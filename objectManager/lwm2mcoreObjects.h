@@ -102,11 +102,13 @@
     else (head)->p_first = (elem)->field.p_next; \
 } while(0)
 
+//--------------------------------------------------------------------------------------------------
 /** Remove element from the head of the list
  *
  * @param[in] head pointer to the list head.
  * @param[in] field the field name of the user data structure used as link element.
  */
+//--------------------------------------------------------------------------------------------------
 #define DLIST_REMOVE_HEAD(head, field) do { \
     (head)->p_first = (head)->p_first->field.p_next; \
     if ((head)->p_first) (head)->p_first->field.p_prev = NULL; \
@@ -204,6 +206,13 @@ int64_t bytesToInt
 #if !defined(ARRAYSIZE)
 #define ARRAYSIZE(a) sizeof(a)/sizeof(a[0])
 #endif
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define the server URI max length
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_SERVER_URI_MAX_LEN    255
 
 //--------------------------------------------------------------------------------------------------
 /**

@@ -56,7 +56,7 @@ typedef enum
  * Enum for security mode for SMS (object 0 (security); resources 6)
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _lwm2mcore_sms_security_mode
+typedef enum
 {
   LWM2MCORE_SSM_RESERVED = 0,                   ///< Default value
   LWM2MCORE_SSM_SECURE_PKT_STRUCT_DEVICE,       ///<

@@ -16,7 +16,7 @@
  * Events for status callback
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _lwm2mcore_statusType_t
+typedef enum
 {
     LWM2MCORE_EVENT_INITIALIZED                    = 0,     ///< The AL subsystem is initialized and
                                                             ///< ready to be used.
@@ -58,7 +58,7 @@ typedef enum _lwm2mcore_statusType_t
                                                             ///< is a Bootstrap or a Device
                                                             ///< Management one
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
-    LWM2MCORE_EVENT_LAST,                                   ///< Internal usage
+    LWM2MCORE_EVENT_LAST                           = 24     ///< Internal usage
 }lwm2mcore_statusType_t;
 
 //--------------------------------------------------------------------------------------------------

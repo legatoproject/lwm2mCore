@@ -294,6 +294,7 @@ void lwm2mcore_sessionEvent
                     case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("BOOTSTRAP DONE");
+                        lwm2mcore_StoreCredentials();
                     }
                     break;
 

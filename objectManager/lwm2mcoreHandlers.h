@@ -470,6 +470,19 @@ int OnExecLWM2MServerRegUpdate
     size_t *len                         ///< [INOUT] length of buffer
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to store credentials in non volatile memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_StoreCredentials
+(
+    void
+);
 
 //--------------------------------------------------------------------------------------------------
 /**

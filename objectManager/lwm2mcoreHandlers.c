@@ -13,8 +13,26 @@
 #include "lwm2mcore.h"
 #include "lwm2mcoreObjectHandler.h"
 #include "../objectManager/lwm2mcoreHandlers.h"
+#include "../objectManager/lwm2mcoreObjects.h"
 #include "../inc/lwm2mcorePortSecurity.h"
 #include "internals.h"
+#include "crypto.h"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Credential temporary RAM storage for BS and DM credentials: storage at the end of the bootstrap
+ */
+//--------------------------------------------------------------------------------------------------
+uint8_t BsPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
+uint16_t BsPskIdLen = 0;
+uint8_t BsPsk[DTLS_PSK_MAX_KEY_LEN];
+uint16_t BsPskLen = 0;
+uint8_t BsAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
+uint8_t DmPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
+uint16_t DmPskIdLen = 0;
+uint8_t DmPsk[DTLS_PSK_MAX_KEY_LEN];
+uint16_t DmPskLen = 0;
+uint8_t DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -200,7 +218,6 @@ static size_t FormatValueToBytes
             else if (size == sizeof (uint64_t))
             {
                 u64Value = (uint64_t*)u;
-                //if( *u64Value > (uint64_t)0x7FFFFFFFFFFFFFFF )
                 if (*u64Value >> 63)
                 {
                     updatedSize = 0;
@@ -306,7 +323,7 @@ int OnLWM2MSecurityServerURI
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -321,7 +338,7 @@ int OnLWM2MSecurityServerURI
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -338,7 +355,7 @@ int OnLWM2MSecurityServerURI
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = os_portSecurityGetCredential (
@@ -360,23 +377,27 @@ int OnLWM2MSecurityServerURI
                 else
                 {
                     /* Write operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_SERVER_URI_MAX_LEN < *lenPtr )
                     {
-                        /* Bootstrap server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
                     }
                     else
                     {
-                        /* Device Management server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+#ifdef CREDENTIALS_DEBUG
+                        os_debug_data_dump ("Server URI write", bufferPtr, *lenPtr);
+#endif
+                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                        {
+                            /* Bootstrap server */
+                            memcpy(BsAddr, bufferPtr, *lenPtr);
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
+                        else
+                        {
+                            /* Device Management server */
+                            memcpy(DmAddr, bufferPtr, *lenPtr);
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
                     }
                 }
             }
@@ -412,7 +433,7 @@ int OnLWM2MSecurityServerType
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -427,7 +448,7 @@ int OnLWM2MSecurityServerType
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -444,7 +465,7 @@ int OnLWM2MSecurityServerType
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         bufferPtr[0] = 1;
@@ -461,7 +482,7 @@ int OnLWM2MSecurityServerType
                 else
                 {
                     /* Write operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = LWM2MCORE_ERR_COMPLETED_OK;
@@ -505,7 +526,7 @@ int OnLWM2MSecurityMode
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -520,7 +541,7 @@ int OnLWM2MSecurityMode
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -580,7 +601,7 @@ int OnLWM2MSecurityDevicePKID
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -595,7 +616,7 @@ int OnLWM2MSecurityDevicePKID
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -612,7 +633,7 @@ int OnLWM2MSecurityDevicePKID
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = os_portSecurityGetCredential (
@@ -637,23 +658,29 @@ int OnLWM2MSecurityDevicePKID
                 else
                 {
                     /* Write operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+#ifdef CREDENTIALS_DEBUG
+                    os_debug_data_dump ("PSK ID write", bufferPtr, *lenPtr);
+#endif
+                    if (*lenPtr > DTLS_PSK_MAX_CLIENT_IDENTITY_LEN)
                     {
-                        /* Bootstrap server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
                     }
                     else
                     {
-                        /* Device Management server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                        {
+                            /* Bootstrap server */
+                            memcpy(BsPskId, bufferPtr, *lenPtr);
+                            BsPskIdLen = *lenPtr;
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
+                        else
+                        {
+                            /* Device Management server */
+                            memcpy(DmPskId, bufferPtr, *lenPtr);
+                            DmPskIdLen = *lenPtr;
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
                     }
                 }
             }
@@ -689,7 +716,7 @@ int OnLWM2MSecurityServerKey
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -704,7 +731,7 @@ int OnLWM2MSecurityServerKey
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -721,7 +748,7 @@ int OnLWM2MSecurityServerKey
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = os_portSecurityGetCredential (
@@ -749,23 +776,26 @@ int OnLWM2MSecurityServerKey
 #ifdef CREDENTIALS_DEBUG
                     os_debug_data_dump ("Server key write", bufferPtr, *lenPtr);
 #endif
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (*lenPtr > DTLS_PSK_MAX_CLIENT_IDENTITY_LEN)
                     {
-                        /* Bootstrap server */
-                        sID = os_portSecuritySetCredential (
-                                                (uint8_t)LWM2MCORE_CREDENTIAL_BS_SERVER_PUBLIC_KEY,
-                                                bufferPtr,
-                                                *lenPtr
-                                                            );
+                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
                     }
                     else
                     {
-                        /* Device Management server */
-                        sID = os_portSecuritySetCredential (
-                                                (uint8_t)LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,
-                                                bufferPtr,
-                                                *lenPtr
-                                                            );
+                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                        {
+                            /* Bootstrap server
+                             * Not used in PSK: respond OK
+                             */
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
+                        else
+                        {
+                            /* Device Management server
+                             * Not used in PSK: respond OK
+                             */
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
                     }
                 }
             }
@@ -801,7 +831,7 @@ int OnLWM2MSecuritySecretKey
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -816,7 +846,7 @@ int OnLWM2MSecuritySecretKey
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -833,7 +863,7 @@ int OnLWM2MSecuritySecretKey
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = os_portSecurityGetCredential (
@@ -861,23 +891,26 @@ int OnLWM2MSecuritySecretKey
 #ifdef CREDENTIALS_DEBUG
                     os_debug_data_dump ("PSK secret write", bufferPtr, *lenPtr);
 #endif
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (*lenPtr > DTLS_PSK_MAX_CLIENT_IDENTITY_LEN)
                     {
-                        /* Bootstrap server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
                     }
                     else
                     {
-                        /* Device Management server */
-                        sID = os_portSecuritySetCredential (
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                                        bufferPtr,
-                                                        *lenPtr
-                                                            );
+                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                        {
+                            /* Bootstrap server */
+                            memcpy(BsPsk, bufferPtr, *lenPtr);
+                            BsPskLen = *lenPtr;
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
+                        else
+                        {
+                            /* Device Management server */
+                            memcpy(DmPsk, bufferPtr, *lenPtr);
+                            DmPskLen = *lenPtr;
+                            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                        }
                     }
                 }
             }
@@ -913,7 +946,7 @@ int OnLWM2MSecuritySMSDummy
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -928,7 +961,7 @@ int OnLWM2MSecuritySMSDummy
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -976,7 +1009,7 @@ int OnLWM2MSecurityServerID
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -991,7 +1024,7 @@ int OnLWM2MSecurityServerID
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1008,7 +1041,7 @@ int OnLWM2MSecurityServerID
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         bufferPtr[0] = 0;
@@ -1026,7 +1059,7 @@ int OnLWM2MSecurityServerID
                 else
                 {
                     /* Write operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = LWM2MCORE_ERR_COMPLETED_OK;
@@ -1070,7 +1103,7 @@ int OnLWM2MSecurityClientHoldOffTime
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1085,7 +1118,7 @@ int OnLWM2MSecurityClientHoldOffTime
          */
         //TODO
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1102,7 +1135,7 @@ int OnLWM2MSecurityClientHoldOffTime
                 if (uriPtr->op & LWM2MCORE_OP_READ)
                 {
                     /* Read operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         bufferPtr[0] = 0;
@@ -1120,7 +1153,7 @@ int OnLWM2MSecurityClientHoldOffTime
                 else
                 {
                     /* Write operation */
-                    if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+                    if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                     {
                         /* Bootstrap server */
                         sID = LWM2MCORE_ERR_COMPLETED_OK;
@@ -1137,6 +1170,82 @@ int OnLWM2MSecurityClientHoldOffTime
     return sID;
 }
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to store credentials in non volatile memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_StoreCredentials
+(
+    void
+)
+{
+    bool result = false;
+    int storageResult = LWM2MCORE_ERR_COMPLETED_OK;
+
+    LOG_ARG( "BsPskIdLen %d BsPskLen %d strlen (BsAddr) %d", BsPskIdLen, BsPskLen, strlen (BsAddr));
+    LOG_ARG( "DmPskIdLen %d DmPskLen %d strlen (DmAddr) %d", DmPskIdLen, DmPskLen, strlen (DmAddr));
+    if (BsPskIdLen && BsPskLen && strlen (BsAddr))
+    {
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                                        (char*)BsPskId,
+                                                        BsPskIdLen);
+        LOG_ARG( "Store BsPskId result %d", storageResult);
+
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                                        (char*)BsPsk,
+                                                        BsPskLen);
+        LOG_ARG( "Store BsPsk result %d", storageResult);
+
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                                        (char*)BsAddr,
+                                                        strlen(BsAddr));
+        LOG_ARG( "Store BsAddr result %d", storageResult);
+    }
+
+    if (BsPskIdLen && BsPskLen && strlen (BsAddr) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
+    {
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                                        (char*)DmPskId,
+                                                        DmPskIdLen);
+        LOG_ARG( "Store DmPskId result %d", storageResult);
+
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                                        (char*)DmPsk,
+                                                        DmPskLen);
+        LOG_ARG( "Store DmPsk result %d", storageResult);
+
+        storageResult = os_portSecuritySetCredential ((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                                        (char*)DmAddr,
+                                                        strlen(DmAddr));
+        LOG_ARG( "Store DmAddr result %d", storageResult);
+    }
+
+    if (LWM2MCORE_ERR_COMPLETED_OK == storageResult)
+    {
+        result = true;
+
+        /* Reset local variables */
+        BsPskIdLen = 0;
+        BsPskLen = 0;
+        DmPskIdLen = 0;
+        DmPskLen = 0;
+
+        memset (BsPskId, 0, DTLS_PSK_MAX_CLIENT_IDENTITY_LEN);
+        memset (BsPsk, 0, DTLS_PSK_MAX_KEY_LEN);
+        memset (BsAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
+        memset (DmPskId, 0, DTLS_PSK_MAX_CLIENT_IDENTITY_LEN);
+        memset (DmPsk, 0, DTLS_PSK_MAX_KEY_LEN);
+        memset (DmAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
+    }
+    LOG_ARG ("credentials storage: %d", result);
+    return result;
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1171,7 +1280,7 @@ int OnLWM2MServerID
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1181,7 +1290,7 @@ int OnLWM2MServerID
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1238,7 +1347,7 @@ int OnLWM2MServerLifeTime
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1248,7 +1357,7 @@ int OnLWM2MServerLifeTime
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1309,7 +1418,7 @@ int OnLWM2MServerMinPeriod
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1319,7 +1428,7 @@ int OnLWM2MServerMinPeriod
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1376,7 +1485,7 @@ int OnLWM2MServerMaxPeriod
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
         sID = LWM2MCORE_ERR_INVALID_ARG;
@@ -1385,7 +1494,7 @@ int OnLWM2MServerMaxPeriod
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1442,7 +1551,7 @@ int OnLWM2MServerQueueUpNotification
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1452,7 +1561,7 @@ int OnLWM2MServerQueueUpNotification
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1509,7 +1618,7 @@ int OnLWM2MServerBindingMode
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1519,7 +1628,7 @@ int OnLWM2MServerBindingMode
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1610,7 +1719,7 @@ int OnManufacturer
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1620,7 +1729,7 @@ int OnManufacturer
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1670,7 +1779,7 @@ int OnModelNumber
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1680,7 +1789,7 @@ int OnModelNumber
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1730,7 +1839,7 @@ int OnSerialNumber
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1740,7 +1849,7 @@ int OnSerialNumber
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1790,7 +1899,7 @@ int OnFirmwareVersion
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1800,7 +1909,7 @@ int OnFirmwareVersion
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1850,7 +1959,7 @@ int OnCurrentTime
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
 
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
@@ -1860,7 +1969,7 @@ int OnCurrentTime
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1915,7 +2024,7 @@ int OnClientSupportedBindingMode
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
         sID = LWM2MCORE_ERR_INVALID_ARG;
@@ -1924,7 +2033,7 @@ int OnClientSupportedBindingMode
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
@@ -1972,7 +2081,7 @@ int OnSslCertif
     value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    int sID;
     if ((uriPtr == NULL) || (bufferPtr == NULL) || (lenPtr == NULL))
     {
         sID = LWM2MCORE_ERR_INVALID_ARG;
@@ -1981,7 +2090,7 @@ int OnSslCertif
     {
         lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+        if (0 == (uriPtr->op & supported_op_mask))
         {
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
         }
