@@ -209,6 +209,13 @@ int64_t bytesToInt
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Maximum buffer length from CoAP
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_BUFFER_MAX_LEN 1024
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Define the server URI max length
  */
 //--------------------------------------------------------------------------------------------------
@@ -336,6 +343,7 @@ typedef enum
     LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID,        ///< Package URI
     LWM2MCORE_FW_UPDATE_UPDATE_RID,             ///< Update
     LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID,       ///< State
+    LWM2MCORE_FW_UPDATE_SUPPPORTED_OBJ_RID,     ///< Update supported objects
     LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID,      ///< Update result
     LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID,       ///< Package name
     LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID,    ///< Package version

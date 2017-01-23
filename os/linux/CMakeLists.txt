@@ -71,6 +71,7 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/objectManager/lwm2mcoreObjectsTable.c
     ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortDeviceDefault.c
     ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortSecurityDefault.c
+    ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortUpdateDefault.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsconnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
     ${LWM2MCORE_DIR}/tinydtls/dtls.c

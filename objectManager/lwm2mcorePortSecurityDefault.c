@@ -22,12 +22,10 @@
  * BS PSK identity and PSK secret can be retrieved from the LWM2M server team (please ask to
  * LWM2MCore team for any support)
  */
+
 #define BS_SERVER_ADDR ""
 #define BS_PSK_ID ""
-uint8_t BS_PSK[OS_PORT_PSKLEN + 1] =
-{
-
-};
+#define BS_PSK ""
 
 /* These values does not need to be filled.
  * When the client connects to the bootstrap server, the bootstrap server sends Device
@@ -68,8 +66,8 @@ uint8_t dmServerAddr[OS_PORT_SERVERADDRLEN] = {'\0'};
 lwm2mcore_sid_t os_portSecurityGetCredential
 (
     lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be retreived
-    char *bufferPtr,                        ///< [INOUT] data buffer
-    size_t *lenPtr                          ///< [INOUT] length of input buffer and length of the
+    char* bufferPtr,                        ///< [INOUT] data buffer
+    size_t* lenPtr                          ///< [INOUT] length of input buffer and length of the
                                             ///< returned data
 )
 {
@@ -86,8 +84,8 @@ lwm2mcore_sid_t os_portSecurityGetCredential
             memset (bufferPtr, 0, *lenPtr);
             case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
             {
-                memcpy (bufferPtr, BS_PSK_ID, strlen ((char*)BS_PSK_ID));
-                *lenPtr = strlen ((char*)BS_PSK_ID);
+                memcpy(bufferPtr, BS_PSK_ID, strlen ((char*)BS_PSK_ID));
+                *lenPtr = strlen((char*)BS_PSK_ID);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -100,24 +98,44 @@ lwm2mcore_sid_t os_portSecurityGetCredential
 
             case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
             {
-                memcpy (bufferPtr, BS_PSK, strlen ((char*)BS_PSK));
-                *lenPtr = strlen ((char*)BS_PSK);
+
+                uint16_t pskLen = strlen((char*)BS_PSK) / 2;
+
+                // Hex string to binary
+                char *h = BS_PSK;
+                char *b = bufferPtr;
+                char xlate[] = "0123456789ABCDEF";
+
+                for ( ; *h; h += 2, ++b)
+                {
+                    char *l = strchr(xlate, toupper(*h));
+                    char *r = strchr(xlate, toupper(*(h+1)));
+
+                    if (!r || !l)
+                    {
+                        LOG("Failed to parse Pre-Shared-Key HEXSTRING");
+                        return -1;
+                    }
+
+                    *b = ((l - xlate) << 4) + (r - xlate);
+                }
+                *lenPtr = pskLen;
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
             {
-                memcpy (bufferPtr, BS_SERVER_ADDR, strlen ((char*)BS_SERVER_ADDR));
-                *lenPtr = strlen ((char*)BS_SERVER_ADDR);
+                memcpy(bufferPtr, BS_SERVER_ADDR, strlen ((char*)BS_SERVER_ADDR));
+                *lenPtr = strlen((char*)BS_SERVER_ADDR);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
             {
-                memcpy (bufferPtr, dmPskId, strlen ((char*)dmPskId));
-                *lenPtr = strlen ((char*)dmPskId);
+                memcpy(bufferPtr, dmPskId, strlen ((char*)dmPskId));
+                *lenPtr = strlen((char*)dmPskId);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -130,16 +148,16 @@ lwm2mcore_sid_t os_portSecurityGetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
             {
-                memcpy (bufferPtr, dmPskSecret, strlen ((char*)dmPskSecret));
-                *lenPtr = strlen ((char*)dmPskSecret);
+                memcpy(bufferPtr, dmPskSecret, LWM2MCORE_PSK_LEN);
+                *lenPtr = LWM2MCORE_PSK_LEN;
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
             {
-                memcpy (bufferPtr, dmServerAddr, strlen ((char*)dmServerAddr));
-                *lenPtr = strlen ((char*)dmServerAddr);
+                memcpy(bufferPtr, dmServerAddr, strlen((char*)dmServerAddr));
+                *lenPtr = strlen((char*)dmServerAddr);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -150,7 +168,7 @@ lwm2mcore_sid_t os_portSecurityGetCredential
             break;
         }
     }
-    LOG_ARG ("os_portSecurityGetCredential credId %d result %d, *lenPtr %d",
+    LOG_ARG("os_portSecurityGetCredential credId %d result %d, *lenPtr %d",
             credId, result, *lenPtr);
     return result;
 }
@@ -173,14 +191,14 @@ lwm2mcore_sid_t os_portSecurityGetCredential
 lwm2mcore_sid_t os_portSecuritySetCredential
 (
     lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be set
-    char *bufferPtr,                        ///< [INOUT] data buffer
+    char* bufferPtr,                        ///< [INOUT] data buffer
     size_t len                              ///< [IN] length of input buffer and length of the
                                             ///< returned data
 )
 {
     lwm2mcore_sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 
-    if ((bufferPtr == NULL) || (!len) || (credId >= LWM2MCORE_CREDENTIAL_MAX))
+    if ((NULL == bufferPtr) || (!len) || (LWM2MCORE_CREDENTIAL_MAX <= credId))
     {
         result = LWM2MCORE_ERR_INVALID_ARG;
     }
@@ -223,7 +241,7 @@ lwm2mcore_sid_t os_portSecuritySetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
             {
-                memcpy (dmPskId, bufferPtr, len);
+                memcpy(dmPskId, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -236,14 +254,14 @@ lwm2mcore_sid_t os_portSecuritySetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
             {
-                memcpy (dmPskSecret, bufferPtr, len);
+                memcpy(dmPskSecret, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
             {
-                memcpy (dmServerAddr, bufferPtr, len);
+                memcpy(dmServerAddr, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -307,7 +325,7 @@ static bool CredentialCheckPresence
         break;
     }
 
-    LOG_ARG ("Credential presence: credId %d result %d", credId, result);
+    LOG_ARG("Credential presence: credId %d result %d", credId, result);
     return result;
 }
 
@@ -333,13 +351,13 @@ bool os_portSecurityCheckDmCredentialsPresence
     /* Check if credentials linked to DM server are present:
      * PSK Id, PSK secret, server URL
      */
-    if (CredentialCheckPresence (LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
-     && CredentialCheckPresence (LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
-     && CredentialCheckPresence (LWM2MCORE_CREDENTIAL_DM_ADDRESS))
+    if (CredentialCheckPresence(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
+     && CredentialCheckPresence(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
+     && CredentialCheckPresence(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
     {
         result = true;
     }
-    LOG_ARG ("os_portSecurityDmServerPresence result %d", result);
+    LOG_ARG("os_portSecurityDmServerPresence result %d", result);
     return result;
 }
 

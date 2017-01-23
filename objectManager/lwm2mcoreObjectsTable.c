@@ -43,48 +43,48 @@ static lwm2mcore_resource_t SecurityResources[] =
         .id = LWM2MCORE_SECURITY_SERVER_URI_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityServerURI,
-        .write = OnLWM2MSecurityServerURI,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_BOOL,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityServerType,
-        .write = OnLWM2MSecurityServerType,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_MODE_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityMode,
-        .write = OnLWM2MSecurityMode,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_PKID_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_OPAQUE,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityDevicePKID,
-        .write = OnLWM2MSecurityDevicePKID,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_SERVER_KEY_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_OPAQUE,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityServerKey,
-        .write = OnLWM2MSecurityServerKey,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_SECRET_KEY_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_OPAQUE,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecuritySecretKey,
-        .write = OnLWM2MSecuritySecretKey,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
@@ -123,16 +123,16 @@ static lwm2mcore_resource_t SecurityResources[] =
         .id = LWM2MCORE_SECURITY_SERVER_ID_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MSecurityServerID,
-        .write = OnLWM2MSecurityServerID,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID,
         .max_res_inst_cnt = 1,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
-        .read = OnLWM2MSecurityClientHoldOffTime,
-        .write = OnLWM2MSecurityClientHoldOffTime,
+        .read = lwm2mcore_ReadSecurityObj,
+        .write = lwm2mcore_WriteSecurityObj,
         .exec = NULL,
     }
 };
@@ -150,48 +150,48 @@ static lwm2mcore_resource_t ServerResources[] =
         .id = LWM2MCORE_SERVER_SHORT_ID_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MServerID,
-        .write = OnLWM2MServerID,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SERVER_LIFETIME_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MServerLifeTime,
-        .write = OnLWM2MServerLifeTime,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MServerMinPeriod,
-        .write = OnLWM2MServerMinPeriod,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_INT,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MServerMaxPeriod,
-        .write = OnLWM2MServerMaxPeriod,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID,
         .max_res_inst_cnt = 1,
         .type = LWM2MCORE_RESOURCE_TYPE_BOOL,
-        .read = OnLWM2MServerQueueUpNotification,
-        .write = OnLWM2MServerQueueUpNotification,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_SERVER_BINDING_MODE_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnLWM2MServerBindingMode,
-        .write = OnLWM2MServerBindingMode,
+        .read = lwm2mcore_ReadServerObj,
+        .write = lwm2mcore_WriteServerObj,
         .exec = NULL,
     }
 };
@@ -209,7 +209,7 @@ static lwm2mcore_resource_t DeviceResources[] =
         .id = LWM2MCORE_DEVICE_MANUFACTURER_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnManufacturer,
+        .read = lwm2mcore_ReadDeviceObj,
         .write = NULL,
         .exec = NULL,
     },
@@ -217,7 +217,7 @@ static lwm2mcore_resource_t DeviceResources[] =
         .id = LWM2MCORE_DEVICE_MODEL_NUMBER_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnModelNumber,
+        .read = lwm2mcore_ReadDeviceObj,
         .write = NULL,
         .exec = NULL,
     },
@@ -225,7 +225,7 @@ static lwm2mcore_resource_t DeviceResources[] =
         .id = LWM2MCORE_DEVICE_SERIAL_NUMBER_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnSerialNumber,
+        .read = lwm2mcore_ReadDeviceObj,
         .write = NULL,
         .exec = NULL,
     },
@@ -233,7 +233,7 @@ static lwm2mcore_resource_t DeviceResources[] =
         .id = LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
         .max_res_inst_cnt = 1,
-        .read = OnFirmwareVersion,
+        .read = lwm2mcore_ReadDeviceObj,
         .write = NULL,
         .exec = NULL,
     },
@@ -241,19 +241,89 @@ static lwm2mcore_resource_t DeviceResources[] =
         .id = LWM2MCORE_DEVICE_CURRENT_TIME_RID,
         .max_res_inst_cnt = 1,
         .type = LWM2MCORE_RESOURCE_TYPE_TIME,
-        .read = OnCurrentTime,
-        .write = OnCurrentTime,
+        .read = lwm2mcore_ReadDeviceObj,
+        .write = lwm2mcore_WriteDeviceObj,
         .exec = NULL,
     },
     {
         .id = LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID,
         .max_res_inst_cnt = 1,
         .type = LWM2MCORE_RESOURCE_TYPE_STRING,
-        .read = OnClientSupportedBindingMode,
-        .write = OnClientSupportedBindingMode,
+        .read = lwm2mcore_ReadDeviceObj,
+        .write = lwm2mcore_WriteDeviceObj,
         .exec = NULL,
     }
 };
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Firmware update supported resources defined for LWM2M object (5)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_resource_t FirmwareUpdateResources[] =
+{
+    {
+        .id = LWM2MCORE_FW_UPDATE_PACKAGE_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_OPAQUE,
+        .read = NULL,
+        .write = lwm2mcore_WriteFwUpdate,
+        .exec = NULL
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_STRING,
+        .read = lwm2mcore_ReadFwUpdate,
+        .write = lwm2mcore_WriteFwUpdate,
+        .exec = NULL
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_UPDATE_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_UNKNOWN,
+        .read = NULL,
+        .write = NULL,
+        .exec = lwm2mcore_ExecFwUpdate,
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_INT,
+        .read = lwm2mcore_ReadFwUpdate,
+        .write = NULL,
+        .exec = NULL
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_INT,
+        .read = lwm2mcore_ReadFwUpdate,
+        .write = NULL,
+        .exec = NULL
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_STRING,
+        .read = lwm2mcore_ReadFwUpdate,
+        .write = NULL,
+        .exec = NULL
+    },
+    {
+        .id = LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID,
+        .max_res_inst_cnt = 1,
+        .type = LWM2MCORE_RESOURCE_TYPE_STRING,
+        .read = lwm2mcore_ReadFwUpdate,
+        .write = NULL,
+        .exec = NULL
+    }
+};
+
+
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -307,6 +377,13 @@ lwm2mcore_object_t ObjArray[] =
         .max_obj_inst_cnt = 1,
         .res_cnt = ARRAYSIZE(DeviceResources),
         .resources = DeviceResources,
+    },
+    /* object 5, firmware update */
+    {
+        .id = LWM2MCORE_FIRMWARE_UPDATE_OID,
+        .max_obj_inst_cnt = 1,
+        .res_cnt = ARRAYSIZE(FirmwareUpdateResources),
+        .resources = FirmwareUpdateResources,
     },
     /* object 10243, SSL certificate */
     {

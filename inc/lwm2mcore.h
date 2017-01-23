@@ -219,10 +219,10 @@ typedef int (*generic_read_write_api_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_read_callback_t)
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
     value_changed_callback_t changed_cb ///< [IN] not used for READ operation
 );
@@ -239,11 +239,10 @@ typedef int (*lwm2mcore_read_callback_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_write_callback_t)
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer
-    value_changed_callback_t changed_cb ///< [IN] only used for OBSERVE operation
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -258,10 +257,10 @@ typedef int (*lwm2mcore_write_callback_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_execute_callback_t)
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] contain arguments
-    size_t *len                         ///< [INOUT] length of buffer
+    char *bufferPtr,                    ///< [INOUT] contain arguments
+    size_t len                          ///< [IN] length of buffer
 );
 
 //--------------------------------------------------------------------------------------------------

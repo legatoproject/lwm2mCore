@@ -32,9 +32,9 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the server URI
+ * Function to write a resource of object 0
  * Object: 0 - Security
- * Resource: 0
+ * Resource: all
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
@@ -47,21 +47,19 @@
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityServerURI
+int lwm2mcore_WriteSecurityObj
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the server type
+ * Function to read a resource of object 0
  * Object: 0 - Security
- * Resource: 1
+ * Resource: All
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
@@ -74,122 +72,14 @@ int OnLWM2MSecurityServerURI
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityServerType
+int lwm2mcore_ReadSecurityObj
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the server security mode
- * Object: 0 - Security
- * Resource: 2
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityMode
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the device PSK Identity
- * Object: 0 - Security
- * Resource: 3
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityDevicePKID
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the server public key
- * Object: 0 - Security
- * Resource: 4
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityServerKey
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the device secret key
- * Object: 0 - Security
- * Resource: 5
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecuritySecretKey
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    value_changed_callback_t changed_cb ///< [IN] callback for notification
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -213,68 +103,10 @@ int OnLWM2MSecuritySMSDummy
 (
     lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len,                         ///< [IN] length of input buffer
     value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
 );
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function for the short server ID
- * Object: 0 - Security
- * Resource: 10
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityServerID
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function for the Client Hold Off Time
- * Object: 0 - Security
- * Resource: 11
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MSecurityClientHoldOffTime
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-
-
 
 
 //--------------------------------------------------------------------------------------------------
@@ -285,9 +117,35 @@ int OnLWM2MSecurityClientHoldOffTime
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the short server ID
+ * Define default value for Pmin: Minimum period (resource 2 of object 1)
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_PMIN_DEFAULT_VALUE 30
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define default value for Pmax: Maximum period (resource 3 of object 1)
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_PMAX_DEFAULT_VALUE 60
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define possible values for binding mode (supported mode is UQ)
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_BINDING_UDP "U"
+#define LWM2MCORE_BINDING_UDP_QUEUE "UQ"
+#define LWM2MCORE_BINDING_SMS "S"
+#define LWM2MCORE_BINDING_SMS_QUEUE "SQ"
+#define LWM2MCORE_BINDING_UDP_SMS "US"
+#define LWM2MCORE_BINDING_UDP_QUEUE_SMS "UQS"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a resource of object 1
  * Object: 1 - Server
- * Resource: 0
+ * Resource: all
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
@@ -300,21 +158,19 @@ int OnLWM2MSecurityClientHoldOffTime
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MServerID
+int lwm2mcore_WriteServerObj
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the server lifetime
+ * Function to read a resource of object 1
  * Object: 1 - Server
- * Resource: 1
+ * Resource: All
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
@@ -327,21 +183,53 @@ int OnLWM2MServerID
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MServerLifeTime
+int lwm2mcore_ReadServerObj
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    value_changed_callback_t changed_cb ///< [IN] callback for notification
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                  OBJECT 3: DEVICE
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a resource of object 3
+ * Object: 3 - Device
+ * Resource: all
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_WriteDeviceObj
+(
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the server Pmin
- * Object: 1 - Server
- * Resource: 2
+ * Function to read a resource of object 3
+ * Object: 3 - Device
+ * Resource: All
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
@@ -354,120 +242,14 @@ int OnLWM2MServerLifeTime
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MServerMinPeriod
+int lwm2mcore_ReadDeviceObj
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the server Pmax
- * Object: 1 - Server
- * Resource: 3
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MServerMaxPeriod
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the server Notification Storing When Disabled or Offline
- * Object: 1 - Server
- * Resource: 6
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MServerQueueUpNotification
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the server binding mode
- * Object: 1 - Server
- * Resource: 7
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnLWM2MServerBindingMode
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to send a REGISTRATION UPDATE to the LWM2M server (DM server)
- * Object: 1 - Server
- * Resource: 8
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnExecLWM2MServerRegUpdate
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] contain arguments
-    size_t *len                         ///< [INOUT] length of buffer
+    value_changed_callback_t changed_cb ///< [IN] callback for notification
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -486,199 +268,9 @@ bool lwm2mcore_StoreCredentials
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 3: DEVICE
+ *                  OBJECT 10243: SSL certificates
  */
 //--------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read the device manufacturer
- * Object: 3 - Device
- * Resource: 0
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnManufacturer
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read the model number
- * Object: 3 - Device
- * Resource: 1
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnModelNumber
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read the device serial number
- * Object: 3 - Device
- * Resource: 2
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnSerialNumber
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read the firmware version
- * Object: 3 - Device
- * Resource: 3
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnFirmwareVersion
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
-
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the device time
- * Object: 3 - Device
- * Resource: 13
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnCurrentTime
-(
-    lwm2mcore_uri_t *uriPtr,               ///< [IN] uriPtr represents the requested operation and
-                                            ///< object/resource
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                            ///< returned data
-    value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the device UTC offset
- * Object: 3 - Device
- * Resource: 14
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnUTCOffset
-(
-    lwm2mcore_uri_t *uriPtr,               ///< [IN] uriPtr represents the requested operation and
-                                            ///< object/resource
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                            ///< returned data
-    value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read/write the device Supported Binding and Modes
- * Object: 3 - Device
- * Resource: 15
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
- */
-//--------------------------------------------------------------------------------------------------
-int OnClientSupportedBindingMode
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
-);
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -716,6 +308,90 @@ int OnUnlistedObject
     size_t *len,                        ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
     value_changed_callback_t changed_cb ///< [IN] callback function pointer for OBSERVE operation
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                  OBJECT 5: FIRMWARE UPDATE
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a ressource of object 5
+ * Object: 5 - Firmware update
+ * Resource: all with write operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_WriteFwUpdate
+(
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a ressource of object 5
+ * Object: 5 - Firmware update
+ * Resource: all with read operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_ReadFwUpdate
+(
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a ressource of object 5
+ * Object: 5 - Firwmare update
+ * Resource: all
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_ExecFwUpdate
+(
+    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [INOUT] length of input buffer
 );
 
 #endif /* LWM2MCORE_HANDLERS_H */
