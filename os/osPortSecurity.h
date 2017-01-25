@@ -3,7 +3,7 @@
  *
  * Header file for adaptation layer for credentials management *
  *
- * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
+ * Copyright (C) Sierra Wireless Inc.
  *
  */
 

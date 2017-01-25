@@ -3,7 +3,7 @@
  *
  * Adaptation layer from the object table managed by the client and the Wakaama object management
  *
- * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
+ * Copyright (C) Sierra Wireless Inc.
  *
  */
 

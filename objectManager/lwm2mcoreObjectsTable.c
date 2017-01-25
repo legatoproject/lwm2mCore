@@ -3,7 +3,7 @@
  *
  * Object table and resource supported by the client
  *
- * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
+ * Copyright (C) Sierra Wireless Inc.
  *
  */
 
