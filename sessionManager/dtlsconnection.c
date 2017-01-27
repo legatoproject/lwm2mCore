@@ -18,119 +18,211 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "lwm2mcore.h"
+#include "../objectManager/lwm2mcoreObjects.h"
 #include "../sessionManager/dtlsconnection.h"
 #include "../os/osDebug.h"
 #include "lwm2mcoreSessionParam.h"
 #include "internals.h"
 #include "liblwm2m.h"
 
-#define URI_LENGTH 256
+#define COAP_PORT "5683"
+#define COAPS_PORT "5684"
+#define URI_LENGTH LWM2MCORE_SERVER_URI_MAX_LEN + 1
 
-dtls_context_t * dtlsContext;
+//--------------------------------------------------------------------------------------------------
+/**
+ * Global for DTLS context
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_context_t* DtlsContextPtr;
 
-/********************* Security Obj Helpers **********************/
-char * security_get_uri(lwm2m_object_t * obj, int instanceId, char * uriBuffer, int bufferSize){
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to search the server URI (resource 0 of object 0)
+ *
+ * @return
+ *  - pointer on server URI
+ *  - NULL if server URI was not found
+ */
+//--------------------------------------------------------------------------------------------------
+static char* SecurityGetUri
+(
+    lwm2m_object_t* objPtr,     ///< [IN] Pointer on the object structure
+    int instanceId,             ///< [IN] Object instance Id
+    char* uriBufferPtr,         ///< [INOUT] Data buffer
+    int bufferSize              ///< [IN] Buffer size
+)
+{
     int size = 1;
-    lwm2m_data_t * dataP = lwm2m_data_new(size);
-    uint8_t test = 0;
-    dataP->id = LWM2M_SECURITY_URI_ID; // security server uri
+    lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    uint8_t test;
+    dataPtr->id = LWM2M_SECURITY_URI_ID;
 
-    test = obj->readFunc(instanceId, &size, &dataP, obj);
-    LOG_ARG ("security_get_uri readFunc return %d", test);
-    if (dataP != NULL &&
-            dataP->type == LWM2M_TYPE_STRING &&
-            dataP->value.asBuffer.length > 0)
+    test = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    LOG_ARG("security_get_uri readFunc return %d", test);
+
+    if ((NULL != dataPtr) &&
+        (LWM2M_TYPE_STRING == dataPtr->type) &&
+        (0 < dataPtr->value.asBuffer.length))
     {
-        if (bufferSize > dataP->value.asBuffer.length){
-            memset(uriBuffer,0,dataP->value.asBuffer.length+1);
-            strncpy(uriBuffer,dataP->value.asBuffer.buffer,dataP->value.asBuffer.length);
-            lwm2m_data_free(size, dataP);
-            return uriBuffer;
+        if(bufferSize > dataPtr->value.asBuffer.length)
+        {
+            memset(uriBufferPtr, 0, (dataPtr->value.asBuffer.length + 1 ));
+            strncpy(uriBufferPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
+            lwm2m_data_free(size, dataPtr);
+            return uriBufferPtr;
+        }
+        else
+        {
+            LOG_ARG("uriBuffer size is too short: bufferSize %d < length %d",
+                    bufferSize, dataPtr->value.asBuffer.length);
         }
     }
-    lwm2m_data_free(size, dataP);
+    lwm2m_data_free(size, dataPtr);
     return NULL;
 }
 
-int64_t security_get_mode(lwm2m_object_t * obj, int instanceId){
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the security mode from security object (resource 2 of object 0)
+ *
+ * @return
+ *  - LWM2M_SECURITY_MODE_PRE_SHARED_KEY if PSKs are used for security
+ *  - LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY if raw public keys are used for security
+ *  - LWM2M_SECURITY_MODE_CERTIFICATE if certificates are used for security
+ *  - LWM2M_SECURITY_MODE_NONE in case of no security
+ */
+//--------------------------------------------------------------------------------------------------
+static int64_t SecurityGetMode
+(
+    lwm2m_object_t* objPtr,     ///< [IN] Pointer on the object structure
+    int instanceId              ///< [IN] Objecxt instance Id
+)
+{
     int64_t mode;
     int size = 1;
-    lwm2m_data_t * dataP = lwm2m_data_new(size);
-    dataP->id = 2; // security mode
+    lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    dataPtr->id = LWM2MCORE_SECURITY_MODE_RID;
 
-    obj->readFunc(instanceId, &size, &dataP, obj);
-    if (0 != lwm2m_data_decode_int(dataP,&mode))
+    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if (0 != lwm2m_data_decode_int(dataPtr,&mode))
     {
-        lwm2m_data_free(size, dataP);
+        lwm2m_data_free(size, dataPtr);
         return mode;
     }
 
-    lwm2m_data_free(size, dataP);
+    lwm2m_data_free(size, dataPtr);
     LOG("Unable to get security mode : use not secure mode");
     return LWM2M_SECURITY_MODE_NONE;
 }
 
-char * security_get_public_id(lwm2m_object_t * obj, int instanceId, int * length){
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the public key or identity (resource 3 of object 0)
+ *
+ * @return
+ *  - pointer on public key or identity
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static char* SecurityGetPublicId
+(
+    lwm2m_object_t* objPtr,     ///< [IN] Pointer on the object structure
+    int instanceId,             ///< [IN] Objecxt instance Id
+    int* lengthPtr              ///< [INOUT] Key length
+)
+{
     int size = 1;
-    lwm2m_data_t * dataP = lwm2m_data_new(size);
-    dataP->id = 3; // public key or id
+    lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    dataPtr->id = LWM2MCORE_SECURITY_PKID_RID;
 
-    obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-        dataP->type == LWM2M_TYPE_OPAQUE)
+    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if ((NULL != dataPtr)
+    && (LWM2M_TYPE_OPAQUE == dataPtr->type))
     {
-        char * buff;
+        char* buffPtr;
 
-        buff = (char*)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (buff != 0)
+        buffPtr = (char*)lwm2m_malloc(dataPtr->value.asBuffer.length);
+        if (0 != buffPtr)
         {
-            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            *length = dataP->value.asBuffer.length;
+            memcpy(buffPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
+            *lengthPtr = dataPtr->value.asBuffer.length;
         }
-        lwm2m_data_free(size, dataP);
+        lwm2m_data_free(size, dataPtr);
 
-        return buff;
-    }else{
+        return buffPtr;
+    }
+    else
+    {
         return NULL;
     }
 }
 
-
-char * security_get_secret_key(lwm2m_object_t * obj, int instanceId, int * length){
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the secret key (resource 5 of object 0)
+ *
+ * @return
+ *  - pointer on secret key
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static char* SecurityGetSecretKey
+(
+    lwm2m_object_t* objPtr,     ///< [IN] Pointer on the object structure
+    int instanceId,             ///< [IN] Objecxt instance Id
+    int* lengthPtr              ///< [INOUT] Key length
+)
+{
     int size = 1;
-    lwm2m_data_t * dataP = lwm2m_data_new(size);
-    dataP->id = 5; // secret key
+    lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    dataPtr->id = LWM2MCORE_SECURITY_SECRET_KEY_RID;
 
-    obj->readFunc(instanceId, &size, &dataP, obj);
-    if (dataP != NULL &&
-        dataP->type == LWM2M_TYPE_OPAQUE)
+    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if ((NULL != dataPtr)
+    && (LWM2M_TYPE_OPAQUE == dataPtr->type))
     {
-        char * buff;
+        char * buffPtr;
 
-        buff = (char*)lwm2m_malloc(dataP->value.asBuffer.length);
-        if (buff != 0)
+        buffPtr = (char*)lwm2m_malloc(dataPtr->value.asBuffer.length);
+        if (0 != buffPtr)
         {
-            memcpy(buff, dataP->value.asBuffer.buffer, dataP->value.asBuffer.length);
-            *length = dataP->value.asBuffer.length;
+            memcpy(buffPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
+            *lengthPtr = dataPtr->value.asBuffer.length;
         }
-        lwm2m_data_free(size, dataP);
+        lwm2m_data_free(size, dataPtr);
 
-        return buff;
-    }else{
+        return buffPtr;
+    }
+    else
+    {
         return NULL;
     }
 }
 
-/********************* Security Obj Helpers Ends **********************/
-
-int send_data(dtls_connection_t *connP,
-                    uint8_t * buffer,
-                    size_t length)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send data on DTLS
+ *
+ * @return
+ *  - data length sent on DTLS
+ *  - 0 if no data were sent
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int SendData
+(
+    dtls_connection_t* connPtr, ///< [IN] DTLS connection
+    uint8_t* bufferPtr,         ///< [IN] Buffer to be sent
+    size_t length               ///< [IN] Buffer length
+)
 {
     int nbSent;
     size_t offset;
-    LOG ("send_data");
+    LOG("SendData");
 
 #ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
@@ -138,118 +230,154 @@ int send_data(dtls_connection_t *connP,
 
     s[0] = 0;
 
-    if (AF_INET == connP->addr.sin6_family)
+    if (AF_INET == connPtr->addr.sin6_family)
     {
-        struct sockaddr_in *saddr = (struct sockaddr_in *)&connP->addr;
-        inet_ntop(saddr->sin_family, &saddr->sin_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin_port;
-}
-    else if (AF_INET6 == connP->addr.sin6_family)
+        struct sockaddr_in *saddrPtr = (struct sockaddr_in *)&connPtr->addr;
+        inet_ntop(saddrPtr->sin_family, &saddrPtr->sin_addr, s, INET6_ADDRSTRLEN);
+        port = saddrPtr->sin_port;
+    }
+    else if (AF_INET6 == connPtr->addr.sin6_family)
     {
-        struct sockaddr_in6 *saddr = (struct sockaddr_in6 *)&connP->addr;
-        inet_ntop(saddr->sin6_family, &saddr->sin6_addr, s, INET6_ADDRSTRLEN);
-        port = saddr->sin6_port;
+        struct sockaddr_in6 *saddrPtr = (struct sockaddr_in6 *)&connPtr->addr;
+        inet_ntop(saddrPtr->sin6_family, &saddrPtr->sin6_addr, s, INET6_ADDRSTRLEN);
+        port = saddrPtr->sin6_port;
     }
 
-    LOG_ARG ("Sending %d bytes to [%s]:%hu", length, s, ntohs(port));
+    LOG_ARG("Sending %d bytes to [%s]:%hu", length, s, ntohs(port));
 
-    //output_buffer(stderr, buffer, length, 0);
 #endif
-    if (connP->dtlsSession == NULL)
+    if (NULL == connPtr->dtlsSessionPtr)
     {
-        os_debug_data_dump ("Sent bytes in no sec", buffer, length);
+        os_debug_data_dump("Sent bytes in no sec", bufferPtr, length);
     }
 
     offset = 0;
     while (offset != length)
     {
-        nbSent = os_udpSend (connP->sock,
-                            buffer + offset,
+        nbSent = os_udpSend(connPtr->sock,
+                            bufferPtr + offset,
                             length - offset,
                             0,
-                            (struct sockaddr *)&(connP->addr),
-                            connP->addrLen);
-        if (nbSent == -1) return -1;
+                            (struct sockaddr *)&(connPtr->addr),
+                            connPtr->addrLen);
+        if (-1 == nbSent)
+        {
+            return -1;
+        }
         offset += nbSent;
     }
+    connPtr->lastSend = lwm2m_gettime();
     return 0;
 }
 
-/**************************  TinyDTLS Callbacks  ************************/
-
-/* This function is the "key store" for tinyDTLS. It is called to
- * retrieve a key for the given identity within this particular
- * session. */
-static int
-get_psk_info(struct dtls_context_t *ctx,
-        const session_t *session,
-        dtls_credentials_type_t type,
-        const unsigned char *id, size_t id_len,
-        unsigned char *result, size_t result_length) {
-
-    LOG_ARG ("get_psk_info type %d", type);
+//--------------------------------------------------------------------------------------------------
+/**
+ * TinyDTLS Callbacks
+ * This function is the "key store" for tinyDTLS. It is called to retrieve a key for the given
+ * identity within this particular session. PSKs is only supported.
+ *
+ * @return
+ *  - key length
+ *  - 0 if no data were sent
+ *  - negative value in case of failure (see dtls_alert_t)
+ */
+//--------------------------------------------------------------------------------------------------
+static int GetPskInfo
+(
+    struct dtls_context_t* ctxPtr,      ///< [IN] DTLS context
+    const session_t* sessionPtr,        ///< [IN] DTLS session
+    dtls_credentials_type_t type,       ///< [IN] Requested redential
+    const unsigned char* idPtr,         ///< [INOUT] Resource Id linked to the requested credential
+    size_t idLen,                       ///< [INOUT] Credential length
+    unsigned char* resultPtr,           ///< [INOUT] Buffer in which the credential is written
+    size_t resultLength                 ///< [IN] Maximum credential length
+)
+{
+    LOG_ARG("GetPskInfo type %d", type);
     // find connection
-    dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
-    if (cnx == NULL)
+    dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
+                                                &(sessionPtr->addr.st),
+                                                sessionPtr->size);
+    if (NULL == cnxPtr)
     {
-        printf("GET PSK session not found\n");
+        LOG("GET PSK session not found");
         return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
     }
-    switch (type) {
+    switch (type)
+    {
         case DTLS_PSK_IDENTITY:
         {
             int idLen;
-            char * id;
-            id = security_get_public_id(cnx->securityObj, cnx->securityInstId, &idLen);
+            char* idPtr;
+            idPtr = SecurityGetPublicId(cnxPtr->securityObjPtr, cnxPtr->securityInstId, &idLen);
 #ifdef CREDENTIALS_DEBUG
-            LOG_ARG ("DTLS_PSK_IDENTITY result_length %d idLen %d", result_length, idLen);
+            LOG_ARG("DTLS_PSK_IDENTITY resultLength %d idLen %d", resultLength, idLen);
 #endif
-            if (result_length < idLen)
+            if (resultLength < idLen)
             {
-                printf("cannot set psk_identity -- buffer too small\n");
+                LOG("cannot set psk_identity -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
-            memcpy(result, id,idLen);
-            lwm2m_free(id);
+            memcpy(resultPtr, idPtr, idLen);
+            lwm2m_free(idPtr);
             return idLen;
         }
         case DTLS_PSK_KEY:
         {
             int keyLen;
-            char * key;
-            key = security_get_secret_key(cnx->securityObj, cnx->securityInstId, &keyLen);
+            char* keyPtr;
+            keyPtr = SecurityGetSecretKey(cnxPtr->securityObjPtr, cnxPtr->securityInstId, &keyLen);
 #ifdef CREDENTIALS_DEBUG
-            LOG_ARG ("DTLS_PSK_KEY result_length %d keyLen %d", result_length, keyLen);
+            LOG_ARG("DTLS_PSK_KEY resultLength %d keyLen %d", resultLength, keyLen);
 #endif
-            if (result_length < keyLen)
+            if (resultLength < keyLen)
             {
-                printf("cannot set psk -- buffer too small\n");
+                LOG("cannot set psk -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
-            memcpy(result, key,keyLen);
-            lwm2m_free(key);
+            memcpy(resultPtr, keyPtr, keyLen);
+            lwm2m_free(keyPtr);
             return keyLen;
         }
         default:
-            printf("unsupported request type: %d\n", type);
+            LOG_ARG("unsupported request type: %d", type);
+        break;
     }
 
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
 }
 
-static int
-send_to_peer(struct dtls_context_t *ctx,
-        session_t *session, uint8 *data, size_t len) {
-
+//--------------------------------------------------------------------------------------------------
+/**
+ * TinyDTLS Callbacks
+ * This function is the "write" for tinyDTLS. It is called to send a buffer to a peer.
+ *
+ * @return
+ *  - 0 if data were well sent
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int SendToPeer
+(
+    struct dtls_context_t* ctxPtr,      ///< [IN] DTLS context
+    session_t* sessionPtr,              ///< [IN] DTLS session
+    uint8_t* dataPtr,                   ///< [IN] Buffer to be sent
+    size_t len                          ///< [IN] Buffer length
+)
+{
     // find connection
-    dtls_connection_t * connP = (dtls_connection_t *) ctx->app;
-    dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
-    if (cnx != NULL)
+    dtls_connection_t* connPtr = (dtls_connection_t*) ctxPtr->app;
+    dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
+                                                &(sessionPtr->addr.st),
+                                                sessionPtr->size);
+    if (NULL != cnxPtr)
     {
         // send data to peer
-        int err = send_data(cnx,data,len);
+
+        // TODO: nat expiration?
+        int err = SendData(cnxPtr, dataPtr, len);
         if (COAP_NO_ERROR != err)
         {
             return -1;
@@ -259,16 +387,32 @@ send_to_peer(struct dtls_context_t *ctx,
     return -1;
 }
 
-static int
-read_from_peer(struct dtls_context_t *ctx,
-          session_t *session, uint8 *data, size_t len) {
-
+//--------------------------------------------------------------------------------------------------
+/**
+ * TinyDTLS Callbacks
+ * This function is the "read" for tinyDTLS. It is called to read a buffer from a peer.
+ *
+ * @return
+ *  - 0 if data were well handled
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int ReadFromPeer
+(
+    struct dtls_context_t* ctxPtr,      ///< [IN] DTLS context
+    session_t* sessionPtr,              ///< [IN] DTLS session
+    uint8_t* dataPtr,                   ///< [INOUT] Buffer
+    size_t len                          ///< [IN] Buffer length
+)
+{
     // find connection
-    dtls_connection_t * connP = (dtls_connection_t *) ctx->app;
-    dtls_connection_t* cnx = connection_find((dtls_connection_t *) ctx->app, &(session->addr.st),session->size);
-    if (cnx != NULL)
+    dtls_connection_t* connPtr = (dtls_connection_t*) ctxPtr->app;
+    dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
+                                                &(sessionPtr->addr.st),
+                                                sessionPtr->size);
+    if (NULL != cnxPtr)
     {
-        lwm2m_handle_packet(cnx->lwm2mH, (uint8_t*)data, len, (void*)cnx);
+        lwm2m_handle_packet(cnxPtr->lwm2mHPtr, dataPtr, len, (void*)cnxPtr);
         return 0;
     }
     return -1;
@@ -325,199 +469,295 @@ static int dtlsEventCb
     }
 }
 
-/**************************   TinyDTLS Callbacks Ends ************************/
-
+//--------------------------------------------------------------------------------------------------
+/**
+ * TinyDTLS Callbacks
+ */
+//--------------------------------------------------------------------------------------------------
 static dtls_handler_t cb = {
-  .write = send_to_peer,
-  .read  = read_from_peer,
+  .write = SendToPeer,
+  .read  = ReadFromPeer,
   .event = dtlsEventCb,
-//#ifdef DTLS_PSK
-  .get_psk_info = get_psk_info,
-//#endif /* DTLS_PSK */
-//#ifdef DTLS_ECC
-//  .get_ecdsa_key = get_ecdsa_key,
-//  .verify_ecdsa_key = verify_ecdsa_key
-//#endif /* DTLS_ECC */
+  .get_psk_info = GetPskInfo,
 };
 
-dtls_context_t * get_dtls_context(dtls_connection_t * connList) {
-    if (dtlsContext == NULL) {
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This function returns a DTLS context from DTLS connection list
+ *
+ * @return
+ *  - dtls_context_t pointer
+ */
+//--------------------------------------------------------------------------------------------------
+static dtls_context_t* GetDtlsContext
+(
+    dtls_connection_t* connListPtr    ///< [IN] DTLS connection
+)
+{
+    if (NULL == DtlsContextPtr)
+    {
         dtls_init();
-        dtlsContext = dtls_new_context(connList);
-        if (dtlsContext == NULL)
+        DtlsContextPtr = dtls_new_context(connListPtr);
+        if (NULL == DtlsContextPtr)
+        {
             LOG("Failed to create the DTLS context");
-        dtls_set_handler(dtlsContext, &cb);
-    }else{
-        dtlsContext->app = connList;
+        }
+        dtls_set_handler(DtlsContextPtr, &cb);
     }
-    return dtlsContext;
+    else
+    {
+        DtlsContextPtr->app = connListPtr;
+    }
+    return DtlsContextPtr;
 }
 
-int get_port(struct sockaddr *x)
+//--------------------------------------------------------------------------------------------------
+/**
+ * This function returns the port associated to sockaddr
+ *
+ * @return
+ *  - port number
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int GetPort
+(
+    struct sockaddr *x      ///< [IN] Socket information
+)
 {
    if (x->sa_family == AF_INET)
    {
        return ((struct sockaddr_in *)x)->sin_port;
-   } else if (x->sa_family == AF_INET6) {
+   }
+   else if (x->sa_family == AF_INET6)
+   {
        return ((struct sockaddr_in6 *)x)->sin6_port;
-   } else {
+   }
+   else
+   {
        printf("non IPV4 or IPV6 address\n");
        return  -1;
    }
 }
 
-int sockaddr_cmp(struct sockaddr *x, struct sockaddr *y)
+//--------------------------------------------------------------------------------------------------
+/**
+ * This function compares 2 socket information
+ *
+ * @return
+ *  - port number
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int SockaddrCmp
+(
+    struct sockaddr *x,     ///< [IN] Socket information 1
+    struct sockaddr *y      ///< [IN] Socket information 2
+)
 {
-    int portX = get_port(x);
-    int portY = get_port(y);
+    int portX = GetPort(x);
+    int portY = GetPort(y);
 
     // if the port is invalid of different
-    if (portX == -1 || portX != portY)
+    if (( -1 == portX) || (portX != portY))
     {
         return 0;
     }
 
     // IPV4?
-    if (x->sa_family == AF_INET)
+    if (AF_INET == x->sa_family)
     {
         // is V4?
-        if (y->sa_family == AF_INET)
+        if (AF_INET == y->sa_family)
         {
             // compare V4 with V4
-            return ((struct sockaddr_in *)x)->sin_addr.s_addr == ((struct sockaddr_in *)y)->sin_addr.s_addr;
+            return ((struct sockaddr_in *)x)->sin_addr.s_addr == \
+                                            ((struct sockaddr_in *)y)->sin_addr.s_addr;
             // is V6 mapped V4?
-        } else if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)y)->sin6_addr)) {
+        }
+        else if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)y)->sin6_addr))
+        {
             struct in6_addr* addr6 = &((struct sockaddr_in6 *)y)->sin6_addr;
-            uint32_t y6to4 = addr6->s6_addr[15] << 24 | addr6->s6_addr[14] << 16 | addr6->s6_addr[13] << 8 | addr6->s6_addr[12];
+            uint32_t y6to4 = addr6->s6_addr[15] << 24 | addr6->s6_addr[14] << 16 | \
+                                                    addr6->s6_addr[13] << 8 | addr6->s6_addr[12];
             return y6to4 == ((struct sockaddr_in *)x)->sin_addr.s_addr;
-        } else {
+        }
+        else
+        {
             return 0;
         }
-    } else if (x->sa_family == AF_INET6 && y->sa_family == AF_INET6) {
+    }
+    else if (x->sa_family == AF_INET6 && y->sa_family == AF_INET6)
+    {
         // IPV6 with IPV6 compare
-        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr, ((struct sockaddr_in6 *)y)->sin6_addr.s6_addr, 16) == 0;
-    } else {
+        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr,
+                      ((struct sockaddr_in6 *)y)->sin6_addr.s6_addr,
+                      16) == 0;
+    }
+    else
+    {
         // unknown address type
         printf("non IPV4 or IPV6 address\n");
         return 0;
     }
 }
 
-dtls_connection_t * connection_find(dtls_connection_t * connList,
-                               const struct sockaddr_storage * addr,
-                               size_t addrLen)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to search if a DTLS connection is available
+ *
+ * @return
+ *  - dtls_connection_t pointer if the DTLS connection is available
+ *  - NULL if the DTLS connection is not available in the indicated socket
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_find
+(
+    dtls_connection_t* connListPtr,         ///< [IN] DTLS connection list
+    const struct sockaddr_storage* addrPtr, ///< [IN] Socket address structure
+    size_t addrLen                          ///< [IN] Socket address structure length
+)
 {
-    dtls_connection_t * connP;
+    dtls_connection_t* connPtr;
 
-    connP = connList;
-    while (connP != NULL)
+    connPtr = connListPtr;
+    while (NULL != connPtr)
     {
 
-       if (sockaddr_cmp((struct sockaddr*) (&connP->addr),(struct sockaddr*) addr)) {
-            return connP;
+       if (SockaddrCmp((struct sockaddr*) (&connPtr->addr), (struct sockaddr*) addrPtr))
+       {
+            return connPtr;
        }
 
-       connP = connP->next;
+       connPtr = connPtr->nextPtr;
     }
 
-    return connP;
+    return connPtr;
 }
 
-dtls_connection_t * connection_new_incoming(dtls_connection_t * connList,
-                                       int sock,
-                                       const struct sockaddr * addr,
-                                       size_t addrLen)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to create a new DTLS connection
+ *
+ * @return
+ *  - DTLS connection structure (dtls_connection_t);
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_new_incoming
+(
+    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection list
+    int sock,                           ///< [IN] Socket Id on which the DTLS needs to be created
+    const struct sockaddr* addrPtr,     ///< [IN] Socket address structure
+    size_t addrLen                      ///< [IN] Socket address structure length
+)
 {
-    dtls_connection_t * connP;
+    dtls_connection_t* connPtr;
 
-    connP = (dtls_connection_t *)malloc(sizeof(dtls_connection_t));
-    if (connP != NULL)
+    connPtr = (dtls_connection_t*)malloc(sizeof(dtls_connection_t));
+    if (NULL != connPtr)
     {
-        connP->sock = sock;
-        memcpy(&(connP->addr), addr, addrLen);
-        connP->addrLen = addrLen;
-        connP->next = connList;
+        connPtr->sock = sock;
+        memcpy(&(connPtr->addr), addrPtr, addrLen);
+        connPtr->addrLen = addrLen;
+        connPtr->nextPtr = connListPtr;
 
-        connP->dtlsSession = (session_t *)malloc(sizeof(session_t));
-        connP->dtlsSession->addr.sin6 = connP->addr;
-        connP->dtlsSession->size = connP->addrLen;
+        connPtr->dtlsSessionPtr = (session_t*)malloc(sizeof(session_t));
+        connPtr->dtlsSessionPtr->addr.sin6 = connPtr->addr;
+        connPtr->dtlsSessionPtr->size = connPtr->addrLen;
+        connPtr->lastSend = lwm2m_gettime();
     }
 
-    return connP;
+    return connPtr;
 }
 
-dtls_connection_t * connection_create(dtls_connection_t * connList,
-                                 int sock,
-                                 lwm2m_object_t * securityObj,
-                                 int instanceId,
-                                 lwm2m_context_t * lwm2mH,
-                                 int addressFamily)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to create a new connection to the server
+ *
+ * @return
+ *  - DTLS connection pointer (dtls_connection_t)
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_create
+(
+    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection structure
+    int sock,                           ///< [IN] Socket Id
+    lwm2m_object_t* securityObjPtr,     ///< [IN] Security object pointer
+    int instanceId,                     ///< [IN] Security object instance Id
+    lwm2m_context_t* lwm2mHPtr,         ///< [IN] Session handle
+    int addressFamily                   ///< [IN] Address familly
+)
 {
     struct addrinfo hints;
     struct addrinfo *servinfo = NULL;
     struct addrinfo *p;
     int s;
-    int error;
-    struct sockaddr *sa;
+    struct sockaddr *saPtr;
     socklen_t sl;
-    dtls_connection_t * connP = NULL;
+    dtls_connection_t* connPtr = NULL;
     char uriBuf[URI_LENGTH];
-    char * uri;
-    char * host;
-    char * port;
+    char * uriPtr;
+    char * hostPtr;
+    char * portPtr;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
     hints.ai_socktype = SOCK_DGRAM;
 
-    uri = security_get_uri(securityObj, instanceId, uriBuf, URI_LENGTH);
-    LOG_ARG ("connection_create uri %s", uri);
-    if (uri == NULL) return NULL;
+    LOG("Entering");
+
+    uriPtr = SecurityGetUri(securityObjPtr, instanceId, uriBuf, URI_LENGTH);
+    LOG_ARG("connection_create uri %s", uriPtr);
+    if (NULL == uriPtr)
+    {
+        return NULL;
+    }
 
     // parse uri in the form "coaps://[host]:[port]"
-    char * defaultport;
-    if (0 == strncmp(uri, "coaps://", strlen("coaps://")))
+    char* defaultPortPtr;
+    if (0 == strncmp(uriPtr, "coaps://", strlen("coaps://")))
     {
-        host = uri+strlen("coaps://");
-        defaultport = LWM2M_DTLS_PORT_STR;
+        hostPtr = uriPtr + strlen("coaps://");
+        defaultPortPtr = COAPS_PORT;
     }
-    else if (0 == strncmp(uri, "coap://", strlen("coap://")))
+    else if (0 == strncmp(uriPtr, "coap://", strlen("coap://")))
     {
-        host = uri+strlen("coap://");
-        defaultport = LWM2M_STANDARD_PORT_STR;
+        hostPtr = uriPtr + strlen("coap://");
+        defaultPortPtr = COAP_PORT;
     }
     else
     {
-        LOG ("ERROR in uri");
+        LOG("ERROR in uri");
         return NULL;
     }
-    port = strrchr(host, ':');
-    if (port == NULL)
+    portPtr = strrchr(hostPtr, ':');
+    if (NULL == portPtr)
     {
-        port = defaultport;
+        portPtr = defaultPortPtr;
     }
     else
     {
         // remove brackets
-        if (host[0] == '[')
+        if (hostPtr[0] == '[')
         {
-            host++;
-            if (*(port - 1) == ']')
+            hostPtr++;
+            if (*(portPtr - 1) == ']')
             {
-                *(port - 1) = 0;
+                *(portPtr - 1) = 0;
             }
             return NULL;
         }
         // split strings
-        *port = 0;
-        port++;
+        *portPtr = 0;
+        portPtr++;
     }
-    LOG_ARG ("port %s", port);
+    LOG_ARG("port %s", portPtr);
 
-    error = getaddrinfo(host, port, &hints, &servinfo);
-    if ((0 != error)  || servinfo == NULL)
+    if (0 != getaddrinfo(hostPtr, portPtr, &hints, &servinfo) || servinfo == NULL)
     {
-        LOG_ARG ("error getaddrinfo %d", error);
         return NULL;
     }
 
@@ -528,7 +768,7 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (s >= 0)
         {
-            sa = p->ai_addr;
+            saPtr = p->ai_addr;
             sl = p->ai_addrlen;
             if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
             {
@@ -539,102 +779,224 @@ dtls_connection_t * connection_create(dtls_connection_t * connList,
     }
     if (s >= 0)
     {
-        connP = connection_new_incoming(connList, sock, sa, sl);
+        connPtr = connection_new_incoming(connListPtr, sock, saPtr, sl);
         close(s);
 
         // do we need to start tinydtls?
-        if (connP != NULL)
+        if (NULL != connPtr)
         {
-            connP->securityObj = securityObj;
-            connP->securityInstId = instanceId;
-            connP->lwm2mH = lwm2mH;
+            connPtr->securityObjPtr = securityObjPtr;
+            connPtr->securityInstId = instanceId;
+            connPtr->lwm2mHPtr = lwm2mHPtr;
 
-            if (security_get_mode(connP->securityObj,connP->securityInstId)
-                     != LWM2M_SECURITY_MODE_NONE)
+            if (LWM2M_SECURITY_MODE_NONE != SecurityGetMode(connPtr->securityObjPtr,
+                                                            connPtr->securityInstId))
             {
-                connP->dtlsContext = get_dtls_context(connP);
+                connPtr->dtlsContextPtr = GetDtlsContext(connPtr);
             }
             else
             {
                 // no dtls session
-                connP->dtlsSession = NULL;
+                connPtr->dtlsSessionPtr = NULL;
             }
         }
     }
 
-    if (NULL != servinfo) free(servinfo);
-
-    return connP;
-}
-
-void connection_free(dtls_connection_t * connList)
-{
-    while (connList != NULL)
+    if (NULL != servinfo)
     {
-        dtls_connection_t * nextP;
-
-        nextP = connList->next;
-        free(connList);
-
-        connList = nextP;
+        free(servinfo);
     }
-    dtls_free_context(dtlsContext);
-    dtlsContext = NULL;
+
+    return connPtr;
 }
 
-int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length){
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to free the DTLS connection list
+ */
+//--------------------------------------------------------------------------------------------------
+void connection_free
+(
+    dtls_connection_t* connListPtr
+)
+{
+    while (NULL != connListPtr)
+    {
+        dtls_connection_t* nextPtr;
 
-    if (connP->dtlsSession == NULL) {
-        LOG ("connection_send NO SEC");
+        nextPtr = connListPtr->nextPtr;
+        free(connListPtr);
+
+        connListPtr = nextPtr;
+    }
+    dtls_free_context(DtlsContextPtr);
+    DtlsContextPtr = NULL;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send data in a specific connection.
+ * This function checks if DTLS is activated on the connection.
+ *
+ * @return
+ *  - 0 in case of success
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static int ConnectionSend
+(
+    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    uint8_t* bufferPtr,                 ///< [IN] Buffer to be sent
+    size_t length                       ///< [IN] Buffer length
+)
+{
+    if (NULL == connPtr->dtlsSessionPtr)
+    {
+        LOG("ConnectionSend NO SEC");
         // no security
-        if ( 0 != send_data(connP, buffer, length)) {
-            LOG ("connection_send send_data != 0");
+        if ( 0 != SendData(connPtr, bufferPtr, length))
+        {
+            LOG("ConnectionSend SendData != 0");
             return -1 ;
         }
-    } else {
-        LOG_ARG ("connection_send SEC length %d", length);
-        os_debug_data_dump ("Data to send", buffer, length);
-        if (-1 == dtls_write(connP->dtlsContext, connP->dtlsSession, buffer, length)) {
-            LOG ("connection_send dtls_write -1");
+    }
+    else
+    {
+        LOG_ARG("now - connP->lastSend %d", lwm2m_gettime() - connPtr->lastSend);
+        if ((0 < DTLS_NAT_TIMEOUT)
+         && (DTLS_NAT_TIMEOUT < (lwm2m_gettime() - connPtr->lastSend)))
+        {
+            // we need to rehandhake because our source IP/port probably changed for the server
+            if (0 != connection_rehandshake(connPtr, false))
+            {
+                LOG("can't send due to rehandshake error");
+                return -1;
+            }
+        }
+        LOG_ARG("ConnectionSend SEC length %d", length);
+        os_debug_data_dump("Data to send", bufferPtr, length);
+        if (-1 == dtls_write(connPtr->dtlsContextPtr,
+                             connPtr->dtlsSessionPtr,
+                             bufferPtr,
+                             length))
+        {
+            LOG("ConnectionSend dtls_write -1");
             return -1;
         }
     }
+
     return 0;
 }
 
-int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t numBytes){
-
-    if (connP->dtlsSession != NULL)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to handle incoming data in a specific connection
+ * This function checks if DTLS is activated on the connection.
+ *
+ * @return
+ *  - 0 in case of success
+ *  - negative value in case of failure (see dtls_alert_t)
+ */
+//--------------------------------------------------------------------------------------------------
+int connection_handle_packet
+(
+    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    uint8_t* bufferPtr,                 ///< [IN] Received buffer
+    size_t numBytes                     ///< [IN] Buffer length
+)
+{
+    if (NULL != connPtr->dtlsSessionPtr)
     {
         // Let liblwm2m respond to the query depending on the context
-        int result = dtls_handle_message(connP->dtlsContext, connP->dtlsSession, buffer, numBytes);
-        if (result !=0) {
-             printf("error dtls handling message %d\n",result);
+        int result = dtls_handle_message(connPtr->dtlsContextPtr,
+                                         connPtr->dtlsSessionPtr,
+                                         bufferPtr,
+                                         numBytes);
+        if (0 != result)
+        {
+             LOG_ARG("error dtls handling message %d",result);
         }
         return result;
-    } else {
+    }
+    else
+    {
         // no security, just give the plaintext buffer to liblwm2m
-        os_debug_data_dump ("received bytes in no sec", buffer, numBytes);
-        lwm2m_handle_packet(connP->lwm2mH, buffer, numBytes, (void*)connP);
+        os_debug_data_dump("received bytes in no sec", bufferPtr, numBytes);
+        lwm2m_handle_packet(connPtr->lwm2mHPtr, bufferPtr, numBytes, (void*)connPtr);
         return 0;
     }
 }
 
-uint8_t lwm2m_buffer_send(void * sessionH,
-                          uint8_t * buffer,
-                          size_t length,
-                          void * userdata)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to initiate a new DTLS handshake
+ * Usefull when NAT timeout happens and client have a new IP/PORT
+ *
+ * @return
+ *  - 0 in case of success (or DTLS is not activated on the connection)
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+int connection_rehandshake
+(
+    dtls_connection_t* connPtr,
+    bool sendCloseNotify
+)
 {
-    dtls_connection_t * connP = (dtls_connection_t*) sessionH;
+    LOG("Entering");
+    // if not a dtls connection we do nothing
+    if (NULL == connPtr->dtlsSessionPtr)
+    {
+        return 0;
+    }
 
-    LOG ("lwm2m_buffer_send");
-    if (connP == NULL)
+    // reset current session
+    dtls_peer_t* peer = dtls_get_peer(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
+    if (peer != NULL)
+    {
+        if (!sendCloseNotify)
+        {
+            peer->state =  DTLS_STATE_CLOSED;
+        }
+        dtls_reset_peer(connPtr->dtlsContextPtr, peer);
+    }
+
+    // start a fresh handshake
+    int result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
+    if (0 != result)
+    {
+         LOG_ARG("error dtls reconnection %d",result);
+    }
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send data on a specific peer
+ *
+ * @return
+ *  - COAP_NO_ERROR in case of success
+ *  - COAP_500_INTERNAL_SERVER_ERROR in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+uint8_t lwm2m_buffer_send
+(
+    void* sessionHPtr,      ///< [IN] Session handle identifying the peer (opaque to the core)
+    uint8_t* bufferPtr,     ///< [IN] Data to be sent
+    size_t length,          ///< [IN] Data length
+    void* userdataPtr       ///< [IN] Parameter to lwm2m_init()
+)
+{
+    dtls_connection_t* connPtr = (dtls_connection_t*) sessionHPtr;
+
+    LOG("lwm2m_buffer_send");
+    if (NULL == connPtr)
     {
         LOG_ARG("#> failed sending %lu bytes, missing connection", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    if (-1 == connection_send(connP, buffer, length))
+    if (-1 == ConnectionSend(connPtr, bufferPtr, length))
     {
         LOG_ARG("#> failed sending %lu bytes", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
@@ -643,9 +1005,22 @@ uint8_t lwm2m_buffer_send(void * sessionH,
     return COAP_NO_ERROR;
 }
 
-bool lwm2m_session_is_equal(void * session1,
-                            void * session2,
-                            void * userData)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to compare two LWM2M session handles
+ *
+ * @return
+ *  - true if the two sessions identify the same peer
+ *  - true if the two sessions do not identify the same peer
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2m_session_is_equal
+(
+    void * session1Ptr,
+    void * session2Ptr,
+    void * userDataPtr
+)
 {
-    return (session1 == session2);
+    return (session1Ptr == session2Ptr);
 }
+

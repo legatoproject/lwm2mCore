@@ -498,8 +498,6 @@ bool lwm2mcore_disconnect
  * This API can be used when the application wants to send a notification or during a firmware/app
  * update in order to be able to fully treat the scheduled update job
  *
- * @note This function is NOT YET IMPLEMENTED
- *
  * @return
  *      - true if the treatment is launched
  *      - else false

@@ -51,7 +51,7 @@ extern lwm2mcore_handler_t Lwm2mcoreHandlers;
  * LWM2M core context
  */
 //--------------------------------------------------------------------------------------------------
-extern lwm2mcore_context_t *lwm2mcore_ctx;
+extern lwm2mcore_context_t* Lwm2mcoreCtxPtr;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -338,7 +338,7 @@ static uint8_t readCb
         uri.oid = objectPtr->objID;
         uri.oiid = instanceId;
 
-        objPtr = findObject(lwm2mcore_ctx, objectPtr->objID);
+        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -579,7 +579,7 @@ static uint8_t writeCb
         uri.oid = objectPtr->objID;
         uri.oiid = instanceId;
 
-        objPtr = findObject(lwm2mcore_ctx, objectPtr->objID);
+        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -889,7 +889,7 @@ static uint8_t executeCb
         uri.oiid = instanceId;
         uri.rid = resourceId;
 
-        objPtr = findObject(lwm2mcore_ctx, objectPtr->objID);
+        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -951,9 +951,9 @@ struct _lwm2mcore_objects_list* getObjectsList
     void
 )
 {
-    if (NULL != lwm2mcore_ctx)
+    if (NULL != Lwm2mcoreCtxPtr)
     {
-        return &(lwm2mcore_ctx->objects_list);
+        return &(Lwm2mcoreCtxPtr->objects_list);
     }
     else
     {
@@ -1031,13 +1031,13 @@ static lwm2mcore_internal_object_t* initObject
 //--------------------------------------------------------------------------------------------------
 static void initObjectsList
 (
-    struct _lwm2mcore_objects_list*objects_list,   ///< [IN] Object list
-    lwm2mcore_handler_t *clientHandlerPtr           ///< [IN] Object and resource table which are
+    struct _lwm2mcore_objects_list* objects_list,   ///< [IN] Object list
+    lwm2mcore_handler_t* clientHandlerPtr           ///< [IN] Object and resource table which are
                                                     ///<      supported by the client
 )
 {
     int i, j;
-    lwm2mcore_internal_object_t *objPtr = NULL;
+    lwm2mcore_internal_object_t* objPtr = NULL;
 
     LOG_ARG("obj_cnt %d", clientHandlerPtr->obj_cnt);
 

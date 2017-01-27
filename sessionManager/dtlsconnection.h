@@ -32,35 +32,145 @@
 #include "../tinydtls/dtls.h"
 #include "liblwm2m.h"
 
-#define LWM2M_STANDARD_PORT_STR "5683"
-#define LWM2M_STANDARD_PORT      5683
-#define LWM2M_DTLS_PORT_STR     "5684"
-#define LWM2M_DTLS_PORT          5684
-#define LWM2M_BSSERVER_PORT_STR "5685"
-#define LWM2M_BSSERVER_PORT      5685
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define value for the DTLS rehandshake: after 40 seconds of inactivity, a rehandshake is needed
+ * in order to send any data to the server
+ */
+//--------------------------------------------------------------------------------------------------
+#define DTLS_NAT_TIMEOUT 40
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for DTLS connection
+ */
+//--------------------------------------------------------------------------------------------------
 typedef struct _dtls_connection_t
 {
-    struct _dtls_connection_t *  next;
-    int                     sock;
-    struct sockaddr_in6     addr;
-    size_t                  addrLen;
-    session_t *      dtlsSession;
-    lwm2m_object_t * securityObj;
-    int securityInstId;
-    lwm2m_context_t * lwm2mH;
-    dtls_context_t * dtlsContext;
-} dtls_connection_t;
+    struct _dtls_connection_t*  nextPtr;        ///< Next entry in the list
+    int                         sock;           ///< Socket Id used for the DTLS connection
+    struct sockaddr_in6         addr;           ///< Socket addess structure
+    size_t                      addrLen;        ///< Socket addess structure length
+    session_t*                  dtlsSessionPtr; ///< DTLS session
+    lwm2m_object_t*             securityObjPtr; ///< LWM2M Security object
+    int                         securityInstId; ///< LWM2M Security object instance Id
+    lwm2m_context_t*            lwm2mHPtr;      ///< Session handler
+    dtls_context_t*             dtlsContextPtr; ///< DTLS context
+    time_t                      lastSend;       ///< Last time a data was sent to the server
+                                                ///< (used for NAT timeouts)
+}dtls_connection_t;
 
-int create_socket(const char * portStr, int ai_family);
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to search if a DTLS connection is available
+ *
+ * @return
+ *  - dtls_connection_t pointer if the DTLS connection is available
+ *  - NULL if the DTLS connection is not available in the indicated socket
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_find
+(
+    dtls_connection_t* connListPtr,         ///< [IN] DTLS connection list
+    const struct sockaddr_storage* addrPtr, ///< [IN] Socket address structure
+    size_t addrLen                          ///< [IN] Socket address structure length
+);
 
-dtls_connection_t * connection_find(dtls_connection_t * connList, const struct sockaddr_storage * addr, size_t addrLen);
-dtls_connection_t * connection_new_incoming(dtls_connection_t * connList, int sock, const struct sockaddr * addr, size_t addrLen);
-dtls_connection_t * connection_create(dtls_connection_t * connList, int sock, lwm2m_object_t * securityObj, int instanceId, lwm2m_context_t * lwm2mH, int addressFamily);
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to create a new DTLS connection
+ *
+ * @return
+ *  - DTLS connection structure (dtls_connection_t);
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_new_incoming
+(
+    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection list
+    int sock,                           ///< [IN] Socket Id on which the DTLS needs to be created
+    const struct sockaddr* addrPtr,     ///< [IN] Socket address structure
+    size_t addrLen                      ///< [IN] Socket address structure length
+);
 
-void connection_free(dtls_connection_t * connList);
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to create a new connection to the server
+ *
+ * @return
+ *  - DTLS connection pointer (dtls_connection_t)
+ *  - NULL in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+dtls_connection_t* connection_create
+(
+    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection structure
+    int sock,                           ///< [IN] Socket Id
+    lwm2m_object_t* securityObjPtr,     ///< [IN] Security object pointer
+    int instanceId,                     ///< [IN] Security object instance Id
+    lwm2m_context_t* lwm2mHPtr,         ///< [IN] Session handle
+    int addressFamily                   ///< [IN] Address familly
+);
 
-int connection_send(dtls_connection_t *connP, uint8_t * buffer, size_t length);
-int connection_handle_packet(dtls_connection_t *connP, uint8_t * buffer, size_t length);
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to free the DTLS connection list
+ */
+//--------------------------------------------------------------------------------------------------
+void connection_free
+(
+    dtls_connection_t* connListPtr      ///< [IN] DTLS connection structure
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send data in a specific connection.
+ * This function checks if DTLS is activated on the connection.
+ *
+ * @return
+ *  - 0 in case of success
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+int connection_send
+(
+    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    uint8_t* bufferPtr,                 ///< [IN] Buffer to be sent
+    size_t length                       ///< [IN] Buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to handle incoming data in a specific connection
+ * This function checks if DTLS is activated on the connection.
+ *
+ * @return
+ *  - 0 in case of success
+ *  - negative value in case of failure (see dtls_alert_t)
+ */
+//--------------------------------------------------------------------------------------------------
+int connection_handle_packet
+(
+    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    uint8_t* bufferPtr,                 ///< [IN] Received buffer
+    size_t numBytes                     ///< [IN] Buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to initiate a new DTLS handshake
+ * Usefull when NAT timeout happens and client have a new IP/PORT
+ *
+ * @return
+ *  - 0 in case of success (or DTLS is not activated on the connection)
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+int connection_rehandshake
+(
+    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    bool sendCloseNotify                ///< [IN] Flag to send a DTLS_STATE_CLOSED
+);
 
 #endif
+
