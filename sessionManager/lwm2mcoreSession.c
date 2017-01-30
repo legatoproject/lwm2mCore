@@ -19,7 +19,6 @@
 #include "../sessionManager/dtlsconnection.h"
 #include "../sessionManager/lwm2mcoreSessionParam.h"
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  *  Context
@@ -40,12 +39,20 @@ os_socketConfig_t SocketConfig;
  */
 //--------------------------------------------------------------------------------------------------
 static client_data_t* DataCtx;
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  Callback for events
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_statucCb_t lwm2mcore_statucCb = NULL;
+lwm2mcore_StatusCb_t StatusCb = NULL;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Static boolean for bootstrap notification
+ */
+//--------------------------------------------------------------------------------------------------
+static bool BootstrapSession = false;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -116,7 +123,7 @@ void* lwm2m_connect_server
                                         dataPtr->addressFamily);
         if (newConnPtr == NULL)
         {
-            fprintf(stderr, "Connection creation failed.\n");
+            LOG("Connection creation failed.");
             return NULL;
         }
         dataPtr->connList = newConnPtr;
@@ -266,43 +273,41 @@ static void Lwm2mClientStepHandler
  * Function for session events
  */
 //--------------------------------------------------------------------------------------------------
-void lwm2mcore_sessionEvent
+void SendSessionEvent
 (
-    lwm2mcore_sessionEventType_t eventId,       ///< [IN] Event Id
-    lwm2mcore_sessionEventStatus_t eventstatus  ///< [IN] Event status
+    SessionEventType_t eventId,         ///< [IN] Event Id
+    SessionEventStatus_t eventstatus    ///< [IN] Event status
 )
 {
-    if (lwm2mcore_statucCb != NULL)
+    if (StatusCb != NULL)
     {
-        lwm2mcore_status_t status;
+        lwm2mcore_Status_t status;
 
         switch (eventId)
         {
-            case LWM2MCORE_EVENT_TYPE_BOOTSTRAP:
+            case EVENT_TYPE_BOOTSTRAP:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("BOOTSTRAP START");
-                        status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
-                        status.u.sessionType = LWM2MCORE_SESSION_BOOTSTRAP;
-                        lwm2mcore_statucCb (status);
+                        BootstrapSession = true;
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("BOOTSTRAP DONE");
                         lwm2mcore_StoreCredentials();
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("BOOTSTRAP FAILURE");
                         status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                        lwm2mcore_statucCb (status);
+                        StatusCb(status);
                     }
                     break;
 
@@ -312,30 +317,34 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_TYPE_REGISTRATION:
+            case EVENT_TYPE_REGISTRATION:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("REGISTER START");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("REGISTER DONE");
+
+                        status.event = LWM2MCORE_EVENT_SESSION_STARTED;
+                        StatusCb(status);
+
                         status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
-                        status.u.sessionType = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
-                        lwm2mcore_statucCb (status);
+                        status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
+                        StatusCb(status);
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("REGISTER FAILURE");
                         status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                        lwm2mcore_statucCb (status);
+                        StatusCb(status);
                     }
                     break;
 
@@ -345,23 +354,23 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_TYPE_REG_UPDATE:
+            case EVENT_TYPE_REG_UPDATE:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("REG UPDATE START");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("REG UPDATE DONE");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("REG UPDATE FAILURE");
                     }
@@ -373,23 +382,23 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_TYPE_DEREG:
+            case EVENT_TYPE_DEREG:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("DEREGISTER START");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("DEREGISTER DONE");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("DEREGISTER FAILURE");
                     }
@@ -401,31 +410,39 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_TYPE_AUTHENTICATION:
+            case EVENT_TYPE_AUTHENTICATION:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("AUTHENTICATION START");
                         status.event = LWM2MCORE_EVENT_AUTHENTICATION_STARTED;
-                        lwm2mcore_statucCb (status);
+                        StatusCb(status);
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("AUTHENTICATION DONE");
                         status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                        lwm2mcore_statucCb (status);
+                        StatusCb(status);
+
+                        if (BootstrapSession)
+                        {
+                            status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
+                            status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
+                            StatusCb(status);
+                            BootstrapSession = false;
+                        }
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("AUTHENTICATION FAILURE");
                         status.event = LWM2MCORE_EVENT_AUTHENTICATION_FAILED;
-                        lwm2mcore_statucCb (status);
+                        StatusCb(status);
                     }
                     break;
 
@@ -435,23 +452,23 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_TYPE_RESUMING:
+            case EVENT_TYPE_RESUMING:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("DTLS RESUME START");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("DTLS RESUME DONE");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("DTLS RESUME FAILURE");
                     }
@@ -463,25 +480,31 @@ void lwm2mcore_sessionEvent
             }
             break;
 
-            case LWM2MCORE_EVENT_SESSION:
+            case EVENT_SESSION:
             {
                 switch (eventstatus)
                 {
-                    case LWM2MCORE_EVENT_STATUS_STARTED:
+                    case EVENT_STATUS_STARTED:
                     {
                         LOG ("SESSION START");
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_SUCCESS:
+                    case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG ("SESSION DONE");
+                        BootstrapSession = false;
+                        status.event = LWM2MCORE_EVENT_SESSION_FINISHED;
+                        StatusCb(status);
                     }
                     break;
 
-                    case LWM2MCORE_EVENT_STATUS_DONE_FAIL:
+                    case EVENT_STATUS_DONE_FAIL:
                     {
                         LOG ("SESSION FAILURE");
+                        BootstrapSession = false;
+                        status.event = LWM2MCORE_EVENT_SESSION_FAILED;
+                        StatusCb(status);
                     }
                     break;
 
@@ -550,14 +573,14 @@ void os_udpReceiveCb
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_init
 (
-    lwm2mcore_statucCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 )
 {
     int result = -1;
     if (eventCb != NULL)
     {
         client_data_t* dataPtr = NULL;
-        lwm2mcore_statucCb = eventCb;
+        StatusCb = eventCb;
 
         dataPtr = (client_data_t*)lwm2m_malloc (sizeof (client_data_t));
         OS_ASSERT (dataPtr);
@@ -727,6 +750,8 @@ bool lwm2mcore_disconnect
         else
         {
             memset (&SocketConfig, 0, sizeof (os_socketConfig_t));
+            /* Notify that the connection is stopped */
+            SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
         }
     }
     return result;

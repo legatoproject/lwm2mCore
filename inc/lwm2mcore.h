@@ -59,7 +59,7 @@ typedef enum
                                                             ///< Management one
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
     LWM2MCORE_EVENT_LAST                           = 24     ///< Internal usage
-}lwm2mcore_statusType_t;
+}lwm2mcore_StatusType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -117,7 +117,7 @@ typedef enum
  * \brief data structure represent the lwm2m request URI, obtained by parsing CoAP URI options.
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_uri
+typedef struct
 {
     lwm2mcore_op_type_t op;             ///< operation type
     int content_type;                   ///< payload content type, a value of -1 indicates content
@@ -265,42 +265,68 @@ typedef int (*lwm2mcore_execute_callback_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for a package download status
+ * Enum for package type
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_packageDownloadStatus
+typedef enum
 {
-    uint32_t numBytes;                  ///< [IN] For package download, downloaded bytes
-    uint32_t progress;                  ///< [IN] For package download, progress
-    uint32_t errorCode;                 ///< [IN] For package download, error code
-}lwm2mcore_pkgDwnldStatus_t;
+    LWM2MCORE_PKG_NONE,   ///< Default value
+    LWM2MCORE_PKG_FW,     ///< Package for firmware
+    LWM2MCORE_PKG_SW      ///< Package for software
+}
+lwm2mcore_PkgDwnldType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for session type
+ * Structure for a package download status
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _lwm2mcore_sessionType
+typedef struct
+{
+    lwm2mcore_PkgDwnldType_t pkgType;   ///< Package type
+    uint32_t numBytes;                  ///< For package download, downloaded bytes
+    uint32_t progress;                  ///< For package download, package download progress in %
+    uint32_t errorCode;                 ///< For package download, error code
+}lwm2mcore_PkgDwnldStatus_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for session type
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
 {
     LWM2MCORE_SESSION_BOOTSTRAP,            ///< Bootstrap session
     LWM2MCORE_SESSION_DEVICE_MANAGEMENT     ///< Device management session
-}lwm2mcore_sessionType_t;
+}lwm2mcore_SessionType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for session event
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    lwm2mcore_SessionType_t type;           ///< Session type for
+                                            ///< LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START event
+}
+lwm2mcore_SessionStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Structure for events (session and package download)
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_status
+typedef struct
 {
-    lwm2mcore_statusType_t event;               ///< [IN] event
+    lwm2mcore_StatusType_t event;               ///< Event
     union
     {
-        lwm2mcore_sessionType_t sessionType;    ///< [IN] session type for
-                                                ///< LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START event
-        lwm2mcore_pkgDwnldStatus_t pkgStatus;   ///< [IN] package download status
+        lwm2mcore_SessionStatus_t session;      ///< Session information
+        lwm2mcore_PkgDwnldStatus_t pkgStatus;   ///< Package download status
     }u;                                         ///< Union
-}lwm2mcore_status_t;
+}
+lwm2mcore_Status_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -311,9 +337,9 @@ typedef struct _lwm2mcore_status
  *      - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_statucCb_t)
+typedef int (*lwm2mcore_StatusCb_t)
 (
-    lwm2mcore_status_t eventStatus              ///< [IN] event status
+    lwm2mcore_Status_t eventStatus              ///< [IN] event status
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -405,7 +431,7 @@ typedef enum _lwm2mcore_credentials
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_init
 (
-    lwm2mcore_statucCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 );
 
 //--------------------------------------------------------------------------------------------------

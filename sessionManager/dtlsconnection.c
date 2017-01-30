@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include "../sessionManager/dtlsconnection.h"
 #include "../os/osDebug.h"
+#include "lwm2mcoreSessionParam.h"
 #include "internals.h"
 #include "liblwm2m.h"
 
@@ -66,7 +67,7 @@ int64_t security_get_mode(lwm2m_object_t * obj, int instanceId){
     }
 
     lwm2m_data_free(size, dataP);
-    fprintf(stderr, "Unable to get security mode : use not secure mode");
+    LOG("Unable to get security mode : use not secure mode");
     return LWM2M_SECURITY_MODE_NONE;
 }
 
@@ -150,7 +151,6 @@ int send_data(dtls_connection_t *connP,
         port = saddr->sin6_port;
     }
 
-    //fprintf(stderr, "Sending %d bytes to [%s]:%hu\r\n", length, s, ntohs(port));
     LOG_ARG ("Sending %d bytes to [%s]:%hu", length, s, ntohs(port));
 
     //output_buffer(stderr, buffer, length, 0);
@@ -163,16 +163,12 @@ int send_data(dtls_connection_t *connP,
     offset = 0;
     while (offset != length)
     {
-#if SIERRA
         nbSent = os_udpSend (connP->sock,
                             buffer + offset,
                             length - offset,
                             0,
                             (struct sockaddr *)&(connP->addr),
                             connP->addrLen);
-#else
-        nbSent = sendto(connP->sock, buffer + offset, length - offset, 0, (struct sockaddr *)&(connP->addr), connP->addrLen);
-#endif
         if (nbSent == -1) return -1;
         offset += nbSent;
     }
@@ -277,12 +273,64 @@ read_from_peer(struct dtls_context_t *ctx,
     }
     return -1;
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * DTLS event callback
+ *
+ * @return
+ *  - ignored
+
+ */
+//--------------------------------------------------------------------------------------------------
+static int dtlsEventCb
+(
+    struct dtls_context_t* ctxPtr,  ///< [IN] Current dtls context
+    session_t* sessionPtr,          ///< [IN] Session object that was affected
+    dtls_alert_level_t level,       ///< [IN] Alert level or 0 when an event ocurred that  is not an
+                                    ///< alert
+    unsigned short code             ///< [IN] Values less than 256 indicate alerts, while 256 or
+                                    ///< greater indicate internal DTLS session changes.
+)
+{
+    switch (code)
+    {
+        case DTLS_EVENT_CONNECT:
+        case DTLS_EVENT_RENEGOTIATE:
+        {
+            /* Notify that the device starts an authentication */
+            SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_STARTED);
+        }
+        break;
+
+        case DTLS_EVENT_CONNECTED:
+        {
+            /* Notify that the device authentication succeeds */
+            SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_SUCCESS);
+        }
+        break;
+
+        case DTLS_ALERT_INTERNAL_ERROR:
+        {
+            /* Notify that the device authentication fails */
+            SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);
+        }
+        break;
+
+        default:
+        {
+            LOG_ARG("dtlsEventCb unsupported DTLS event %d", code);
+        }
+        break;
+    }
+}
+
 /**************************   TinyDTLS Callbacks Ends ************************/
 
 static dtls_handler_t cb = {
   .write = send_to_peer,
   .read  = read_from_peer,
-  .event = NULL,
+  .event = dtlsEventCb,
 //#ifdef DTLS_PSK
   .get_psk_info = get_psk_info,
 //#endif /* DTLS_PSK */
@@ -297,7 +345,7 @@ dtls_context_t * get_dtls_context(dtls_connection_t * connList) {
         dtls_init();
         dtlsContext = dtls_new_context(connList);
         if (dtlsContext == NULL)
-            fprintf(stderr, "Failed to create the DTLS context\r\n");
+            LOG("Failed to create the DTLS context");
         dtls_set_handler(dtlsContext, &cb);
     }else{
         dtlsContext->app = connList;
@@ -582,13 +630,13 @@ uint8_t lwm2m_buffer_send(void * sessionH,
     LOG ("lwm2m_buffer_send");
     if (connP == NULL)
     {
-        fprintf(stderr, "#> failed sending %lu bytes, missing connection\r\n", length);
+        LOG_ARG("#> failed sending %lu bytes, missing connection", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
     if (-1 == connection_send(connP, buffer, length))
     {
-        fprintf(stderr, "#> failed sending %lu bytes\r\n", length);
+        LOG_ARG("#> failed sending %lu bytes", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 

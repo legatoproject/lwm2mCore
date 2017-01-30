@@ -51,11 +51,12 @@ typedef struct _client_data
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_EVENT_STATUS_STARTED,         ///< Event started
-    LWM2MCORE_EVENT_STATUS_DONE_SUCCESS,    ///< Event stopped successfully
-    LWM2MCORE_EVENT_STATUS_DONE_FAIL,       ///< Event stopped with failure
-    LWM2MCORE_EVENT_STATUS_MAX = 0xFF,      ///< Internal usage
-}lwm2mcore_sessionEventStatus_t;
+    EVENT_STATUS_STARTED,       ///< Event started
+    EVENT_STATUS_DONE_SUCCESS,  ///< Event stopped successfully
+    EVENT_STATUS_DONE_FAIL,     ///< Event stopped with failure
+    EVENT_STATUS_MAX = 0xFF,    ///< Internal usage
+}
+SessionEventStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -64,28 +65,27 @@ typedef enum
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_EVENT_TYPE_BOOTSTRAP,         ///< Bootstrap event: started, succeeded or failed
-    LWM2MCORE_EVENT_TYPE_REGISTRATION,      ///< Registration event: started, succeeded or failed
-    LWM2MCORE_EVENT_TYPE_REG_UPDATE,        ///< Registration update event: started, succeeded or
-                                            ///< failed
-    LWM2MCORE_EVENT_TYPE_DEREG,             ///< Deregistration event: started, succeeded or failed
-    LWM2MCORE_EVENT_TYPE_AUTHENTICATION,    ///< Authentication event: started, succeeded or failed
-    LWM2MCORE_EVENT_TYPE_RESUMING,          ///< DTLS resuming/re-authentication event: started,
-                                            ///< succeedd or failed
-    LWM2MCORE_EVENT_SESSION,                ///< Session event: started or done with success or
-                                            ///< failure
-    LWM2MCORE_EVENT_TYPE_MAX = 0xFF,        ///< Internal usage
-}lwm2mcore_sessionEventType_t;
+    EVENT_TYPE_BOOTSTRAP,       ///< Bootstrap event: started, succeeded or failed
+    EVENT_TYPE_REGISTRATION,    ///< Registration event: started, succeeded or failed
+    EVENT_TYPE_REG_UPDATE,      ///< Registration update event: started, succeeded or failed
+    EVENT_TYPE_DEREG,           ///< Deregistration event: started, succeeded or failed
+    EVENT_TYPE_AUTHENTICATION,  ///< Authentication event: started, succeeded or failed
+    EVENT_TYPE_RESUMING,        ///< DTLS resuming/re-authentication event: started, succeeded or
+                                ///< failed
+    EVENT_SESSION,              ///< Session event: started or done with success or failure
+    EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
+}
+SessionEventType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Function for session events
  */
 //--------------------------------------------------------------------------------------------------
-void lwm2mcore_sessionEvent
+void SendSessionEvent
 (
-    lwm2mcore_sessionEventType_t eventId,   ///< [IN] Event Id
-    lwm2mcore_sessionEventStatus_t status   ///< [IN] Event status
+    SessionEventType_t eventId,     ///< [IN] Event Id
+    SessionEventStatus_t status     ///< [IN] Event status
 );
 
 #endif /* LWM2MCORE_SESSIONPARAM_H */
