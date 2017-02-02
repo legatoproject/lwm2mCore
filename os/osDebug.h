@@ -9,8 +9,11 @@
  *
  */
 
-#ifndef OS_DEBUG_H
-#define OS_DEBUG_H
+#ifndef __OSDEBUG_H__
+#define __OSDEBUG_H__
+
+#include <stdint.h>
+#include <stdbool.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -20,7 +23,7 @@
 void os_assert
 (
     bool condition,         /// [IN] Condition to be checked
-    char* function,         /// [IN] Function name which calls the assert function
+    const char* function,   /// [IN] Function name which calls the assert function
     uint32_t line           /// [IN] Function line which calls the assert function
 );
 
@@ -43,5 +46,5 @@ void os_debug_data_dump
     int len                     ///< [IN] Data length
 );
 
-#endif //OS_DEBUG_H
+#endif //__OSDEBUG_H__
 

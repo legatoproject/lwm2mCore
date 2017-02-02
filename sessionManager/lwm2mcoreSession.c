@@ -12,12 +12,12 @@
 #include "liblwm2m.h"
 #include "lwm2mcore.h"
 #include "internals.h"
-#include "../objectManager/lwm2mcoreObjects.h"
-#include "../os/osDebug.h"
-#include "../os/osTimer.h"
-#include "../os/osUdp.h"
-#include "../sessionManager/dtlsconnection.h"
-#include "../sessionManager/lwm2mcoreSessionParam.h"
+#include "objects.h"
+#include "osDebug.h"
+#include "osTimer.h"
+#include "osUdp.h"
+#include "dtlsConnection.h"
+#include "session.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -31,21 +31,21 @@ lwm2mcore_context_t* Lwm2mcoreCtxPtr = NULL;
  * Socket configuration variable
  */
 //--------------------------------------------------------------------------------------------------
-os_socketConfig_t SocketConfig;
+static  os_socketConfig_t SocketConfig;
 
 //--------------------------------------------------------------------------------------------------
 /**
  *  Context
  */
 //--------------------------------------------------------------------------------------------------
-static client_data_t* DataCtxPtr;
+static ClientData_t* DataCtxPtr;
 
 //--------------------------------------------------------------------------------------------------
 /**
  *  Callback for events
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_StatusCb_t StatusCb = NULL;
+static lwm2mcore_statusCb_t StatusCb = NULL;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -76,16 +76,16 @@ static lwm2m_client_state_t PreviousState;
  *  - pointer to lwm2m context object
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_context_t* initContext
+static lwm2mcore_context_t* InitContext
 (
-    client_data_t* dataPtr,         ///< [IN] Context
+    ClientData_t* dataPtr,         ///< [IN] Context
     lwm2m_endpoint_type_t epType   ///< [IN] Lwm2m endpoint type, e.g. server/client.
 )
 {
-    dataPtr->lwm2mcoreCtx = (lwm2mcore_context_t *)malloc(sizeof(lwm2mcore_context_t));
-    OS_ASSERT(dataPtr->lwm2mcoreCtx);
-    memset(dataPtr->lwm2mcoreCtx, 0, sizeof(lwm2mcore_context_t));
-    return dataPtr->lwm2mcoreCtx;
+    dataPtr->lwm2mcoreCtxPtr = (lwm2mcore_context_t*)malloc(sizeof(lwm2mcore_context_t));
+    OS_ASSERT(dataPtr->lwm2mcoreCtxPtr);
+    memset(dataPtr->lwm2mcoreCtxPtr, 0, sizeof(lwm2mcore_context_t));
+    return dataPtr->lwm2mcoreCtxPtr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -103,33 +103,33 @@ void* lwm2m_connect_server
     void * userDataPtr          ///< [IN] User data
 )
 {
-    client_data_t* dataPtr;
+    ClientData_t* dataPtr;
     lwm2m_list_t* instancePtr;
     dtls_connection_t* newConnPtr = NULL;
-    dataPtr = (client_data_t *)userDataPtr;
+    dataPtr = (ClientData_t*)userDataPtr;
 
     if (NULL != dataPtr)
     {
-        lwm2m_object_t  * securityObj = dataPtr->securityObjP;
+        lwm2m_object_t  * securityObj = dataPtr->securityObjPtr;
 
-        instancePtr = LWM2M_LIST_FIND(dataPtr->securityObjP->instanceList, secObjInstID);
+        instancePtr = LWM2M_LIST_FIND(dataPtr->securityObjPtr->instanceList, secObjInstID);
         if (NULL == instancePtr)
         {
             return NULL;
         }
 
-        newConnPtr = connection_create(dataPtr->connList,
+        newConnPtr = connection_create(dataPtr->connListPtr,
                                        dataPtr->sock,
                                        securityObj,
                                        instancePtr->id,
-                                       dataPtr->lwm2mH,
+                                       dataPtr->lwm2mHPtr,
                                        dataPtr->addressFamily);
         if (NULL == newConnPtr)
         {
             LOG("Connection creation failed");
             return NULL;
         }
-        dataPtr->connList = newConnPtr;
+        dataPtr->connListPtr = newConnPtr;
     }
 
     return (void *)newConnPtr;
@@ -146,23 +146,23 @@ void lwm2m_close_connection
     void* userDataPtr      ///< [IN] Context
 )
 {
-    client_data_t* appDataPtr;
+    ClientData_t* appDataPtr;
     dtls_connection_t* targetPtr;
 
-    appDataPtr = (client_data_t*)userDataPtr;
+    appDataPtr = (ClientData_t*)userDataPtr;
     targetPtr = (dtls_connection_t*)sessionHPtr;
 
     if ((NULL != appDataPtr) && (NULL != targetPtr))
     {
-        if (targetPtr == appDataPtr->connList)
+        if (targetPtr == appDataPtr->connListPtr)
         {
-            appDataPtr->connList = targetPtr->nextPtr;
+            appDataPtr->connListPtr = targetPtr->nextPtr;
             lwm2m_free(targetPtr);
         }
         else
         {
             dtls_connection_t* parentPtr;
-            parentPtr = appDataPtr->connList;
+            parentPtr = appDataPtr->connListPtr;
             while ((parentPtr != NULL) && (parentPtr->nextPtr != targetPtr))
             {
                 parentPtr = parentPtr->nextPtr;
@@ -244,7 +244,7 @@ static void Lwm2mClientStepHandler
      *   (eg. retransmission) and the time between the next operation
      */
 
-    result = lwm2m_step(DataCtxPtr->lwm2mH, &(tv.tv_sec));
+    result = lwm2m_step(DataCtxPtr->lwm2mHPtr, &(tv.tv_sec));
     if (result != 0)
     {
        LOG_ARG("lwm2m_step() failed: 0x%X.", result);
@@ -255,7 +255,7 @@ static void Lwm2mClientStepHandler
            LOG("[BOOTSTRAP] restore security and server objects.");
 #endif
            //prv_restore_objects(ClientCtxt.lwm2mH);
-           DataCtxPtr->lwm2mH->state = STATE_INITIAL;
+           DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
        }
 #endif
     }
@@ -266,7 +266,7 @@ static void Lwm2mClientStepHandler
         LOG("ERROR to launch the step timer");
     }
 
-    UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mH);
+    UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mHPtr);
 
     LOG("lwm2m step completed.");
 }
@@ -284,7 +284,7 @@ void SendSessionEvent
 {
     if (StatusCb != NULL)
     {
-        lwm2mcore_Status_t status;
+        lwm2mcore_status_t status;
 
         switch (eventId)
         {
@@ -302,7 +302,7 @@ void SendSessionEvent
                     case EVENT_STATUS_DONE_SUCCESS:
                     {
                         LOG("BOOTSTRAP DONE");
-                        lwm2mcore_StoreCredentials();
+                        StoreCredentials();
                     }
                     break;
 
@@ -540,19 +540,20 @@ void os_udpReceiveCb
     os_socketConfig_t config            ///< [IN] Socket config
 )
 {
-    client_data_t* dataPtr = (client_data_t*)config.context;
+    ClientData_t* dataPtr = (ClientData_t*)config.context;
     dtls_connection_t* connPtr;
     LOG("avc_udpCb");
 
     dataPtr->sock = config.sock;
     dataPtr->addressFamily = config.af;
 
-    connPtr = connection_find(dataPtr->connList, addrPtr, addrLen);
+    connPtr = connection_find(dataPtr->connListPtr, addrPtr, addrLen);
     if (NULL != connPtr)
     {
         // Let liblwm2m respond to the query depending on the context
+        int result;
         LOG("Handle packet");
-        int result = connection_handle_packet(connPtr, bufferPtr, (size_t)len);
+        result = connection_handlePacket(connPtr, bufferPtr, (size_t)len);
         if (0 != result)
         {
              LOG_ARG("Error handling message %d.",result);
@@ -581,26 +582,26 @@ void os_udpReceiveCb
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_init
 (
-    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_statusCb_t eventCb    ///< [IN] event callback
 )
 {
     int result = -1;
     if (NULL != eventCb)
     {
-        client_data_t* dataPtr = NULL;
+        ClientData_t* dataPtr = NULL;
         StatusCb = eventCb;
 
-        dataPtr = (client_data_t*)lwm2m_malloc(sizeof (client_data_t));
+        dataPtr = (ClientData_t*)lwm2m_malloc(sizeof (ClientData_t));
         OS_ASSERT(dataPtr);
-        memset(dataPtr, 0, sizeof (client_data_t));
+        memset(dataPtr, 0, sizeof (ClientData_t));
 
          /* Initialize LWM2M agent */
-        dataPtr->lwm2mH = lwm2m_init(dataPtr);
-        OS_ASSERT(dataPtr->lwm2mH);
+        dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
+        OS_ASSERT(dataPtr->lwm2mHPtr);
 
-        dataPtr->lwm2mcoreCtx = initContext(dataPtr, ENDPOINT_CLIENT);
-        Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtx;
-        OS_ASSERT(dataPtr->lwm2mcoreCtx);
+        dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr, ENDPOINT_CLIENT);
+        Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
+        OS_ASSERT(dataPtr->lwm2mcoreCtxPtr);
 
         result = (int)dataPtr;
         DataCtxPtr = dataPtr;
@@ -620,21 +621,21 @@ void lwm2mcore_free
     int context     ///< [IN] context
 )
 {
-    client_data_t* dataPtr = (client_data_t*)context;
+    ClientData_t* dataPtr = (ClientData_t*)context;
 
     if (NULL != dataPtr)
     {
         /* Free objects */
-        connection_free(dataPtr->connList);
+        connection_free(dataPtr->connListPtr);
 
-        lwm2mcore_objectFree();
+        ObjectsFree();
 
-        if (dataPtr->lwm2mcoreCtx != NULL)
+        if (NULL != dataPtr->lwm2mcoreCtxPtr)
         {
-            lwm2m_free(dataPtr->lwm2mcoreCtx);
+            lwm2m_free(dataPtr->lwm2mcoreCtxPtr);
         }
 
-        if (dataPtr != NULL)
+        if (NULL != dataPtr)
         {
             lwm2m_free(dataPtr);
             LOG("free dataPtr");
@@ -661,7 +662,7 @@ bool lwm2mcore_connect
 )
 {
     bool result = false;
-    client_data_t* dataPtr = (client_data_t*)context;
+    ClientData_t* dataPtr = (ClientData_t*)context;
 
     if (dataPtr != NULL)
     {
@@ -711,7 +712,7 @@ bool lwm2mcore_update
 )
 {
     bool result = false;
-    client_data_t* dataPtr = (client_data_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) context;
 
     if (NULL != dataPtr)
     {
@@ -720,7 +721,7 @@ bool lwm2mcore_update
         if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
         {
             /* Retrieve the serverID from list */
-            lwm2m_server_t * targetPtr = dataPtr->lwm2mH->serverList;
+            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
             if (NULL == targetPtr)
             {
                 LOG("serverList is NULL");
@@ -729,7 +730,7 @@ bool lwm2mcore_update
             {
                 LOG_ARG("shortServerId %d", targetPtr->shortID);
 
-                int iresult = lwm2m_update_registration(dataPtr->lwm2mH, targetPtr->shortID, false);
+                int iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
                 LOG_ARG("lwm2m_update_registration return %d", iresult);
                 if (!iresult)
                 {
@@ -774,7 +775,7 @@ bool lwm2mcore_disconnect
 )
 {
     bool result = false;
-    client_data_t* dataPtr = (client_data_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) context;
 
     if (dataPtr != NULL)
     {
@@ -785,7 +786,7 @@ bool lwm2mcore_disconnect
         }
 
         /* Stop the agent */
-        lwm2m_close(dataPtr->lwm2mH);
+        lwm2m_close(dataPtr->lwm2mHPtr);
 
         /* Close the socket */
         result = os_udpClose(SocketConfig);
@@ -820,11 +821,11 @@ bool lwm2mcore_connectionGetType
 )
 {
     bool result = true;
-    client_data_t* dataPtr = (client_data_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) context;
 
     if ((NULL != dataPtr) && (NULL != isDeviceManagement))
     {
-        if ((dataPtr->lwm2mH->state) >= STATE_REGISTER_REQUIRED )
+        if ((dataPtr->lwm2mHPtr->state) >= STATE_REGISTER_REQUIRED )
         {
             *isDeviceManagement = true;
         }
@@ -834,7 +835,7 @@ bool lwm2mcore_connectionGetType
         }
 
         LOG_ARG("state %d --> isDeviceManagement %d",
-                dataPtr->lwm2mH->state, *isDeviceManagement);
+                dataPtr->lwm2mHPtr->state, *isDeviceManagement);
     }
     return result;
 }

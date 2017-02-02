@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcoreObjects.h
+ * @file objects.h
  *
  * Object manager header file
  *
@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef LWM2MCORE_OBJECTS_H
-#define LWM2MCORE_OBJECTS_H
+#ifndef __OBJECTS_H__
+#define __OBJECTS_H__
 
 #include "lwm2mcore.h"
 #include "liblwm2m.h"
@@ -115,89 +115,6 @@
     else (head)->p_last = NULL; \
 } while(0)
 
-
-//--------------------------------------------------------------------------------------------------
-/*! \struct _lwm2m_attribute
- *  \brief data structure represent the attribute.
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct _lwm2m_attribute
-{
-    int pmin;       ///< min value
-    int pmax;       ///< max value
-    int gt;         ///< greater than
-    int lt;         ///< less than
-    int st;         ///< step
-    int cancel;     ///< cancel observe
-    int mask;       ///< bitmask indicates what attributes are set
-}lwm2m_attribute_t;
-
-//--------------------------------------------------------------------------------------------------
-/*! \struct _lwm2m_resource
- *  \brief data structure reprents a lwm2m resource.
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_internal_resource
-{
-    DLIST_ENTRY(_lwm2mcore_internal_resource) list;  ///< list entry for resource linked list
-    uint16_t id;                        ///< resource id
-    uint16_t iid;                       ///< resource instance id
-    lwm2m_resource_type_t type;         ///< resource data type
-    bool multiple;                      ///< flag indicate if this is single or multiple instances
-    lwm2m_attribute_t attr;             ///< resource attributes
-
-    /* operation handler */
-    lwm2mcore_read_callback_t read;     ///< READ handler
-    lwm2mcore_write_callback_t write;   ///< WRITE handler
-    lwm2mcore_execute_callback_t exec;  ///< EXECUTE handler
-
-    /* used by async notification*/
-    char *cache;                        ///< cache value for OBSERVE
-}lwm2mcore_internal_resource_t;
-
-//--------------------------------------------------------------------------------------------------
-/** LWM2M Core resource list data type
- */
-//--------------------------------------------------------------------------------------------------
-DLIST_HEAD(_lwm2m_resource_list, _lwm2mcore_internal_resource);
-
-//--------------------------------------------------------------------------------------------------
-/*! \struct _lwm2m_object
- *  \brief data structure reprents a lwm2m object.
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_internal_object
-{
-    DLIST_ENTRY(_lwm2mcore_internal_object) list;   ///< list entry for object linked list
-    uint16_t id;                                    ///< object id
-    uint16_t iid;                                   ///< object instance id
-    bool multiple;                                  ///< flag indicate if this is single or multiple
-                                                    ///< instances
-    lwm2m_attribute_t attr;                         ///< object attributes
-    struct _lwm2m_resource_list resource_list;      ///< resource linked list
-}lwm2mcore_internal_object_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * LWM2M Core object list data type
- */
-//--------------------------------------------------------------------------------------------------
-DLIST_HEAD(_lwm2mcore_objects_list, _lwm2mcore_internal_object);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to convert bytes(in network byte order) to integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-int64_t bytesToInt
-(
-    const uint8_t *bytes,
-    size_t len
-);
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Macro for array size
@@ -242,7 +159,7 @@ typedef enum
                                             ///< connectivity statistics
     LWM2M_SWI_SSL_CERTIFS_OID               ///< Sierra Wireless proprietary object ID: SSL
                                             ///< certificate
-} lwm2mcore_object_enum_t;
+} lwm2mcore_objectEnum_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -263,7 +180,7 @@ typedef enum
     LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID,       /// <LWM2M server SMS number
     LWM2MCORE_SECURITY_SERVER_ID_RID,               ///< Short server ID
     LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID     ///< Client hold of time
-}lwm2mcore_security_res_enum_t;
+}lwm2mcore_securityResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -282,7 +199,7 @@ typedef enum
                                                     ///< or offline
     LWM2MCORE_SERVER_BINDING_MODE_RID,              ///< Binding
     LWM2MCORE_SERVER_REG_UPDATE_TRIGGER_RID,        ///< Registration update trigger
-}lwm2mcore_server_res_enum_t;
+}lwm2mcore_serverResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -308,29 +225,7 @@ typedef enum
     LWM2MCORE_DEVICE_UTC_OFFSET_RID,                ///< UTC offset
     LWM2MCORE_DEVICE_TIMEZONE_RID,                  ///< Timezone
     LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID,    ///< Supported binding and modes
-}lwm2mcore_device_res_enum_t;
-
-
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 4 (connectivity monitoring) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_CONN_MONITOR_BEARER_RID = 0,          ///< Network bearer
-    LWM2MCORE_CONN_MONITOR_AVAILABLE_BEARER_RID,    ///< Available network bearer
-    LWM2MCORE_CONN_MONITOR_RSSI_RID,                ///< Radio Signal Strength
-    LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID,        ///< Link quality
-    LWM2MCORE_CONN_MONITOR_IP_ADDR_RID,             ///< IP addresses
-    LWM2MCORE_CONN_MONITOR_ROUTER_IP_ADDR_RID,      ///< Router IP addresses
-    LWM2MCORE_CONN_MONITOR_LINK_UTILIZATION_RID,    ///< Link utilization
-    LWM2MCORE_CONN_MONITOR_APN_RID,                 ///< APN
-    LWM2MCORE_CONN_MONITOR_CELL_ID_RID,             ///< Cell ID
-    LWM2MCORE_CONN_MONITOR_SMNC_RID,                ///< SMNC
-    LWM2MCORE_CONN_MONITOR_SMCC_RID,                ///< SMCC
-}lwm2mcore_conn_monitor_res_enum_t;
-
+}lwm2mcore_deviceResource_enum_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -349,99 +244,7 @@ typedef enum
     LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID,    ///< Package version
     LWM2MCORE_FW_UPDATE_PROTO_SUPPORT_RID,      ///< Fw update protocol support
     LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID,    ///< Fw update delivery method
-}lwm2mcore_fw_update_res_enum_t;
-
-#if LWM2MCORE_GPS
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 6 (location) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_LOCATION_LATITUDE_RID = 0,    ///< Latitude
-    LWM2MCORE_LOCATION_LONGITUDE_RID,       ///< Longitude
-    LWM2MCORE_LOCATION_ALTITUDE_RID,        ///< Altitude
-    LWM2MCORE_LOCATION_RADIUS_RID,          ///< Radius
-    LWM2MCORE_LOCATION_VELOCITY_RID,        ///< Velocity
-    LWM2MCORE_LOCATION_TIMESTAMP_RID,       ///< Timestamp
-    LWM2MCORE_LOCATION_SPEED_RID,           ///< Speed
-}lwm2mcore_location_res_enum_t;
-#endif /* LWM2MCORE_GPS */
-
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 7 (connectivity statistics) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_CONN_STATS_SMS_TX_COUNT_RID = 0,  ///< SMS Tx counter
-    LWM2MCORE_CONN_STATS_SMS_RX_COUNT_RID,      ///< SMS Rx counter
-    LWM2MCORE_CONN_STATS_DATA_TX_COUNT_RID,     ///< Tx data
-    LWM2MCORE_CONN_STATS_DATA_RX_COUNT_RID,     ///< Rx data
-    LWM2MCORE_CONN_STATS_MAX_MSG_SIZE_RID,      ///< Max message size
-    LWM2MCORE_CONN_STATS_AVERAGE_MSG_SIZE_RID,  ///< Average message size
-    LWM2MCORE_CONN_STATS_START_RID,             ///< Start
-    LWM2MCORE_CONN_STATS_STOP_RID,              ///< Stop
-    LWM2MCORE_CONN_STATS_COLLECT_PERIOD_RID,    ///< Collection period
-    LWM2MCORE_CONN_STATS_COLLECT_DURATION_RID,  ///< Collection duration
-}lwm2mcore_conn_stats_res_enum_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 9 (software update) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID = 0,   ///< Package name
-    LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID,    ///< Package version
-    LWM2MCORE_SW_UPDATE_PACKAGE_RID,            ///< Package
-    LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID,        ///< Package URI
-    LWM2MCORE_SW_UPDATE_INSTALL_RID,            ///< Install
-    LWM2MCORE_SW_UPDATE_CHECKPOINT_RID,         ///< Checkpoint
-    LWM2MCORE_SW_UPDATE_UNINSTALL_RID,          ///< Uninstall
-    LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID,       ///< Update state
-    LWM2MCORE_SW_UPDATE_UPDATE_SUPP_OBJ_RID,    ///< Update supported objects
-    LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID,      ///< Update result
-    LWM2MCORE_SW_UPDATE_ACTIVATE_RID,           ///< Activate
-    LWM2MCORE_SW_UPDATE_DEACTIVATE_RID,         ///< Deactivate
-    LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID,   ///< Activation state
-    LWM2MCORE_SW_UPDATE_PACKAGE_SETTINGS_RID,   ///< Package settings
-}lwm2mcore_sw_update_res_enum_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 10241 (subscription) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_SUBSCRIPTION_MODULE_IDENTITY_RID = 0, ///< Module identity (IMEI)
-    LWM2MCORE_SUBSCRIPTION_ICCID_RID,               ///< ICCID
-    LWM2MCORE_SUBSCRIPTION_IDENTITY_RID,            ///< Subscription identity
-    LWM2MCORE_SUBSCRIPTION_NUMBER_RID,              ///< Subscription number
-}lwm2mcore_subscription_res_enum_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
-* Enumeration for LWM2M object 10242 (extended connectivity statistics) resources
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_EXT_CONN_STATS_SIGNAL_BAR_RID = 0,        ///< Signal bar
-    LWM2MCORE_EXT_CONN_STATS_CELLULAR_TECH_USED_RID,    ///< Cellular technology used
-    LWM2MCORE_EXT_CONN_STATS_ROAMING_INDICATOR_RID,     ///< Roaming indicator
-    LWM2MCORE_EXT_CONN_STATS_ECIO_RID,                  ///< Ec/Io
-    LWM2MCORE_EXT_CONN_STATS_RSRP_RID,                  ///< RSRP
-    LWM2MCORE_EXT_CONN_STATS_RSRQ_RID,                  ///< RSRQ
-    LWM2MCORE_EXT_CONN_STATS_RSCP_RID,                  ///< RSCP
-    LWM2MCORE_EXT_CONN_DEVICE_TEMPERATURE_RID,          ///< Device temperature
-    LWM2MCORE_EXT_CONN_UNEXPECTED_RESET_COUNT_RID,      ///< Unexpected reset counter
-    LWM2MCORE_EXT_CONN_TOTAL_RESET_COUNT_RID,           ///< Total reset counter
-}lwm2mcore_ext_conn_stats_res_enum_t;
+}lwm2mcore_fwUpdateResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -451,8 +254,99 @@ typedef enum
 typedef enum
 {
     LWM2MCORE_SSL_CERTIFICATE_CERTIF         = 0    ///< SSL certificates
-} lwm2mcore_ssl_certificate_res_enum_t;
+} lwm2mcore_sslCertificateResource_t;
 
+//--------------------------------------------------------------------------------------------------
+/*! \struct lwm2m_attribute_t
+ *  \brief data structure represent the attribute.
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    int pmin;       ///< min value
+    int pmax;       ///< max value
+    int gt;         ///< greater than
+    int lt;         ///< less than
+    int st;         ///< step
+    int cancel;     ///< cancel observe
+    int mask;       ///< bitmask indicates what attributes are set
+}lwm2m_attribute_t;
 
-#endif /* LWM2MCORE_OBJECTS_H */
+//--------------------------------------------------------------------------------------------------
+/*! \struct _lwm2m_resource
+ *  \brief data structure reprents a lwm2m resource.
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _lwm2mcore_internalResource
+{
+    DLIST_ENTRY(_lwm2mcore_internalResource) list;  ///< list entry for resource linked list
+    uint16_t id;                        ///< resource id
+    uint16_t iid;                       ///< resource instance id
+    lwm2m_resourceType_t type;          ///< resource data type
+    bool multiple;                      ///< flag indicate if this is single or multiple instances
+    lwm2m_attribute_t attr;             ///< resource attributes
+
+    /* operation handler */
+    lwm2mcore_read_callback_t read;     ///< READ handler
+    lwm2mcore_write_callback_t write;   ///< WRITE handler
+    lwm2mcore_execute_callback_t exec;  ///< EXECUTE handler
+
+    /* used by async notification*/
+    char *cache;                        ///< cache value for OBSERVE
+}lwm2mcore_internalResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/** LWM2M Core resource list data type
+ */
+//--------------------------------------------------------------------------------------------------
+DLIST_HEAD(_lwm2m_resource_list, _lwm2mcore_internalResource);
+
+//--------------------------------------------------------------------------------------------------
+/*! \struct _lwm2m_object
+ *  \brief data structure reprents a lwm2m object.
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _lwm2mcore_internalObject
+{
+    DLIST_ENTRY(_lwm2mcore_internalObject) list;   ///< list entry for object linked list
+    uint16_t id;                                    ///< object id
+    uint16_t iid;                                   ///< object instance id
+    bool multiple;                                  ///< flag indicate if this is single or multiple
+                                                    ///< instances
+    lwm2m_attribute_t attr;                         ///< object attributes
+    struct _lwm2m_resource_list resource_list;      ///< resource linked list
+}lwm2mcore_internalObject_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * LWM2M Core object list data type
+ */
+//--------------------------------------------------------------------------------------------------
+DLIST_HEAD(_lwm2mcore_objectsList, _lwm2mcore_internalObject);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to convert bytes(in network byte order) to integer
+ *
+ * @return
+ *      - converted data
+ */
+//--------------------------------------------------------------------------------------------------
+int64_t BytesToInt
+(
+    const uint8_t *bytes,
+    size_t len
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Free the registered objects and resources (LWM2MCore and Wakaama)
+ */
+//--------------------------------------------------------------------------------------------------
+void ObjectsFree
+(
+    void
+);
+
+#endif /* __OBJECTS_H__ */
 

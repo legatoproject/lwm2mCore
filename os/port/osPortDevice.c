@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcorePortDeviceDefault.c
+ * @file osPortDevice.c
  *
  * Porting layer for device parameters
  *
@@ -10,8 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "../inc/lwm2mcoreObjectHandler.h"
-#include "lwm2mcorePortDevice.h"
+#include "osPortDevice.h"
 
 //--------------------------------------------------------------------------------------------------
 /**

@@ -21,10 +21,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "lwm2mcore.h"
-#include "../objectManager/lwm2mcoreObjects.h"
-#include "../sessionManager/dtlsconnection.h"
-#include "../os/osDebug.h"
-#include "lwm2mcoreSessionParam.h"
+#include "objects.h"
+#include "dtlsConnection.h"
+#include "osDebug.h"
+#include "session.h"
 #include "internals.h"
 #include "liblwm2m.h"
 
@@ -475,10 +475,10 @@ static int dtlsEventCb
  */
 //--------------------------------------------------------------------------------------------------
 static dtls_handler_t cb = {
-  .write = SendToPeer,
-  .read  = ReadFromPeer,
-  .event = dtlsEventCb,
-  .get_psk_info = GetPskInfo,
+  SendToPeer,                   //.write
+  ReadFromPeer,                 //.read
+  dtlsEventCb,                  //.event
+  GetPskInfo,                   //.get_psk_info
 };
 
 
@@ -645,7 +645,7 @@ dtls_connection_t* connection_find
  *  - NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-dtls_connection_t* connection_new_incoming
+dtls_connection_t* connection_newIncoming
 (
     dtls_connection_t* connListPtr,     ///< [IN] DTLS connection list
     int sock,                           ///< [IN] Socket Id on which the DTLS needs to be created
@@ -692,16 +692,17 @@ dtls_connection_t* connection_create
 )
 {
     struct addrinfo hints;
-    struct addrinfo *servinfo = NULL;
-    struct addrinfo *p;
+    struct addrinfo* servinfoPtr = NULL;
+    struct addrinfo* p;
     int s;
-    struct sockaddr *saPtr;
+    struct sockaddr* saPtr;
     socklen_t sl;
     dtls_connection_t* connPtr = NULL;
     char uriBuf[URI_LENGTH];
-    char * uriPtr;
-    char * hostPtr;
-    char * portPtr;
+    char* uriPtr;
+    char* hostPtr;
+    char* portPtr;
+    char* defaultPortPtr;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = addressFamily;
@@ -717,7 +718,6 @@ dtls_connection_t* connection_create
     }
 
     // parse uri in the form "coaps://[host]:[port]"
-    char* defaultPortPtr;
     if (0 == strncmp(uriPtr, "coaps://", strlen("coaps://")))
     {
         hostPtr = uriPtr + strlen("coaps://");
@@ -756,14 +756,14 @@ dtls_connection_t* connection_create
     }
     LOG_ARG("port %s", portPtr);
 
-    if (0 != getaddrinfo(hostPtr, portPtr, &hints, &servinfo) || servinfo == NULL)
+    if (0 != getaddrinfo(hostPtr, portPtr, &hints, &servinfoPtr) || servinfoPtr == NULL)
     {
         return NULL;
     }
 
     // we test the various addresses
     s = -1;
-    for(p = servinfo ; p != NULL && s == -1 ; p = p->ai_next)
+    for(p = servinfoPtr ; p != NULL && s == -1 ; p = p->ai_next)
     {
         s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
         if (s >= 0)
@@ -779,7 +779,7 @@ dtls_connection_t* connection_create
     }
     if (s >= 0)
     {
-        connPtr = connection_new_incoming(connListPtr, sock, saPtr, sl);
+        connPtr = connection_newIncoming(connListPtr, sock, saPtr, sl);
         close(s);
 
         // do we need to start tinydtls?
@@ -802,9 +802,9 @@ dtls_connection_t* connection_create
         }
     }
 
-    if (NULL != servinfo)
+    if (NULL != servinfoPtr)
     {
-        free(servinfo);
+        free(servinfoPtr);
     }
 
     return connPtr;
@@ -898,7 +898,7 @@ static int ConnectionSend
  *  - negative value in case of failure (see dtls_alert_t)
  */
 //--------------------------------------------------------------------------------------------------
-int connection_handle_packet
+int connection_handlePacket
 (
     dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
     uint8_t* bufferPtr,                 ///< [IN] Received buffer

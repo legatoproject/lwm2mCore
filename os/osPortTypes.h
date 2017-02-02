@@ -7,8 +7,8 @@
  *
  */
 
-#ifndef OS_PORTTYPES_H
-#define OS_PORTTYPES_H
+#ifndef __OSPORTTYPES_H__
+#define __OSPORTTYPES_H__
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -17,5 +17,5 @@
 //--------------------------------------------------------------------------------------------------
 #define uint8 uint8_t
 
-#endif //OS_PORTTYPES_H
+#endif //__OSPORTTYPES_H__
 

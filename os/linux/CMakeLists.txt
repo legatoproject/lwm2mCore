@@ -38,7 +38,7 @@ endif()
 add_custom_command(OUTPUT ${TINYDTLS_SOURCES_GENERATED} COMMAND ""  DEPENDS external_tinydtls)
 
 include_directories (${LWM2MCORE_DIR}/inc)
-include_directories (${LWM2MCORE_DIR}/os/)
+include_directories (${LWM2MCORE_DIR}/os)
 
 include_directories (${LWM2MCORE_DIR}/wakaama/core)
 include_directories (${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
@@ -66,13 +66,13 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/os/linux/osTimer.c
     ${LWM2MCORE_DIR}/os/linux/osUdp.c
     ${LWM2MCORE_DIR}/os/linux/main.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreHandlers.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreObjects.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreObjectsTable.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortDeviceDefault.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortSecurityDefault.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcorePortUpdateDefault.c
-    ${LWM2MCORE_DIR}/sessionManager/dtlsconnection.c
+    ${LWM2MCORE_DIR}/objectManager/handlers.c
+    ${LWM2MCORE_DIR}/objectManager/objects.c
+    ${LWM2MCORE_DIR}/objectManager/objectsTable.c
+    ${LWM2MCORE_DIR}/os/port/osPortDevice.c
+    ${LWM2MCORE_DIR}/os/port/osPortSecurity.c
+    ${LWM2MCORE_DIR}/os/port/osPortUpdate.c
+    ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
     ${LWM2MCORE_DIR}/tinydtls/dtls.c
     ${LWM2MCORE_DIR}/tinydtls/crypto.c

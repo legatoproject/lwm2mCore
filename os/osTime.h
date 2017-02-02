@@ -9,14 +9,14 @@
  *
  */
 
-#ifndef OS_TIME_H
-#define OS_TIME_H
+#ifndef __OSTIME_H__
+#define __OSTIME_H__
 
 #include <stdbool.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to retreive the device time
+ * Function to retrieve the device time
  *
  * @return
  *      - device time (UNIX time: seconds since January 01, 1970)
@@ -27,5 +27,5 @@ time_t lwm2m_gettime
     void
 );
 
-#endif //OS_TIME_H
+#endif //__OSTIME_H__
 

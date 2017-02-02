@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcorePortDevice.h
+ * @file osPortDevice.h
  *
  * Porting layer for device parameters
  *
@@ -7,11 +7,10 @@
  *
  */
 
-#ifndef LWM2MCORE_PORTDEVICE_H_
-#define LWM2MCORE_PORTDEVICE_H_
+#ifndef __OS_PORTDEVICE_H__
+#define __OS_PORTDEVICE_H__
 
 #include "lwm2mcore.h"
-#include "lwm2mcoreObjectHandler.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -123,5 +122,5 @@ lwm2mcore_sid_t os_portDeviceCurrentTime
     uint64_t* valuePtr          ///< [INOUT] data buffer
 );
 
-#endif /* LWM2MCORE_PORTDEVICE_H_ */
+#endif /* __OS_PORTDEVICE_H__ */
 

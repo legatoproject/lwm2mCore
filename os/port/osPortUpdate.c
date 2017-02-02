@@ -1,9 +1,9 @@
 /**
- * @file lwm2mcorePortUpdateDefault.c
+ * @file osPortUpdate.c
  *
  * Porting layer for Firmware Over The Air update
  *
- * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
+ * Copyright (C) Sierra Wireless Inc.
  *
  */
 
@@ -11,8 +11,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "osDebug.h"
-#include "lwm2mcorePortUpdate.h"
-
+#include "osPortUpdate.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -28,14 +27,17 @@
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_PushPackage
+lwm2mcore_sid_t os_portUpdatePushPackage
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
 )
 {
+    /* This function can be used to receive a package using CoAP
+     * This is not supported by LWM2MCore
+     */
     return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 }
 
@@ -54,9 +56,9 @@ lwm2mcore_sid_t os_portUpdate_PushPackage
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_SetPackageUri
+lwm2mcore_sid_t os_portUpdateSetPackageUri
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
@@ -67,7 +69,7 @@ lwm2mcore_sid_t os_portUpdate_SetPackageUri
     if (0 == len)
     {
         /* If len is 0, then :
-         * the Update State shall be set to default value
+         * the Update State shall be set to default value: LWM2MCORE_FW_UPDATE_STATE_IDLE
          * the package URI is deleted from storage file
          * any active download is suspended
          */
@@ -89,7 +91,9 @@ lwm2mcore_sid_t os_portUpdate_SetPackageUri
             memset(downloadUri, 0, LWM2MCORE_PACKAGE_URI_MAX_LEN+1);
             memcpy(downloadUri, bufferPtr, len);
 
-            /* Call API to launch the package download */
+            /* Call API to launch the package download
+             * Advice: the package download needs to be made in a dedicated thread/task.
+             */
             sid = LWM2MCORE_ERR_COMPLETED_OK;
         }
     }
@@ -110,9 +114,9 @@ lwm2mcore_sid_t os_portUpdate_SetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageUri
+lwm2mcore_sid_t os_portUpdateGetPackageUri
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
@@ -146,9 +150,9 @@ lwm2mcore_sid_t os_portUpdate_GetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_LaunchUpdate
+lwm2mcore_sid_t os_portUpdateLaunchUpdate
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
@@ -161,7 +165,9 @@ lwm2mcore_sid_t os_portUpdate_LaunchUpdate
     }
     else
     {
-        /* Call API to launch the package update */
+        /* Call API to launch the update process
+         * Set the update state to LWM2MCORE_FW_UPDATE_STATE_UPDATING
+         */
         sid = LWM2MCORE_ERR_COMPLETED_OK;
     }
     return sid;
@@ -181,9 +187,9 @@ lwm2mcore_sid_t os_portUpdate_LaunchUpdate
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetUpdateState
+lwm2mcore_sid_t os_portUpdateGetUpdateState
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     uint8_t* updateStatePtr         ///< [OUT] Firmware update state
 )
@@ -196,7 +202,10 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateState
     else
     {
         /* Call API to get the update state
-         * For the moment, hard-coded to LWM2MCORE_FW_UPDATE_STATE_IDLE
+         * Default value is LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL.
+         * When the update process succeeds, the update result needs to be set to
+         * LWM2MCORE_FW_UPDATE_RESULT_INSTALLED_SUCCESSFUL
+         * Others values (see lwm2mcore_fw_update_result_t) are related to update process error.
          */
         if (LWM2MCORE_FW_UPDATE_TYPE == type)
         {
@@ -227,9 +236,9 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateState
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetUpdateResult
+lwm2mcore_sid_t os_portUpdateGetUpdateResult
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     uint8_t* updateResultPtr        ///< [OUT] Firmware update result
 )
@@ -244,7 +253,7 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateResult
         /* Call API to get the update result
          * For the moment, hard-coded to LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL
          */
-        if (LWM2MCORE_FW_UPDATE_TYPE == type)
+         if (LWM2MCORE_FW_UPDATE_TYPE == type)
         {
             /* Firmware update */
             *updateResultPtr = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
@@ -273,9 +282,9 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateResult
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageName
+lwm2mcore_sid_t os_portUpdateGetPackageName
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
@@ -299,9 +308,9 @@ lwm2mcore_sid_t os_portUpdate_GetPackageName
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageVersion
+lwm2mcore_sid_t os_portUpdateGetPackageVersion
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned

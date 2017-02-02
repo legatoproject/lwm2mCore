@@ -1,17 +1,16 @@
 /**
- * @file lwm2mcorePortUpdate.h
+ * @file osPortUpdate.h
  *
  * Porting layer for firmware update
  *
- * Copyright (C) Sierra Wireless Inc. Use of this work is subject to license.
+ * Copyright (C) Sierra Wireless Inc.
  *
  */
 
-#ifndef LWM2MCORE_PORT_UPDATE_H_
-#define LWM2MCORE_PORT_UPDATE_H_
+#ifndef __OS_PORT_UPDATE_H__
+#define __OS_PORT_UPDATE_H__
 
 #include "lwm2mcore.h"
-#include "lwm2mcoreObjectHandler.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -30,7 +29,7 @@ typedef enum
     LWM2MCORE_FW_UPDATE_TYPE,    ///< Firmware update
     LWM2MCORE_SW_UPDATE_TYPE,    ///< Software update
     LWM2MCORE_MAX_UPDATE_TYPE    ///< Internal usage
-}lwm2mcore_update_type_t;
+}lwm2mcore_updateType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -52,7 +51,7 @@ typedef enum
                                                         ///< specification)
     LWM2MCORE_FW_UPDATE_STATE_WAITINSTALL       = 4,    ///< FW update: wait for install
     LWM2MCORE_FW_UPDATE_STATE_WAITINSTALLRESULT = 5     ///< FW update: install result
-}lwm2mcore_fw_update_state_t;
+}lwm2mcore_fwUpdateState_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -80,7 +79,7 @@ typedef enum
                                                         ///< protocol
     /* Sierra defined UD_RESULT code */
     LWM2MCORE_FW_UPDATE_RESULT_CLIENT_CANCEL = 0xF000   ///< internal usage
-}lwm2mcore_fw_update_result_t;
+}lwm2mcore_fwUpdateResult_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -96,9 +95,9 @@ typedef enum
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_PushPackage
+lwm2mcore_sid_t os_portUpdatePushPackage
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
@@ -118,9 +117,9 @@ lwm2mcore_sid_t os_portUpdate_PushPackage
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_SetPackageUri
+lwm2mcore_sid_t os_portUpdateSetPackageUri
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
@@ -140,9 +139,9 @@ lwm2mcore_sid_t os_portUpdate_SetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageUri
+lwm2mcore_sid_t os_portUpdateGetPackageUri
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
@@ -163,9 +162,9 @@ lwm2mcore_sid_t os_portUpdate_GetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_LaunchUpdate
+lwm2mcore_sid_t os_portUpdateLaunchUpdate
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
@@ -185,9 +184,9 @@ lwm2mcore_sid_t os_portUpdate_LaunchUpdate
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetUpdateState
+lwm2mcore_sid_t os_portUpdateGetUpdateState
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     uint8_t* updateStatePtr         ///< [OUT] update state
 );
@@ -206,9 +205,9 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateState
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetUpdateResult
+lwm2mcore_sid_t os_portUpdateGetUpdateResult
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     uint8_t* updateResultPtr        ///< [OUT] update result
 );
@@ -227,9 +226,9 @@ lwm2mcore_sid_t os_portUpdate_GetUpdateResult
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageName
+lwm2mcore_sid_t os_portUpdateGetPackageName
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
@@ -250,14 +249,14 @@ lwm2mcore_sid_t os_portUpdate_GetPackageName
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portUpdate_GetPackageVersion
+lwm2mcore_sid_t os_portUpdateGetPackageVersion
 (
-    lwm2mcore_update_type_t type,   ///< [IN] Update type
+    lwm2mcore_updateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
                                     ///< data
 );
 
-#endif /* LWM2MCORE_PORT_UPDATE_H_ */
+#endif /* __OS_PORT_UPDATE_H__ */
 

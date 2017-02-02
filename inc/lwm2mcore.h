@@ -8,8 +8,64 @@
  */
 
 
-#ifndef LWM2CORE_H_
-#define LWM2CORE_H_
+#ifndef  __LWM2MCORE_H__
+#define  __LWM2MCORE_H__
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Maximum LWM2M server supported, though only one used at any time
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_DM_SERVER_MAX_COUNT           1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Maximum LWM2M bootstrap server supported
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT     1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Maximum length of a resource name
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2M_NAME_LEN                          64
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Maximum length of a device endpoint
+ * Endpoint can be:
+ * IMEI: 15 digits
+ * ESN: 8 digits
+ * MEID: 14 digits
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_ENDPOINT_LEN                  16
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define values to indicate that an object can be supported without any defined ressource
+ */
+//--------------------------------------------------------------------------------------------------
+#define    LWM2MCORE_ID_NONE                    0xFFFF
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for handlers status ID code (returned value)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_ERR_COMPLETED_OK          = 0,    ///< Handler treatment is OK
+    LWM2MCORE_ERR_GENERAL_ERROR         = -1,   ///< Handler treatment failed
+    LWM2MCORE_ERR_INCORRECT_RANGE       = -2,   ///< Bad parameter range (WRITE operation)
+    LWM2MCORE_ERR_NOT_YET_IMPLEMENTED   = -3,   ///< Not yet implemented resource
+    LWM2MCORE_ERR_OP_NOT_SUPPORTED      = -4,   ///< Not supported resource
+    LWM2MCORE_ERR_INVALID_ARG           = -5,   ///< Invalid parameter in resource handler
+    LWM2MCORE_ERR_INVALID_STATE         = -6,   ///< Invalid state to treat the resource handler
+    LWM2MCORE_ERR_OVERFLOW              = -7    ///< Buffer overflow
+}lwm2mcore_sid_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -59,39 +115,7 @@ typedef enum
                                                             ///< Management one
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
     LWM2MCORE_EVENT_LAST                           = 24     ///< Internal usage
-}lwm2mcore_StatusType_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Maximum LWM2M server supported, though only one used at any time
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_DM_SERVER_MAX_COUNT           1
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Maximum LWM2M bootstrap server supported
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT     1
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Maximum length of a resource name
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2M_NAME_LEN                          64
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Maximum length of a device endpoint
- * Endpoint can be:
- * IMEI: 15 digits
- * ESN: 8 digits
- * MEID: 14 digits
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_ENDPOINT_LEN                  16
+}lwm2mcore_statusType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -109,7 +133,90 @@ typedef enum
     LWM2MCORE_OP_DELETE       = 0x40,             ///< standard DM: delete
     LWM2MCORE_OP_OBSERVE      = 0x80,             ///< observe
     LWM2MCORE_OP_QUERY_INSTANCE_COUNT = 0x100     ///< custom: query resource instance count
-}lwm2mcore_op_type_t;
+}lwm2mcore_opType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for LWM2M resource data type
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_RESOURCE_TYPE_INT = 0,        ///< resource type: integer
+    LWM2MCORE_RESOURCE_TYPE_BOOL,           ///< resource type: boolean
+    LWM2MCORE_RESOURCE_TYPE_STRING,         ///< resource type: string
+    LWM2MCORE_RESOURCE_TYPE_OPAQUE,         ///< resource type: opaque
+    LWM2MCORE_RESOURCE_TYPE_FLOAT,          ///< resource type: float
+    LWM2MCORE_RESOURCE_TYPE_TIME,           ///< resource type: time
+    LWM2MCORE_RESOURCE_TYPE_UNKNOWN         ///< resource type: unknown
+}lwm2m_resourceType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration of supported LWM2M credentials
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum _lwm2mcore_credentials
+{
+    LWM2MCORE_CREDENTIAL_FW_KEY = 0,            ///< FW public key
+    LWM2MCORE_CREDENTIAL_SW_KEY,                ///< SW public key
+    LWM2MCORE_CREDENTIAL_CERTIFICATE,           ///< Certificate for HTTPS
+    LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,         ///< LWM2M Client’s Certificate (Certificate mode),
+                                                ///< public key (RPK mode) or PSK Identity (PSK
+                                                ///< mode)
+    LWM2MCORE_CREDENTIAL_BS_SERVER_PUBLIC_KEY,  ///< LWM2M Server’s or LWM2M Bootstrap Server’s
+                                                ///< Certificate (Certificate mode), public key
+                                                ///< (RPK mode)
+    LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,         ///< secret key or private key of the security mode
+    LWM2MCORE_CREDENTIAL_BS_ADDRESS,            ///< BS server address
+    LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,         ///< LWM2M Client’s Certificate (Certificate mode),
+                                                ///< public key (RPK mode) or PSK Identity (PSK
+                                                ///< mode)
+    LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,  ///< LWM2M Server’s or LWM2M Bootstrap Server’s
+                                                ///< Certificate (Certificate mode), public key
+                                                ///< (RPK mode)
+    LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,         ///< secret key or private key of the security mode
+    LWM2MCORE_CREDENTIAL_DM_ADDRESS,            ///< DM server address
+    LWM2MCORE_CREDENTIAL_MAX                    ///< Internal usage
+}lwm2mcore_credentials_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for device endpoint urn format: LWM2M TS v1.0 6.2.1
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    UUID_URN,       ///< UUID
+    OPS_URN,        ///< QPS
+    OS_URN,         ///< OS
+    IMEI_URN,       ///< IMEI
+    ESN_URN,        ///< ESN
+    MEID_URN        ///< MEID
+}lwm2mcore_epnType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for session type
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SESSION_BOOTSTRAP,            ///< Bootstrap session
+    LWM2MCORE_SESSION_DEVICE_MANAGEMENT     ///< Device management session
+}lwm2mcore_sessionType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for package type
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_PKG_NONE,   ///< Default value
+    LWM2MCORE_PKG_FW,     ///< Package for firmware
+    LWM2MCORE_PKG_SW      ///< Package for software
+}lwm2mcore_pkgDwnldType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -119,7 +226,7 @@ typedef enum
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_op_type_t op;             ///< operation type
+    lwm2mcore_opType_t op;              ///< operation type
     int content_type;                   ///< payload content type, a value of -1 indicates content
                                         ///< type is not specified
     int accept_content_type;            ///< server accept content type, a value of -1 indicates its
@@ -142,34 +249,42 @@ typedef struct
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for LWM2M resource data type
+ * Structure for a package download status
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum
+typedef struct
 {
-    LWM2MCORE_RESOURCE_TYPE_INT = 0,        ///< resource type: integer
-    LWM2MCORE_RESOURCE_TYPE_BOOL,           ///< resource type: boolean
-    LWM2MCORE_RESOURCE_TYPE_STRING,         ///< resource type: string
-    LWM2MCORE_RESOURCE_TYPE_OPAQUE,         ///< resource type: opaque
-    LWM2MCORE_RESOURCE_TYPE_FLOAT,          ///< resource type: float
-    LWM2MCORE_RESOURCE_TYPE_TIME,           ///< resource type: time
-    LWM2MCORE_RESOURCE_TYPE_UNKNOWN         ///< resource type: unknown
-}lwm2m_resource_type_t;
+    lwm2mcore_pkgDwnldType_t pkgType;   ///< Package type
+    uint32_t numBytes;                  ///< For package download, downloaded bytes
+    uint32_t progress;                  ///< For package download, package download progress in %
+    uint32_t errorCode;                 ///< For package download, error code
+}lwm2mcore_pkgDwnldStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for device endpoint urn format: LWM2M TS v1.0 6.2.1
+ * Structure for session event
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum
+typedef struct
 {
-    UUID_URN,       ///< UUID
-    OPS_URN,        ///< QPS
-    OS_URN,         ///< OS
-    IMEI_URN,       ///< IMEI
-    ESN_URN,        ///< ESN
-    MEID_URN        ///< MEID
-}lwm2mcore_epn_type_t;
+    lwm2mcore_sessionType_t type;           ///< Session type for
+                                            ///< LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START event
+}lwm2mcore_sessionStatus_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for events (session and package download)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    lwm2mcore_statusType_t event;               ///< Event
+    union
+    {
+        lwm2mcore_sessionStatus_t session;      ///< Session information
+        lwm2mcore_pkgDwnldStatus_t pkgStatus;   ///< Package download status
+    }u;                                         ///< Union
+}lwm2mcore_status_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -185,26 +300,6 @@ typedef int (*value_changed_callback_t)
     lwm2mcore_uri_t *uri,               ///< [IN] uri represents the resource whose value is changed
     char *buffer,                       ///< [INOUT] buffer of the notification data
     int len                             ///< [IN] llength of the notification data
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * function pointer of resource READ/WRITE/OBSERVE function.
- *
- * @return
- *      - 0 on success
- *      - negative value on failure
- *      -  > 0 values for asynchronous ops.
-*/
-//--------------------------------------------------------------------------------------------------
-typedef int (*generic_read_write_api_t)
-(
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback function pointer for OBSERVE operation
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -265,99 +360,13 @@ typedef int (*lwm2mcore_execute_callback_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enum for package type
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_PKG_NONE,   ///< Default value
-    LWM2MCORE_PKG_FW,     ///< Package for firmware
-    LWM2MCORE_PKG_SW      ///< Package for software
-}
-lwm2mcore_PkgDwnldType_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Structure for a package download status
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct
-{
-    lwm2mcore_PkgDwnldType_t pkgType;   ///< Package type
-    uint32_t numBytes;                  ///< For package download, downloaded bytes
-    uint32_t progress;                  ///< For package download, package download progress in %
-    uint32_t errorCode;                 ///< For package download, error code
-}lwm2mcore_PkgDwnldStatus_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Enumeration for session type
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_SESSION_BOOTSTRAP,            ///< Bootstrap session
-    LWM2MCORE_SESSION_DEVICE_MANAGEMENT     ///< Device management session
-}lwm2mcore_SessionType_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Structure for session event
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct
-{
-    lwm2mcore_SessionType_t type;           ///< Session type for
-                                            ///< LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START event
-}
-lwm2mcore_SessionStatus_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Structure for events (session and package download)
- */
-//--------------------------------------------------------------------------------------------------
-typedef struct
-{
-    lwm2mcore_StatusType_t event;               ///< Event
-    union
-    {
-        lwm2mcore_SessionStatus_t session;      ///< Session information
-        lwm2mcore_PkgDwnldStatus_t pkgStatus;   ///< Package download status
-    }u;                                         ///< Union
-}
-lwm2mcore_Status_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Callback for event status
- *
- * @return
- *      - 0 on success
- *      - negative value on failure.
- */
-//--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_StatusCb_t)
-(
-    lwm2mcore_Status_t eventStatus              ///< [IN] event status
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Define values to indicate that an object can be supported without any defined ressource
- */
-//--------------------------------------------------------------------------------------------------
-#define    LWM2MCORE_ID_NONE                    0xFFFF
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Structure for an object resource
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_resource
+typedef struct
 {
     uint16_t id;                        ///< resource id: one of the LWM2M_xyz_RID above
-    lwm2m_resource_type_t type;         ///< resource data type
+    lwm2m_resourceType_t type;          ///< resource data type
     uint16_t max_res_inst_cnt;          ///< maximum number of resource instance
                                         ///< count. 1 means single instance
     lwm2mcore_read_callback_t read;     ///< operation handler: READ handler
@@ -370,7 +379,7 @@ typedef struct _lwm2mcore_resource
  * Structure for an object
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_object
+typedef struct
 {
     uint16_t id;                            ///< one of the defined object id
     uint16_t max_obj_inst_cnt;              ///< maximum number of object instance
@@ -381,10 +390,30 @@ typedef struct _lwm2mcore_object
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * function pointer of resource READ/WRITE/OBSERVE function.
+ *
+ * @return
+ *      - 0 on success
+ *      - negative value on failure
+ *      -  > 0 values for asynchronous ops.
+*/
+//--------------------------------------------------------------------------------------------------
+typedef int (*generic_read_write_api_t)
+(
+    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *buffer,                       ///< [INOUT] data buffer for information
+    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    value_changed_callback_t changed_cb ///< [IN] callback function pointer for OBSERVE operation
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Structure for a handler
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_handler
+typedef struct
 {
     uint16_t                  obj_cnt;              ///< Numbers of supported pre-defined objects
     lwm2mcore_object_t*       objects;              ///< Actual supported pre-defined objects
@@ -393,32 +422,17 @@ typedef struct _lwm2mcore_handler
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration of supported LWM2M credentials
+ * Callback for event status
+ *
+ * @return
+ *      - 0 on success
+ *      - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _lwm2mcore_credentials
-{
-    LWM2MCORE_CREDENTIAL_FW_KEY = 0,            ///< FW public key
-    LWM2MCORE_CREDENTIAL_SW_KEY,                ///< SW public key
-    LWM2MCORE_CREDENTIAL_CERTIFICATE,           ///< Certificate for HTTPS
-    LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,         ///< LWM2M Client’s Certificate (Certificate mode),
-                                                ///< public key (RPK mode) or PSK Identity (PSK
-                                                ///< mode)
-    LWM2MCORE_CREDENTIAL_BS_SERVER_PUBLIC_KEY,  ///< LWM2M Server’s or LWM2M Bootstrap Server’s
-                                                ///< Certificate (Certificate mode), public key
-                                                ///< (RPK mode)
-    LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,         ///< secret key or private key of the security mode
-    LWM2MCORE_CREDENTIAL_BS_ADDRESS,            ///< BS server address
-    LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,         ///< LWM2M Client’s Certificate (Certificate mode),
-                                                ///< public key (RPK mode) or PSK Identity (PSK
-                                                ///< mode)
-    LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,  ///< LWM2M Server’s or LWM2M Bootstrap Server’s
-                                                ///< Certificate (Certificate mode), public key
-                                                ///< (RPK mode)
-    LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,         ///< secret key or private key of the security mode
-    LWM2MCORE_CREDENTIAL_DM_ADDRESS,            ///< DM server address
-    LWM2MCORE_CREDENTIAL_MAX                    ///< Internal usage
-}lwm2mcore_credentials_t;
+typedef int (*lwm2mcore_statusCb_t)
+(
+    lwm2mcore_status_t eventStatus              ///< [IN] event status
+);
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -431,7 +445,7 @@ typedef enum _lwm2mcore_credentials
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_init
 (
-    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_statusCb_t eventCb    ///< [IN] event callback
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -524,5 +538,5 @@ bool lwm2mcore_connectionGetType
                                 ///< true: device management)
 );
 
-#endif /* LWM2CORE_H_ */
+#endif /*  __LWM2MCORE_H__ */
 

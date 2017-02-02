@@ -10,11 +10,10 @@
 /* include files */
 #include "liblwm2m.h"
 #include "lwm2mcore.h"
-#include "../objectManager/lwm2mcoreObjects.h"
-#include "../inc/lwm2mcoreObjectHandler.h"
-#include "../os/osDebug.h"
-#include "../sessionManager/lwm2mcoreSessionParam.h"
-#include "lwm2mcorePortSecurity.h"
+#include "objects.h"
+#include "osDebug.h"
+#include "session.h"
+#include "osPortSecurity.h"
 #include "internals.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -67,10 +66,10 @@ extern lwm2mcore_context_t* Lwm2mcoreCtxPtr;
  *      - NULL  if the object is not found
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t setCoapError
+static uint8_t SetCoapError
 (
     int sid,                            ///< [IN] resource handler status
-    lwm2mcore_op_type_t operation       ///< [IN] operation
+    lwm2mcore_opType_t operation        ///< [IN] operation
 )
 {
     uint8_t result = COAP_503_SERVICE_UNAVAILABLE;
@@ -154,21 +153,21 @@ static uint8_t setCoapError
  *      - NULL  if the object is not found
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_internal_object_t* findObject
+static lwm2mcore_internalObject_t* FindObject
 (
     lwm2mcore_context_t* ctxPtr,            ///< [IN] LWM2M core context
     uint16_t oid                            ///< [IN] object ID to find
 )
 {
-    lwm2mcore_internal_object_t *obj = NULL;
+    lwm2mcore_internalObject_t* objPtr = NULL;
 
-    for (obj = DLIST_FIRST(&(ctxPtr->objects_list)); obj; obj = DLIST_NEXT(obj, list))
+    for (objPtr = DLIST_FIRST(&(ctxPtr->objects_list)); objPtr; objPtr = DLIST_NEXT(objPtr, list))
     {
-        if (obj->id == oid)
+        if (objPtr->id == oid)
             break;
     }
 
-    return obj;
+    return objPtr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -180,13 +179,13 @@ static lwm2mcore_internal_object_t* findObject
  *      - NULL  if the object is not found
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_internal_resource_t* findResource
+static lwm2mcore_internalResource_t* FindResource
 (
-    lwm2mcore_internal_object_t* objPtr,    ///< [IN] Object pointer
+    lwm2mcore_internalObject_t* objPtr,     ///< [IN] Object pointer
     uint16_t rid                            ///< [IN] resource ID
 )
 {
-    lwm2mcore_internal_resource_t* resourcePtr = NULL;
+    lwm2mcore_internalResource_t* resourcePtr = NULL;
 
     OS_ASSERT(objPtr);
 
@@ -209,7 +208,7 @@ static lwm2mcore_internal_resource_t* findResource
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-static uint16_t bytesToUint16
+static uint16_t BytesToUint16
 (
     const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 )
@@ -225,7 +224,7 @@ static uint16_t bytesToUint16
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-static uint32_t bytesToUint32
+static uint32_t BytesToUint32
 (
     const uint8_t* bytesPtr
 )
@@ -241,13 +240,13 @@ static uint32_t bytesToUint32
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-static uint64_t bytesToUint64
+static uint64_t BytesToUint64
 (
     const uint8_t* bytesPtr
 )
 {
-    return (((uint64_t)bytesToUint32(bytesPtr) << 32)
-            | bytesToUint32(bytesPtr + 4));
+    return (((uint64_t)BytesToUint32(bytesPtr) << 32)
+            | BytesToUint32(bytesPtr + 4));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -258,7 +257,7 @@ static uint64_t bytesToUint64
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-inline int64_t bytesToInt
+inline int64_t BytesToInt
 (
     const uint8_t* bytesPtr,
     size_t len
@@ -276,19 +275,19 @@ inline int64_t bytesToInt
 
         case 2:
         {
-            value = (int16_t)bytesToUint16(bytesPtr);
+            value = (int16_t)BytesToUint16(bytesPtr);
         }
         break;
 
         case 4:
         {
-            value = (int32_t)bytesToUint32(bytesPtr);
+            value = (int32_t)BytesToUint32(bytesPtr);
         }
         break;
 
         case 8:
         {
-            value = (int64_t)bytesToUint64(bytesPtr);
+            value = (int64_t)BytesToUint64(bytesPtr);
         }
         break;
 
@@ -312,7 +311,7 @@ inline int64_t bytesToInt
  *      - COAP_205_CONTENT if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t readCb
+static uint8_t ReadCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     int* numDataPtr,                ///< [IN] Number of resources to be read
@@ -323,13 +322,13 @@ static uint8_t readCb
     uint8_t result;
     int i;
 
-    LOG_ARG("readCb oid %d oiid %d", objectPtr->objID, instanceId);
+    LOG_ARG("ReadCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
         lwm2mcore_uri_t uri;
-        lwm2mcore_internal_object_t *objPtr;
+        lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
         memset(&uri, 0, sizeof (lwm2mcore_uri_t));
@@ -338,7 +337,7 @@ static uint8_t readCb
         uri.oid = objectPtr->objID;
         uri.oiid = instanceId;
 
-        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
+        objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -347,7 +346,7 @@ static uint8_t readCb
         else
         {
             int sid = 0;
-            lwm2mcore_internal_resource_t*resourcePtr = NULL;
+            lwm2mcore_internalResource_t* resourcePtr = NULL;
             char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
             size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
 
@@ -390,7 +389,7 @@ static uint8_t readCb
                 uri.rid = (*dataArrayPtr)[i].id;
 
                 /* Search the resource handler */
-                resourcePtr = findResource(objPtr, uri.rid);
+                resourcePtr = FindResource(objPtr, uri.rid);
                 if (NULL != resourcePtr)
                 {
                     if (NULL != resourcePtr->read)
@@ -404,7 +403,7 @@ static uint8_t readCb
                                                 NULL);
 
                         /* Define the CoAP result */
-                        result = setCoapError(sid, LWM2MCORE_OP_READ);
+                        result = SetCoapError(sid, LWM2MCORE_OP_READ);
 
                         if (COAP_205_CONTENT == result)
                         {
@@ -413,15 +412,15 @@ static uint8_t readCb
                                 case LWM2MCORE_RESOURCE_TYPE_INT:
                                 {
                                     int64_t value = 0;
-                                    value = bytesToInt((uint8_t*)async_buf, async_buf_len);
+                                    value = BytesToInt((uint8_t*)async_buf, async_buf_len);
                                     lwm2m_data_encode_int(value, (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d value %d", sid, value);
+                                        LOG_ARG("ReadCb sID %d value %d", sid, value);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -431,11 +430,11 @@ static uint8_t readCb
                                     lwm2m_data_encode_bool(async_buf[0], (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d value %d", sid, async_buf[0]);
+                                        LOG_ARG("ReadCb sID %d value %d", sid, async_buf[0]);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -447,11 +446,11 @@ static uint8_t readCb
                                                               (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d async_buf %s", sid, async_buf);
+                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -463,11 +462,11 @@ static uint8_t readCb
                                                              (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d async_buf %s", sid, async_buf);
+                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -481,15 +480,15 @@ static uint8_t readCb
                                 case LWM2MCORE_RESOURCE_TYPE_TIME:
                                 {
                                     int64_t value = 0;
-                                    value = bytesToInt((uint8_t*)async_buf, async_buf_len);
+                                    value = BytesToInt((uint8_t*)async_buf, async_buf_len);
                                     lwm2m_data_encode_int(value, (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d value %d", sid, value);
+                                        LOG_ARG("ReadCb sID %d value %d", sid, value);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -501,11 +500,11 @@ static uint8_t readCb
                                                              (*dataArrayPtr) + i);
                                     if (LWM2MCORE_SECURITY_OID != uri.oid)
                                     {
-                                        LOG_ARG("readCb sID %d async_buf %s", sid, async_buf);
+                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
                                     }
                                     else
                                     {
-                                        LOG_ARG("readCb sID %d", sid);
+                                        LOG_ARG("ReadCb sID %d", sid);
                                     }
                                 }
                                 break;
@@ -539,7 +538,7 @@ static uint8_t readCb
         LOG_ARG("Object %d not found", objectPtr->objID);
         result = COAP_404_NOT_FOUND;
     }
-    LOG_ARG("readCb result %d", result);
+    LOG_ARG("ReadCb result %d", result);
     return result;
 }
 
@@ -553,7 +552,7 @@ static uint8_t readCb
  *      - COAP_204_CHANGED if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t writeCb
+static uint8_t WriteCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     int numData,                    ///< [IN] Number of resources to be written
@@ -564,13 +563,13 @@ static uint8_t writeCb
     uint8_t result;
     int i;
 
-    LOG_ARG("writeCb oid %d oiid %d", objectPtr->objID, instanceId);
+    LOG_ARG("WriteCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
         lwm2mcore_uri_t uri;
-        lwm2mcore_internal_object_t *objPtr;
+        lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
         memset( &uri, 0, sizeof (lwm2mcore_uri_t));
@@ -579,7 +578,7 @@ static uint8_t writeCb
         uri.oid = objectPtr->objID;
         uri.oiid = instanceId;
 
-        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
+        objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -588,7 +587,7 @@ static uint8_t writeCb
         else
         {
             int sid = 0;
-            lwm2mcore_internal_resource_t* resourcePtr = NULL;
+            lwm2mcore_internalResource_t* resourcePtr = NULL;
             char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
             size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
 
@@ -630,7 +629,7 @@ static uint8_t writeCb
                 async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
 
                 /* Search the resource handler */
-                resourcePtr = findResource(objPtr, uri.rid);
+                resourcePtr = FindResource(objPtr, uri.rid);
                 if (NULL != resourcePtr)
                 {
                     if (NULL != resourcePtr->write)
@@ -641,7 +640,7 @@ static uint8_t writeCb
                         {
                             case LWM2M_TYPE_STRING:
                             {
-                                LOG("writeCb string");
+                                LOG("WriteCb string");
                                 if (dataArrayPtr[i].value.asBuffer.length <= \
                                                 LWM2MCORE_BUFFER_MAX_LEN)
                                 {
@@ -655,7 +654,7 @@ static uint8_t writeCb
 
                             case LWM2M_TYPE_OPAQUE:
                             {
-                                LOG("writeCb opaque");
+                                LOG("WriteCb opaque");
                                 if (dataArrayPtr[i].value.asBuffer.length <= \
                                                     LWM2MCORE_BUFFER_MAX_LEN)
                                 {
@@ -670,14 +669,14 @@ static uint8_t writeCb
                             case LWM2M_TYPE_INTEGER:
                             {
                                 int64_t value = 0;
-                                LOG("writeCb integer");
+                                LOG("WriteCb integer");
                                 if (0 == lwm2m_data_decode_int(dataArrayPtr+i, &value))
                                 {
                                     LOG("integer decode ERROR");
                                 }
                                 else
                                 {
-                                    LOG_ARG("writeCb integer %d", value);
+                                    LOG_ARG("WriteCb integer %d", value);
                                     snprintf(async_buf, LWM2MCORE_BUFFER_MAX_LEN, "%d", value);
                                 }
                             }
@@ -685,21 +684,21 @@ static uint8_t writeCb
 
                             case LWM2M_TYPE_FLOAT:
                             {
-                                LOG("writeCb float");
+                                LOG("WriteCb float");
                             }
                             break;
 
                             case LWM2M_TYPE_BOOLEAN:
                             {
                                 bool value = false;
-                                LOG("writeCb bool");
+                                LOG("WriteCb bool");
                                 if (0 == lwm2m_data_decode_bool(dataArrayPtr+i, &value))
                                 {
                                     LOG("bool decode ERROR");
                                 }
                                 else
                                 {
-                                    LOG_ARG("writeCb bool %d", value);
+                                    LOG_ARG("WriteCb bool %d", value);
                                 }
                             }
                             break;
@@ -713,7 +712,7 @@ static uint8_t writeCb
                                                   async_buf_len);
                         LOG_ARG("WRITE sID %d", sid);
                         /* Define the CoAP result */
-                        result = setCoapError(sid, LWM2MCORE_OP_WRITE);
+                        result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
                     }
                     else
                     {
@@ -735,7 +734,7 @@ static uint8_t writeCb
         LOG_ARG("Object %d not found", objectPtr->objID);
         result = COAP_404_NOT_FOUND;
     }
-    LOG_ARG("writeCb result %d", result);
+    LOG_ARG("WriteCb result %d", result);
     return result;
 }
 
@@ -748,7 +747,7 @@ static uint8_t writeCb
  *      - COAP_202_DELETED if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t deleteObjInstance
+static uint8_t DeleteObjInstance
 (
     uint16_t id,                    ///< [IN] Object instance ID
     lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
@@ -779,7 +778,7 @@ static uint8_t deleteObjInstance
  *      - COAP_201_CREATED if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t createCb
+static uint8_t CreateCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     int numData,                    ///< [IN] Number of resources to be written
@@ -789,7 +788,7 @@ static uint8_t createCb
 {
     uint8_t result;
     bool instanceCreated = false;
-    LOG_ARG("createCb oid %d oiid %d", objectPtr->objID, instanceId);
+    LOG_ARG("CreateCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     if (NULL == objectPtr->instanceList)
     {
@@ -814,11 +813,11 @@ static uint8_t createCb
         instancePtr->id = instanceId;
         objectPtr->instanceList = LWM2M_LIST_ADD(objectPtr->instanceList, instancePtr);
 
-        result = writeCb(instanceId, numData, dataArrayPtr, objectPtr);
+        result = WriteCb(instanceId, numData, dataArrayPtr, objectPtr);
         if (COAP_204_CHANGED != result)
         {
-            LOG_ARG("createCb --> delete oiid %d", instanceId);
-            (void)deleteObjInstance(instanceId, objectPtr);
+            LOG_ARG("CreateCb --> delete oiid %d", instanceId);
+            (void)DeleteObjInstance(instanceId, objectPtr);
             result = COAP_500_INTERNAL_SERVER_ERROR;
         }
         else
@@ -831,7 +830,7 @@ static uint8_t createCb
         LOG("Object instance already exists");
         result = COAP_400_BAD_REQUEST;
     }
-    LOG_ARG("createCb result %d", result);
+    LOG_ARG("CreateCb result %d", result);
     return result;
 }
 
@@ -843,7 +842,7 @@ static uint8_t createCb
  *      - 0
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t discoverCb
+static uint8_t DiscoverCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     int* numDataPtr,                ///< [INOUT] Number of resources which were read
@@ -862,7 +861,7 @@ static uint8_t discoverCb
  *      - 0
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t executeCb
+static uint8_t ExecuteCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     uint16_t resourceId,            ///< [IN] Resource ID
@@ -879,7 +878,7 @@ static uint8_t executeCb
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
         lwm2mcore_uri_t uri;
-        lwm2mcore_internal_object_t *objPtr;
+        lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
         memset(&uri, 0, sizeof (lwm2mcore_uri_t));
@@ -889,7 +888,7 @@ static uint8_t executeCb
         uri.oiid = instanceId;
         uri.rid = resourceId;
 
-        objPtr = findObject(Lwm2mcoreCtxPtr, objectPtr->objID);
+        objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
         {
             LOG_ARG("Object %d is NOT registered", objectPtr->objID);
@@ -898,11 +897,11 @@ static uint8_t executeCb
         else
         {
             int sid = 0;
-            lwm2mcore_internal_resource_t* resourcePtr = NULL;
+            lwm2mcore_internalResource_t* resourcePtr = NULL;
             size_t len = (size_t) length;
 
             /* Search the resource handler */
-            resourcePtr = findResource(objPtr, uri.rid);
+            resourcePtr = FindResource(objPtr, uri.rid);
             if (NULL != resourcePtr)
             {
                 if (NULL != resourcePtr->exec)
@@ -913,7 +912,7 @@ static uint8_t executeCb
                                             len);
                     LOG_ARG("EXECUTE sID %d", sid);
                     /* Define the CoAP result */
-                    result = setCoapError(sid, LWM2MCORE_OP_EXECUTE);
+                    result = SetCoapError(sid, LWM2MCORE_OP_EXECUTE);
                 }
                 else
                 {
@@ -946,7 +945,7 @@ static uint8_t executeCb
  *      - object list else
  */
 //--------------------------------------------------------------------------------------------------
-struct _lwm2mcore_objects_list* getObjectsList
+static struct _lwm2mcore_objectsList* GetObjectsList
 (
     void
 )
@@ -969,7 +968,7 @@ struct _lwm2mcore_objects_list* getObjectsList
  *      - object pointer
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_internal_object_t* initObject
+static lwm2mcore_internalObject_t* InitObject
 (
     lwm2mcore_object_t* client_objPtr,  ///< [IN] pointer to object passed from client
     uint16_t iid,                       ///< [IN] object instance ID
@@ -977,17 +976,17 @@ static lwm2mcore_internal_object_t* initObject
 )
 {
     int j;
-    lwm2mcore_internal_object_t* objPtr = NULL;
-    lwm2mcore_internal_resource_t* resourcePtr = NULL;
+    lwm2mcore_internalObject_t* objPtr = NULL;
+    lwm2mcore_internalResource_t* resourcePtr = NULL;
     lwm2mcore_resource_t *client_resourcePtr = NULL;
 
-    LOG_ARG("initObject /%d/%d, multiple %d", client_objPtr->id, iid, multiple);
+    LOG_ARG("InitObject /%d/%d, multiple %d", client_objPtr->id, iid, multiple);
 
-    objPtr = (lwm2mcore_internal_object_t *)malloc (sizeof (lwm2mcore_internal_object_t));
+    objPtr = (lwm2mcore_internalObject_t*)malloc (sizeof (lwm2mcore_internalObject_t));
 
     OS_ASSERT(objPtr);
 
-    memset(objPtr, 0, sizeof (lwm2mcore_internal_object_t));
+    memset(objPtr, 0, sizeof (lwm2mcore_internalObject_t));
 
     objPtr->multiple = multiple;
     objPtr->id = client_objPtr->id;
@@ -999,15 +998,15 @@ static lwm2mcore_internal_object_t* initObject
      * or avcm_delete_lwm2m_object accordingly */
     client_resourcePtr = client_objPtr->resources;
 
-    LOG_ARG("initObject client_obj->res_cnt %d", client_objPtr->res_cnt);
+    LOG_ARG("InitObject client_obj->res_cnt %d", client_objPtr->res_cnt);
 
     DLIST_INIT(&(objPtr->resource_list));
 
     for (j = 0; j < client_objPtr->res_cnt; j++) {
-        resourcePtr = (lwm2mcore_internal_resource_t *)malloc (sizeof (lwm2mcore_internal_resource_t));
+        resourcePtr = (lwm2mcore_internalResource_t*)malloc (sizeof (lwm2mcore_internalResource_t));
 
         OS_ASSERT(resourcePtr);
-        memset(resourcePtr, 0, sizeof(lwm2mcore_internal_resource_t));
+        memset(resourcePtr, 0, sizeof(lwm2mcore_internalResource_t));
 
         resourcePtr->id = (client_resourcePtr + j)->id;
         resourcePtr->iid = 0;
@@ -1029,15 +1028,15 @@ static lwm2mcore_internal_object_t* initObject
  *
  */
 //--------------------------------------------------------------------------------------------------
-static void initObjectsList
+static void InitObjectsList
 (
-    struct _lwm2mcore_objects_list* objects_list,   ///< [IN] Object list
+    struct _lwm2mcore_objectsList* objects_list ,   ///< [IN] Object list
     lwm2mcore_handler_t* clientHandlerPtr           ///< [IN] Object and resource table which are
                                                     ///<      supported by the client
 )
 {
     int i, j;
-    lwm2mcore_internal_object_t* objPtr = NULL;
+    lwm2mcore_internalObject_t* objPtr = NULL;
 
     LOG_ARG("obj_cnt %d", clientHandlerPtr->obj_cnt);
 
@@ -1046,26 +1045,26 @@ static void initObjectsList
         if (LWM2MCORE_ID_NONE == (clientHandlerPtr->objects + i)->max_obj_inst_cnt)
         {
             /*Unknown object instance count is always assumed to be multiple*/
-            objPtr = initObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
+            objPtr = InitObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
         else if ((clientHandlerPtr->objects + i)->max_obj_inst_cnt > 1)
         {
             for (j = 0; j < (clientHandlerPtr->objects + i)->max_obj_inst_cnt; j++)
             {
-                objPtr = initObject(clientHandlerPtr->objects + i, j, true);
+                objPtr = InitObject(clientHandlerPtr->objects + i, j, true);
                 DLIST_INSERT_TAIL(objects_list, objPtr, list);
             }
         }
         else if (LWM2M_SERVER_OBJECT_ID == (clientHandlerPtr->objects + i)->id)
         {
             /* the max_obj_inst_cnt is 1 for this object, but this is actually multiple instance */
-            objPtr = initObject(clientHandlerPtr->objects + i, 0, true);
+            objPtr = InitObject(clientHandlerPtr->objects + i, 0, true);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
         else
         {
-            objPtr = initObject(clientHandlerPtr->objects + i, 0, false);
+            objPtr = InitObject(clientHandlerPtr->objects + i, 0, false);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
     }
@@ -1077,14 +1076,14 @@ static void initObjectsList
  *
  */
 //--------------------------------------------------------------------------------------------------
-void lwm2mcore_objectFree
+void ObjectsFree
 (
     void
 )
 {
-    struct _lwm2mcore_objects_list* objectsListPtr = getObjectsList ();
-    lwm2mcore_internal_object_t* objPtr = NULL;
-    lwm2mcore_internal_resource_t* resPtr = NULL;
+    struct _lwm2mcore_objectsList* objectsListPtr = GetObjectsList ();
+    lwm2mcore_internalObject_t* objPtr = NULL;
+    lwm2mcore_internalResource_t* resPtr = NULL;
     uint32_t i = 0;
 
     /* Free memory for objects and resources for LWM2MCore */
@@ -1118,7 +1117,7 @@ void lwm2mcore_objectFree
  *
  */
 //--------------------------------------------------------------------------------------------------
-bool RegisterObjTable
+static bool RegisterObjTable
 (
     lwm2mcore_handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     uint16_t* registeredObjNbPtr,           ///< [INOUT] Registered bject number
@@ -1131,7 +1130,7 @@ bool RegisterObjTable
     uint16_t ObjNb = *registeredObjNbPtr;
     uint16_t objInstanceNb = 0;
     bool dmServerPresence = false;
-    struct _lwm2mcore_objects_list *objectsListPtr = NULL;
+    struct _lwm2mcore_objectsList *objectsListPtr = NULL;
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false) && os_portSecurityCheckDmCredentialsPresence())
@@ -1239,11 +1238,11 @@ bool RegisterObjTable
               * server. In fact the library doesn't need to know the resources of the object,
               * only the server does.
               */
-            ObjectArray[ObjNb]->readFunc     = readCb;
-            ObjectArray[ObjNb]->discoverFunc = discoverCb;
-            ObjectArray[ObjNb]->writeFunc    = writeCb;
-            ObjectArray[ObjNb]->executeFunc  = executeCb;
-            ObjectArray[ObjNb]->createFunc   = createCb;
+            ObjectArray[ObjNb]->readFunc     = ReadCb;
+            ObjectArray[ObjNb]->discoverFunc = DiscoverCb;
+            ObjectArray[ObjNb]->writeFunc    = WriteCb;
+            ObjectArray[ObjNb]->executeFunc  = ExecuteCb;
+            ObjectArray[ObjNb]->createFunc   = CreateCb;
 
             ObjectArray[ObjNb]->userData = NULL;
             ObjNb++;
@@ -1254,8 +1253,8 @@ bool RegisterObjTable
      * This is used to make a link between the lwm2mcore_handler_t provided by the client
      * and the lwm2m_object_t for Wakaama
      */
-    objectsListPtr = getObjectsList();
-    initObjectsList(objectsListPtr, handlerPtr);
+    objectsListPtr = GetObjectsList();
+    InitObjectsList(objectsListPtr, handlerPtr);
     *registeredObjNbPtr = ObjNb;
     return true;
 }
@@ -1295,7 +1294,7 @@ uint16_t lwm2mcore_objectRegister
     {
         bool result = false;
 
-        client_data_t* dataPtr = (client_data_t*)context;
+        ClientData_t* dataPtr = (ClientData_t*)context;
         LOG_ARG("lwm2mcore_objectRegister context %d RegisteredObjNb %d", context, RegisteredObjNb);
 
         /* Register static object tables managed by LWM2MCore */
@@ -1327,11 +1326,11 @@ uint16_t lwm2mcore_objectRegister
             {
                 int test = 0;
                 /* Save the security object list in the context (used for connection) */
-                dataPtr->securityObjP = ObjectArray[LWM2M_SECURITY_OBJECT_ID];
+                dataPtr->securityObjPtr = ObjectArray[LWM2M_SECURITY_OBJECT_ID];
 
                 /* Wakaama configuration and the object registration */
                 LOG_ARG("RegisteredObjNb %d", RegisteredObjNb);
-                test = lwm2m_configure(dataPtr->lwm2mH,
+                test = lwm2m_configure(dataPtr->lwm2mHPtr,
                                        endpointPtr,
                                        NULL,
                                        NULL,

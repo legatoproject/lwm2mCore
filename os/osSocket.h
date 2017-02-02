@@ -9,8 +9,17 @@
  *
  */
 
-#ifndef OS_SOCKET_H
-#define OS_SOCKET_H
+#ifndef __OSSOCKET_H__
+#define __OSSOCKET_H__
+
+#define OS_SOCKET_INADDR_ANY ((uint32_t)0)
+#define OS_SOCKET_INADDR_NONE ((uint32_t)0xffffffff)
+#define OS_SOCKET_INADDR_BROADCAST ((uint32_t)0xffffffff)
+#define OS_SOCKET_INVALID_SOCKET (-1)
+
+#ifndef OS_SOCKET_SOCKADDR_IN_SIN_ZERO_LEN
+# define OS_SOCKET_SOCKADDR_IN_SIN_ZERO_LEN 8
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -65,84 +74,56 @@ typedef struct
     int context;                    ///< Context
 }os_socketConfig_t;
 
-
-
-#define OS_SOCKET_INADDR_ANY ((uint32_t)0)
-#define OS_SOCKET_INADDR_NONE ((uint32_t)0xffffffff)
-#define OS_SOCKET_INADDR_BROADCAST ((uint32_t)0xffffffff)
-#define OS_SOCKET_INVALID_SOCKET (-1)
-
 /* Must undefine s_addr because of pj_in_addr below */
-typedef struct _os_socket_in_addr
+typedef struct
 {
     uint32_t s_addr;
-} os_socket_in_addr_t;
+} os_sockInAddr_t;
 
-typedef union _os_sock_in6_addr
+typedef union
 {
     /* This is the main entry */
     uint8_t s6_addr[16];
     /* While these are used for proper alignment */
     uint32_t u6_addr32[4];
-} os_sock_in6_addr_t;
+} os_sockIn6Addr_t;
 
-#ifndef OS_SOCKET_SOCKADDR_IN_SIN_ZERO_LEN
-# define OS_SOCKET_SOCKADDR_IN_SIN_ZERO_LEN 8
-#endif
-
-typedef struct _os_socket_sockaddr_in
+typedef struct
 {
     uint16_t sin_family;
     uint16_t sin_port;
-    os_socket_in_addr_t sin_addr;
+    os_sockInAddr_t sin_addr;
     char sin_zero[OS_SOCKET_SOCKADDR_IN_SIN_ZERO_LEN];
-}os_socket_sockaddr_in_t;
+}os_socketSockaddrIn_t;
 
-
-typedef struct _os_socket_sockaddr_in6
+typedef struct
 {
     uint16_t sin6_family;
     uint16_t sin6_port;
     uint32_t sin6_flowinfo;
-    os_sock_in6_addr_t sin6_addr;
+    os_sockIn6Addr_t sin6_addr;
     uint32_t sin6_scope_id;
-} os_socket_sockaddr_in6_t;
+} os_socketSockaddrIn6_t;
 
-typedef struct _os_socket_addr_hdr
+typedef struct
 {
     uint16_t sa_family;
-}os_socket_addr_hdr_t;
+}os_socketAddrHdr_t;
 
-
-typedef union _os_socket_sockaddr
+typedef union
 {
-    os_socket_addr_hdr_t addr;
-    os_socket_sockaddr_in_t ipv4;
-    os_socket_sockaddr_in6_t ipv6;
-}os_socket_sockaddr_t;
+    os_socketAddrHdr_t addr;
+    os_socketSockaddrIn_t ipv4;
+    os_socketSockaddrIn6_t ipv6;
+}os_socketSockaddr_t;
 
 
-typedef struct _os_socket_ip_mreq
+typedef struct
 {
-    os_socket_in_addr_t imr_multiaddr;
-    os_socket_in_addr_t imr_interface;
-}os_socket_ip_mreq_t;
+    os_sockInAddr_t imr_multiaddr;
+    os_sockInAddr_t imr_interface;
+}os_socketIpMreq_t;
 
 
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Convert 16-bit value from network byte order to host byte order.
- *
- * @return
- *      - 16-bit host value
- *
- */
-//--------------------------------------------------------------------------------------------------
-uint16_t os_socket_ntohs(
-    uint16_t netshort       ///< [IN] 16-bit network value
-);
-
-
-#endif // OS_SOCKET_H
+#endif // __OSSOCKET_H__
 

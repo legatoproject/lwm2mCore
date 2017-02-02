@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef OS_UDP_H
-#define OS_UDP_H
+#ifndef __OSUDP_H__
+#define __OSUDP_H__
 
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -141,5 +141,5 @@ bool os_udpClose
     os_socketConfig_t config        ///< [INOUT] socket configuration
 );
 
-#endif //OS_UDP_H
+#endif //__OSUDP_H__
 

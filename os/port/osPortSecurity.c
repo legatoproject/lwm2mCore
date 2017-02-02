@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcorePortSecurityDefault.c
+ * @file osPortSecurity.c
  *
  * Porting layer for credential management
  *
@@ -10,11 +10,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "../inc/lwm2mcorePortSecurity.h"
-#include "../inc/lwm2mcoreObjectHandler.h"
-#include "../os/osPortSecurity.h"
+#include "osPortSecurity.h"
 #include "internals.h"
-
 
 
 /* Set the bootstrap credentials with correct values
@@ -36,9 +33,9 @@
  * This implies that a each connection to the LWM2M server, a connection to the bootstrap server
  * will be firstly initiated, followed by a connection to the Device Management server.
  */
-uint8_t dmPskId[OS_PORT_PSKLEN+1] = {'\0'};
-uint8_t dmPskSecret[OS_PORT_PSKLEN + 1] = {'\0'};
-uint8_t dmServerAddr[OS_PORT_SERVERADDRLEN] = {'\0'};
+uint8_t DmPskId[OS_PORT_PSK_LEN+1] = {'\0'};
+uint8_t DmPskSecret[OS_PORT_PSK_LEN + 1] = {'\0'};
+uint8_t DmServerAddr[OS_PORT_SERVERADDR_LEN] = {'\0'};
 
 
 //--------------------------------------------------------------------------------------------------
@@ -134,8 +131,8 @@ lwm2mcore_sid_t os_portSecurityGetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
             {
-                memcpy(bufferPtr, dmPskId, strlen ((char*)dmPskId));
-                *lenPtr = strlen((char*)dmPskId);
+                memcpy(bufferPtr, DmPskId, strlen ((char*)DmPskId));
+                *lenPtr = strlen((char*)DmPskId);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -148,16 +145,16 @@ lwm2mcore_sid_t os_portSecurityGetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
             {
-                memcpy(bufferPtr, dmPskSecret, LWM2MCORE_PSK_LEN);
-                *lenPtr = LWM2MCORE_PSK_LEN;
+                memcpy(bufferPtr, DmPskSecret, OS_PORT_PSK_LEN);
+                *lenPtr = OS_PORT_PSK_LEN;
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
             {
-                memcpy(bufferPtr, dmServerAddr, strlen((char*)dmServerAddr));
-                *lenPtr = strlen((char*)dmServerAddr);
+                memcpy(bufferPtr, DmServerAddr, strlen((char*)DmServerAddr));
+                *lenPtr = strlen((char*)DmServerAddr);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -241,7 +238,7 @@ lwm2mcore_sid_t os_portSecuritySetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
             {
-                memcpy(dmPskId, bufferPtr, len);
+                memcpy(DmPskId, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -254,14 +251,14 @@ lwm2mcore_sid_t os_portSecuritySetCredential
 
             case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
             {
-                memcpy(dmPskSecret, bufferPtr, len);
+                memcpy(DmPskSecret, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
             case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
             {
-                memcpy(dmServerAddr, bufferPtr, len);
+                memcpy(DmServerAddr, bufferPtr, len);
                 result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
@@ -296,7 +293,7 @@ static bool CredentialCheckPresence
     {
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
         {
-            if (strlen((char*)dmPskId))
+            if (strlen((char*)DmPskId))
             {
                 result = true;
             }
@@ -305,7 +302,7 @@ static bool CredentialCheckPresence
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
         {
-            if (strlen((char*)dmPskSecret))
+            if (strlen((char*)DmPskSecret))
             {
                 result = true;
             }
@@ -314,7 +311,7 @@ static bool CredentialCheckPresence
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
         {
-            if (strlen((char*)dmServerAddr))
+            if (strlen((char*)DmServerAddr))
             {
                 result = true;
             }

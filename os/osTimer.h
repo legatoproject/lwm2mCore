@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef OS_TIMER_H
-#define OS_TIMER_H
+#ifndef __OSTIMER_H__
+#define __OSTIMER_H__
 
 #include <stdbool.h>
 
@@ -79,5 +79,5 @@ bool os_timerIsRunning
     os_timerType_t timer    ///< [IN] Timer Id
 );
 
-#endif //OS_TIMER_H
+#endif //__OSTIMER_H__
 

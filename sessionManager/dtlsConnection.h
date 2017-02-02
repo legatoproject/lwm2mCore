@@ -28,8 +28,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../tinydtls/tinydtls.h"
-#include "../tinydtls/dtls.h"
+#include "tinydtls.h"
+#include "dtls.h"
 #include "liblwm2m.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ dtls_connection_t* connection_find
  *  - NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-dtls_connection_t* connection_new_incoming
+dtls_connection_t* connection_newIncoming
 (
     dtls_connection_t* connListPtr,     ///< [IN] DTLS connection list
     int sock,                           ///< [IN] Socket Id on which the DTLS needs to be created
@@ -149,7 +149,7 @@ int connection_send
  *  - negative value in case of failure (see dtls_alert_t)
  */
 //--------------------------------------------------------------------------------------------------
-int connection_handle_packet
+int connection_handlePacket
 (
     dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
     uint8_t* bufferPtr,                 ///< [IN] Received buffer

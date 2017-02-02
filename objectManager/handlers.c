@@ -11,13 +11,36 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "lwm2mcore.h"
-#include "lwm2mcoreObjectHandler.h"
-#include "../objectManager/lwm2mcoreHandlers.h"
-#include "../objectManager/lwm2mcoreObjects.h"
-#include "../inc/lwm2mcorePortSecurity.h"
-#include "../inc/lwm2mcorePortUpdate.h"
+#include "handlers.h"
+#include "objects.h"
+#include "osPortSecurity.h"
+#include "osPortUpdate.h"
 #include "internals.h"
 #include "crypto.h"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Lifetime value to indicate that the lifetime is deactivated
+ * This is compliant with the LWM2M specification and a 0-value has no sense
+ * 630720000 = 20 years
+ * This is used if the customer does not wan any "automatic" connection to the server
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_LIFETIME_VALUE_DISABLED       630720000
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for security mode for LWM2M connection (object 0 (security); resource 2)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    SEC_PSK = 0,          ///< PSK
+    SEC_RAW_PK,           ///< Raw PSK
+    SEC_CERTIFICATE,      ///< Certificate
+    SEC_NONE,             ///< No security
+    SEC_MODE_MAX          ///<internal use only
+}SecurityMode_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -275,7 +298,7 @@ static size_t FormatValueToBytes
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_WriteSecurityObj
+int WriteSecurityObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -291,7 +314,7 @@ int lwm2mcore_WriteSecurityObj
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_WRITE;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_WRITE;
 
         /* Check that the server which tries to read/write is the bootstrap one
          * The Device Management server can not access to this resource
@@ -521,7 +544,7 @@ int lwm2mcore_WriteSecurityObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_ReadSecurityObj
+int ReadSecurityObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -539,7 +562,7 @@ int lwm2mcore_ReadSecurityObj
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ;
 
         /* Check that the server which tries to read/write is the bootstrap one
          * The Device Management server can not access to this resource
@@ -607,7 +630,7 @@ int lwm2mcore_ReadSecurityObj
                     /* Resource 2: Security mode */
                     case LWM2MCORE_SECURITY_MODE_RID:
                     {
-                        bufferPtr[0] = LWM2MCORE_SEC_PSK;
+                        bufferPtr[0] = SEC_PSK;
                         *lenPtr = 1;
                         sID = LWM2MCORE_ERR_COMPLETED_OK;
                     }
@@ -764,7 +787,7 @@ int lwm2mcore_ReadSecurityObj
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_StoreCredentials
+bool StoreCredentials
 (
     void
 )
@@ -848,7 +871,7 @@ bool lwm2mcore_StoreCredentials
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnLWM2MSecuritySMSDummy
+int SmsDummy
 (
     lwm2mcore_uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
@@ -865,7 +888,7 @@ int OnLWM2MSecuritySMSDummy
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
         /* Check that the server which tries to read/write is the bootstrap one
          * The Device Management server can not access to this resource
@@ -916,7 +939,7 @@ int OnLWM2MSecuritySMSDummy
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_WriteServerObj
+int WriteServerObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -932,7 +955,7 @@ int lwm2mcore_WriteServerObj
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_WRITE;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_WRITE;
 
         if ((uriPtr->op & supported_op_mask) == 0)
         {
@@ -961,7 +984,7 @@ int lwm2mcore_WriteServerObj
                     case LWM2MCORE_SERVER_LIFETIME_RID:
                     {
 
-                        Lifetime = (uint64_t)bytesToInt((uint8_t*)bufferPtr, len);
+                        Lifetime = (uint64_t)BytesToInt((uint8_t*)bufferPtr, len);
                         LOG_ARG("lifetime write %s, %d", bufferPtr, Lifetime);
                         sID = LWM2MCORE_ERR_COMPLETED_OK;
                     }
@@ -1008,7 +1031,6 @@ int lwm2mcore_WriteServerObj
                     }
                     break;
                 }
-
             }
         }
     }
@@ -1032,7 +1054,7 @@ int lwm2mcore_WriteServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_ReadServerObj
+int ReadServerObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1050,7 +1072,7 @@ int lwm2mcore_ReadServerObj
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ;
 
         if ((uriPtr->op & supported_op_mask) == 0)
         {
@@ -1167,7 +1189,7 @@ int lwm2mcore_ReadServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_WriteDeviceObj
+int WriteDeviceObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1189,7 +1211,7 @@ int lwm2mcore_WriteDeviceObj
         }
         else
         {
-            lwm2mcore_op_type_t supportedMask = LWM2MCORE_OP_WRITE;
+            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_WRITE;
 
             if (0 ==(uriPtr->op & supportedMask))
             {
@@ -1243,7 +1265,7 @@ int lwm2mcore_WriteDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_ReadDeviceObj
+int ReadDeviceObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1267,7 +1289,7 @@ int lwm2mcore_ReadDeviceObj
         }
         else
         {
-            lwm2mcore_op_type_t supportedMask = LWM2MCORE_OP_READ;
+            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_READ;
 
             if (0 == (uriPtr->op & supportedMask))
             {
@@ -1380,7 +1402,7 @@ int lwm2mcore_ReadDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_WriteFwUpdate
+int WriteFwUpdateObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1402,7 +1424,7 @@ int lwm2mcore_WriteFwUpdate
         }
         else
         {
-            lwm2mcore_op_type_t supportedMask = LWM2MCORE_OP_WRITE;
+            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_WRITE;
             if (0 == (uriPtr->op & supportedMask))
             {
                 sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -1420,10 +1442,10 @@ int lwm2mcore_WriteFwUpdate
                         }
                         else
                         {
-                            sID = os_portUpdate_SetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                              uriPtr->oid,
-                                                              bufferPtr,
-                                                              len);
+                            sID = os_portUpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                                             uriPtr->oid,
+                                                             bufferPtr,
+                                                             len);
                         }
                     }
                     break;
@@ -1457,7 +1479,7 @@ int lwm2mcore_WriteFwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_ReadFwUpdate
+int ReadFwUpdateObj
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1481,7 +1503,7 @@ int lwm2mcore_ReadFwUpdate
         }
         else
         {
-            lwm2mcore_op_type_t supportedMask = LWM2MCORE_OP_READ;
+            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_READ;
             if (0 == (uriPtr->op & supportedMask))
             {
                 sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -1494,10 +1516,10 @@ int lwm2mcore_ReadFwUpdate
                     case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
                     {
 
-                        sID = os_portUpdate_GetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                          uriPtr->oid,
-                                                          bufferPtr,
-                                                          lenPtr);
+                        sID = os_portUpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                                         uriPtr->oid,
+                                                         bufferPtr,
+                                                         lenPtr);
                     }
                     break;
 
@@ -1505,9 +1527,9 @@ int lwm2mcore_ReadFwUpdate
                     case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
                     {
                         uint8_t updateState;
-                        sID = os_portUpdate_GetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
-                                                           uriPtr->oid,
-                                                           &updateState);
+                        sID = os_portUpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
+                                                          uriPtr->oid,
+                                                          &updateState);
                         if (sID == LWM2MCORE_ERR_COMPLETED_OK)
                         {
                             *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1522,9 +1544,9 @@ int lwm2mcore_ReadFwUpdate
                     case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
                     {
                         uint8_t updateResult;
-                        sID = os_portUpdate_GetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
-                                                            uriPtr->oid,
-                                                            &updateResult);
+                        sID = os_portUpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
+                                                           uriPtr->oid,
+                                                           &updateResult);
                         if (sID == LWM2MCORE_ERR_COMPLETED_OK)
                         {
                             *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1578,7 +1600,7 @@ int lwm2mcore_ReadFwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_ExecFwUpdate
+int ExecFwUpdate
 (
     lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1594,7 +1616,7 @@ int lwm2mcore_ExecFwUpdate
     }
     else
     {
-        lwm2mcore_op_type_t supportedMaskExec = LWM2MCORE_OP_EXECUTE;
+        lwm2mcore_opType_t supportedMaskExec = LWM2MCORE_OP_EXECUTE;
 
         if (0 == (uriPtr->op & supportedMaskExec))
         {
@@ -1607,10 +1629,10 @@ int lwm2mcore_ExecFwUpdate
                 /* Resource 2: Update */
                 case LWM2MCORE_FW_UPDATE_UPDATE_RID:
                 {
-                    sID = os_portUpdate_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
-                                                     uriPtr->oid,
-                                                     bufferPtr,
-                                                     len);
+                    sID = os_portUpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
+                                                    uriPtr->oid,
+                                                    bufferPtr,
+                                                    len);
                 }
                 break;
 
@@ -1666,7 +1688,7 @@ int OnSslCertif
     }
     else
     {
-        lwm2mcore_op_type_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
+        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
         if (0 == (uriPtr->op & supported_op_mask))
         {

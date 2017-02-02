@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <sys/time.h>
 
 #ifndef LWM2M_MEMORY_TRACE
 
@@ -30,7 +29,7 @@ void * lwm2m_malloc(size_t s)
 
 void lwm2m_free(void * p)
 {
-    return free(p);
+    free(p);
 }
 
 char * lwm2m_strdup(const char * str)

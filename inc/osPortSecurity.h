@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcorePortSecurity.h
+ * @file osPortSecurity.h
  *
  * Porting layer for credential management
  *
@@ -7,11 +7,10 @@
  *
  */
 
-#ifndef LWM2MCORE_PORTSECURITY_H_
-#define LWM2MCORE_PORTSECURITY_H_
+#ifndef __OS_PORTSECURITY_H__
+#define __OS_PORTSECURITY_H__
 
 #include "lwm2mcore.h"
-#include "lwm2mcoreObjectHandler.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -21,17 +20,24 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Define for server address maximum length
+ */
+//--------------------------------------------------------------------------------------------------
+#define OS_PORT_SERVERADDR_LEN 256
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Define value for PSK ID maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_PSKID_LEN 32
+#define OS_PORT_PSKID_LEN 32
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for PSK secret maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_PSK_LEN 16
+#define OS_PORT_PSK_LEN 16
 
 
 //--------------------------------------------------------------------------------------------------
@@ -96,5 +102,5 @@ bool os_portSecurityCheckDmCredentialsPresence
     void
 );
 
-#endif /* LWM2MCORE_PORTSECURITY_H_ */
+#endif /* __OS_PORTSECURITY_H__ */
 

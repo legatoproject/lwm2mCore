@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcoreSessionParam.h
+ * @file session.h
  *
  * Session manager header file
  *
@@ -8,13 +8,12 @@
  *
  */
 
-#ifndef LWM2MCORE_SESSIONPARAM_H
-#define LWM2MCORE_SESSIONPARAM_H
+#ifndef __SESSION_H__
+#define __SESSION_H__
 
 #include "lwm2mcore.h"
-#include "../inc/lwm2mcoreObjectHandler.h"
-#include "../objectManager/lwm2mcoreObjects.h"
-#include "../sessionManager/dtlsconnection.h"
+#include "objects.h"
+#include "dtlsConnection.h"
 
 
 //--------------------------------------------------------------------------------------------------
@@ -22,10 +21,10 @@
  * Structure for LWM2M core context
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_context
+typedef struct
 {
-    struct _lwm2mcore_objects_list objects_list;    ///< list of supported objects
-} lwm2mcore_context_t;
+    struct _lwm2mcore_objectsList objects_list;     ///< list of supported objects
+}lwm2mcore_context_t;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -33,16 +32,16 @@ typedef struct _lwm2mcore_context
  * Structure to be used by the client
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _client_data
+typedef struct
 {
-    lwm2m_object_t * securityObjP;      ///< Security object list
-    lwm2m_object_t * serverObject;      ///< Server object list
-    int sock;                           ///< Socket Id
-    dtls_connection_t * connList;       ///< DTLS connection list
-    lwm2m_context_t * lwm2mH;           ///< Wakaama LWM2M context
-    int addressFamily;                  ///< Socket family address
-    lwm2mcore_context_t * lwm2mcoreCtx; ///< LWM2M Core context
-} client_data_t;
+    lwm2m_object_t* securityObjPtr;         ///< Security object list
+    lwm2m_object_t* serverObjectPtr;        ///< Server object list
+    int sock;                               ///< Socket Id
+    dtls_connection_t* connListPtr;         ///< DTLS connection list
+    lwm2m_context_t* lwm2mHPtr;             ///< Wakaama LWM2M context
+    int addressFamily;                      ///< Socket family address
+    lwm2mcore_context_t* lwm2mcoreCtxPtr;   ///< LWM2M Core context
+}ClientData_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -55,8 +54,7 @@ typedef enum
     EVENT_STATUS_DONE_SUCCESS,  ///< Event stopped successfully
     EVENT_STATUS_DONE_FAIL,     ///< Event stopped with failure
     EVENT_STATUS_MAX = 0xFF,    ///< Internal usage
-}
-SessionEventStatus_t;
+}SessionEventStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -74,8 +72,7 @@ typedef enum
                                 ///< failed
     EVENT_SESSION,              ///< Session event: started or done with success or failure
     EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
-}
-SessionEventType_t;
+}SessionEventType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -88,5 +85,5 @@ void SendSessionEvent
     SessionEventStatus_t status     ///< [IN] Event status
 );
 
-#endif /* LWM2MCORE_SESSIONPARAM_H */
+#endif /* __SESSION_H__ */
 
