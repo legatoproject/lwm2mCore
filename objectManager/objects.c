@@ -12,7 +12,7 @@
 #include "lwm2mcore.h"
 #include "objects.h"
 #include "osDebug.h"
-#include "session.h"
+#include "sessionManager.h"
 #include "osPortSecurity.h"
 #include "internals.h"
 

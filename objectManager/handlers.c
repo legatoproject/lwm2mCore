@@ -1630,7 +1630,7 @@ int ExecFwUpdate
                 case LWM2MCORE_FW_UPDATE_UPDATE_RID:
                 {
                     sID = os_portUpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
-                                                    uriPtr->oid,
+                                                    uriPtr->oiid,
                                                     bufferPtr,
                                                     len);
                 }

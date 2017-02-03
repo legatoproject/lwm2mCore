@@ -24,7 +24,7 @@
 #include "objects.h"
 #include "dtlsConnection.h"
 #include "osDebug.h"
-#include "session.h"
+#include "sessionManager.h"
 #include "internals.h"
 #include "liblwm2m.h"
 

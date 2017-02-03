@@ -1,5 +1,5 @@
 /**
- * @file session.h
+ * @file sessionManager.h
  *
  * Session manager header file
  *
@@ -73,6 +73,17 @@ typedef enum
     EVENT_SESSION,              ///< Session event: started or done with success or failure
     EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
 }SessionEventType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send status event to the application, using the callback stored in the LWM2M core
+ * session manager
+ */
+//--------------------------------------------------------------------------------------------------
+void SendStatusEvent
+(
+    lwm2mcore_status_t status       ///< [IN] LWM2M status event
+);
 
 //--------------------------------------------------------------------------------------------------
 /**

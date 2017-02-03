@@ -11,6 +11,9 @@
 #ifndef  __LWM2MCORE_H__
 #define  __LWM2MCORE_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Maximum LWM2M server supported, though only one used at any time
@@ -49,6 +52,19 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define    LWM2MCORE_ID_NONE                    0xFFFF
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Specific defines for OMA FUMO (Firmware Update Management Object)
+ * Values defined in ETSI 118 105 Table 5.4.2.1-1
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_FUMO_CORRUPTED_PKG            402     ///< Corrupted package
+#define LWM2MCORE_FUMO_FAILED_VALIDATION        404     ///< Failed package validation
+#define LWM2MCORE_FUMO_UNSUPPORTED_PKG          405     ///< Unsupported package
+#define LWM2MCORE_FUMO_INVALID_URI              411     ///< Invalid URI
+#define LWM2MCORE_FUMO_ALTERNATE_DL_ERROR       500     ///< Download error
+#define LWM2MCORE_FUMO_NO_SUFFICIENT_MEMORY     501     ///< Insufficient memory
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -216,7 +232,7 @@ typedef enum
     LWM2MCORE_PKG_NONE,   ///< Default value
     LWM2MCORE_PKG_FW,     ///< Package for firmware
     LWM2MCORE_PKG_SW      ///< Package for software
-}lwm2mcore_pkgDwnldType_t;
+}lwm2mcore_PkgDwlType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -254,11 +270,11 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_pkgDwnldType_t pkgType;   ///< Package type
+    lwm2mcore_PkgDwlType_t pkgType;    ///< Package type
     uint32_t numBytes;                  ///< For package download, downloaded bytes
     uint32_t progress;                  ///< For package download, package download progress in %
     uint32_t errorCode;                 ///< For package download, error code
-}lwm2mcore_pkgDwnldStatus_t;
+}lwm2mcore_PkgDwlStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -282,7 +298,7 @@ typedef struct
     union
     {
         lwm2mcore_sessionStatus_t session;      ///< Session information
-        lwm2mcore_pkgDwnldStatus_t pkgStatus;   ///< Package download status
+        lwm2mcore_PkgDwlStatus_t pkgStatus;     ///< Package download status
     }u;                                         ///< Union
 }lwm2mcore_status_t;
 

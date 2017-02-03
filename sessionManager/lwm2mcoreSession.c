@@ -17,7 +17,7 @@
 #include "osTimer.h"
 #include "osUdp.h"
 #include "dtlsConnection.h"
-#include "session.h"
+#include "sessionManager.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -273,6 +273,28 @@ static void Lwm2mClientStepHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to send status event to the application, using the callback stored in the LWM2M core
+ * session manager
+ */
+//--------------------------------------------------------------------------------------------------
+void SendStatusEvent
+(
+    lwm2mcore_status_t status
+)
+{
+    // Check if a status callback is available
+    if (!StatusCb)
+    {
+        LOG("No StatusCb to send status events");
+        return;
+    }
+
+    // Send the status event notification
+    StatusCb(status);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function for session events
  */
 //--------------------------------------------------------------------------------------------------
@@ -282,247 +304,244 @@ void SendSessionEvent
     SessionEventStatus_t eventstatus    ///< [IN] Event status
 )
 {
-    if (StatusCb != NULL)
+    lwm2mcore_status_t status;
+
+    switch (eventId)
     {
-        lwm2mcore_status_t status;
-
-        switch (eventId)
+        case EVENT_TYPE_BOOTSTRAP:
         {
-            case EVENT_TYPE_BOOTSTRAP:
+            switch (eventstatus)
             {
-                switch (eventstatus)
+                case EVENT_STATUS_STARTED:
                 {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("BOOTSTRAP START");
-                        BootstrapSession = true;
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("BOOTSTRAP DONE");
-                        StoreCredentials();
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("BOOTSTRAP FAILURE");
-                        status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    default:
-                    break;
+                    LOG("BOOTSTRAP START");
+                    BootstrapSession = true;
                 }
-            }
-            break;
+                break;
 
-            case EVENT_TYPE_REGISTRATION:
-            {
-                switch (eventstatus)
+                case EVENT_STATUS_DONE_SUCCESS:
                 {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("REGISTER START");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("REGISTER DONE");
-
-                        status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                        StatusCb(status);
-
-                        status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
-                        status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("REGISTER FAILURE");
-                        status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    default:
-                    break;
+                    LOG("BOOTSTRAP DONE");
+                    StoreCredentials();
                 }
-            }
-            break;
+                break;
 
-            case EVENT_TYPE_REG_UPDATE:
-            {
-                switch (eventstatus)
+                case EVENT_STATUS_DONE_FAIL:
                 {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("REG UPDATE START");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("REG UPDATE DONE");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("REG UPDATE FAILURE");
-                    }
-                    break;
-
-                    default:
-                    break;
+                    LOG("BOOTSTRAP FAILURE");
+                    status.event = LWM2MCORE_EVENT_SESSION_FAILED;
+                    SendStatusEvent(status);
                 }
+                break;
+
+                default:
+                break;
             }
-            break;
-
-            case EVENT_TYPE_DEREG:
-            {
-                switch (eventstatus)
-                {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("DEREGISTER START");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("DEREGISTER DONE");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("DEREGISTER FAILURE");
-                    }
-                    break;
-
-                    default:
-                    break;
-                }
-            }
-            break;
-
-            case EVENT_TYPE_AUTHENTICATION:
-            {
-                switch (eventstatus)
-                {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG ("AUTHENTICATION START");
-                        status.event = LWM2MCORE_EVENT_AUTHENTICATION_STARTED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("AUTHENTICATION DONE");
-                        status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                        StatusCb(status);
-
-                        if (BootstrapSession)
-                        {
-                            status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
-                            status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
-                            StatusCb(status);
-                            BootstrapSession = false;
-                        }
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("AUTHENTICATION FAILURE");
-                        status.event = LWM2MCORE_EVENT_AUTHENTICATION_FAILED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    default:
-                    break;
-                }
-            }
-            break;
-
-            case EVENT_TYPE_RESUMING:
-            {
-                switch (eventstatus)
-                {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("DTLS RESUME START");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("DTLS RESUME DONE");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("DTLS RESUME FAILURE");
-                    }
-                    break;
-
-                    default:
-                    break;
-                }
-            }
-            break;
-
-            case EVENT_SESSION:
-            {
-                switch (eventstatus)
-                {
-                    case EVENT_STATUS_STARTED:
-                    {
-                        LOG("SESSION START");
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_SUCCESS:
-                    {
-                        LOG("SESSION DONE");
-                        BootstrapSession = false;
-                        status.event = LWM2MCORE_EVENT_SESSION_FINISHED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    case EVENT_STATUS_DONE_FAIL:
-                    {
-                        LOG("SESSION FAILURE");
-                        BootstrapSession = false;
-                        status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                        StatusCb(status);
-                    }
-                    break;
-
-                    default:
-                    break;
-                }
-            }
-            break;
-
-            default:
-            {
-                LOG_ARG("Bad event %d", eventId);
-            }
-            break;
         }
+        break;
+
+        case EVENT_TYPE_REGISTRATION:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG("REGISTER START");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("REGISTER DONE");
+
+                    status.event = LWM2MCORE_EVENT_SESSION_STARTED;
+                    SendStatusEvent(status);
+
+                    status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
+                    status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("REGISTER FAILURE");
+                    status.event = LWM2MCORE_EVENT_SESSION_FAILED;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case EVENT_TYPE_REG_UPDATE:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG("REG UPDATE START");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("REG UPDATE DONE");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("REG UPDATE FAILURE");
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case EVENT_TYPE_DEREG:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG("DEREGISTER START");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("DEREGISTER DONE");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("DEREGISTER FAILURE");
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case EVENT_TYPE_AUTHENTICATION:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG ("AUTHENTICATION START");
+                    status.event = LWM2MCORE_EVENT_AUTHENTICATION_STARTED;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("AUTHENTICATION DONE");
+                    status.event = LWM2MCORE_EVENT_SESSION_STARTED;
+                    SendStatusEvent(status);
+
+                    if (BootstrapSession)
+                    {
+                        status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
+                        status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
+                        SendStatusEvent(status);
+                        BootstrapSession = false;
+                    }
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("AUTHENTICATION FAILURE");
+                    status.event = LWM2MCORE_EVENT_AUTHENTICATION_FAILED;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case EVENT_TYPE_RESUMING:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG("DTLS RESUME START");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("DTLS RESUME DONE");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("DTLS RESUME FAILURE");
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        case EVENT_SESSION:
+        {
+            switch (eventstatus)
+            {
+                case EVENT_STATUS_STARTED:
+                {
+                    LOG("SESSION START");
+                }
+                break;
+
+                case EVENT_STATUS_DONE_SUCCESS:
+                {
+                    LOG("SESSION DONE");
+                    BootstrapSession = false;
+                    status.event = LWM2MCORE_EVENT_SESSION_FINISHED;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                case EVENT_STATUS_DONE_FAIL:
+                {
+                    LOG("SESSION FAILURE");
+                    BootstrapSession = false;
+                    status.event = LWM2MCORE_EVENT_SESSION_FAILED;
+                    SendStatusEvent(status);
+                }
+                break;
+
+                default:
+                break;
+            }
+        }
+        break;
+
+        default:
+        {
+            LOG_ARG("Bad event %d", eventId);
+        }
+        break;
     }
 }
 
