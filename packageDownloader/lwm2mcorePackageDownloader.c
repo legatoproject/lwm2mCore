@@ -22,11 +22,13 @@
  *      - DWL comments: optional subsection containing comments about the package
  *      - Signature: package signature
  *
- * The package CRC is retrieved in the first DWL prolog. A CRC is then computed with all data
- * from the package, starting from the first byte after the package CRC until the end of the file.
- * The CRC is computed using the crc32 function from zlib.
+ * The package CRC is retrieved in the first DWL prolog. A CRC is then computed with all binary data
+ * from the package, starting from the first byte after the package CRC until the end of the BINA
+ * section. The SIGN section is therefore ignored for the CRC computation.
  *
- * @Note The zlib library should be present on your platform to use the package downloader.
+ * The package signature is computed by hashing all the data from the beginning of the file until
+ * the end of the BINA section, using the SHA1 algorithm. The SIGN section is therefore ignored for
+ * the SHA1 digest computation.
  *
  * <HR>
  *
@@ -37,11 +39,11 @@
 #include <stdio.h>
 #include <liblwm2m.h>
 #include <string.h>
-#include <zlib.h>
 #include <lwm2mcore.h>
 #include <internals.h>
 #include "lwm2mcorePackageDownloader.h"
 #include "sessionManager.h"
+#include "osPortSecurity.h"
 
 //--------------------------------------------------------------------------------------------------
 // Symbol and Enum definitions
@@ -159,18 +161,18 @@ PackageDownloaderEvent_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    PackageDownloaderState_t state;                 ///< State of package downloader state machine
-    bool                     endOfProcessing;       ///< End of package processing
-    lwm2mcore_DwlResult_t    result;                ///< Current result of package downloader
+    PackageDownloaderState_t   state;               ///< State of package downloader state machine
+    bool                       endOfProcessing;     ///< End of package processing
+    lwm2mcore_DwlResult_t      result;              ///< Current result of package downloader
     lwm2mcore_fwUpdateResult_t updateResult;        ///< Current package update result
-    bool                     firstDownload;         ///< Indicates if next download is the first one
-    lwm2mcore_PkgDwlType_t   packageType;           ///< Package type (FW or SW)
-    uint64_t                 offset;                ///< Current offset in the package
-    size_t                   lenToDownload;         ///< Length of next buffer to download
+    bool                       firstDownload;       ///< Indicates if next download is the first one
+    lwm2mcore_PkgDwlType_t     packageType;         ///< Package type (FW or SW)
+    uint64_t                   offset;              ///< Current offset in the package
+    size_t                     lenToDownload;       ///< Length of next buffer to download
     uint8_t dwlData[MAX_DATA_BUFFER_CHUNK];         ///< Buffer of downloaded data
-    size_t                   downloadedLen;         ///< Length of data really downloaded
-    double                   downloadProgress;      ///< Overall download progress
-    uint64_t                 storageOffset;         ///< Current offset in data storage
+    size_t                     downloadedLen;       ///< Length of data really downloaded
+    double                     downloadProgress;    ///< Overall download progress
+    uint64_t                   storageOffset;       ///< Current offset in data storage
 }
 PackageDownloaderObj_t;
 
@@ -190,6 +192,7 @@ typedef struct
     uint64_t paddingSize;           ///< Binary padding size read in DWL prolog
     uint64_t remainingBinaryData;   ///< Remaining length of binary data to download
     uint64_t signatureSize;         ///< Signature size read in DWL prolog
+    void*    sha1CtxPtr;            ///< SHA1 context pointer
 }
 DwlParserObj_t;
 
@@ -381,6 +384,143 @@ static void PkgDwlEvent
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Hash data if necessary, based on the current DWL section/subsection:
+ * - compute CRC32
+ * - compute SHA1 digest
+ *
+ * @return
+ *  - DWL_OK      The function succeeded
+ *  - DWL_FAULT   The function failed
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_DwlResult_t HashData
+(
+    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
+    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+)
+{
+    // Initialize SHA1 context and CRC if not already done
+    if (!dwlParserObjPtr->sha1CtxPtr)
+    {
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Start(&dwlParserObjPtr->sha1CtxPtr))
+        {
+            LOG("Unable to initialize SHA1 context");
+            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+            return DWL_FAULT;
+        }
+
+        // Initialize computed CRC
+        dwlParserObjPtr->computedCRC = os_portSecurityCrc32(0L, NULL, 0);
+    }
+
+    // Some parts of the DWL data are excluded from the CRC computation and/or the SHA1 digest
+    switch (dwlParserObjPtr->section)
+    {
+        case DWL_TYPE_UPCK:
+            if (DWL_SUB_PROLOG == dwlParserObjPtr->subsection)
+            {
+                // Compute CRC starting from fileSize in UPCK DWL prolog,
+                // ignore DWLF magic, file size, CRC
+                DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)pkgDwlObjPtr->dwlData;
+                size_t prologSizeForCrc = sizeof(DwlProlog_t) - (3 * sizeof(uint32_t));
+                dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
+                                                                  (uint8_t*)&dwlPrologPtr->fileSize,
+                                                                  prologSizeForCrc);
+            }
+            else
+            {
+                // All other UPCK subsections are used for CRC computation
+                dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
+                                                                    pkgDwlObjPtr->dwlData,
+                                                                    pkgDwlObjPtr->downloadedLen);
+            }
+
+            // SHA1 digest is updated with all UPCK data
+            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(dwlParserObjPtr->sha1CtxPtr,
+                                                                       pkgDwlObjPtr->dwlData,
+                                                                       pkgDwlObjPtr->downloadedLen))
+            {
+                LOG("Unable to update SHA1 digest");
+                pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                return DWL_FAULT;
+            }
+
+            break;
+
+        case DWL_TYPE_BINA:
+            // All BINA subsections are used for CRC computation
+            dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
+                                                                pkgDwlObjPtr->dwlData,
+                                                                pkgDwlObjPtr->downloadedLen);
+
+            // SHA1 digest is updated with all BINA data
+            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(dwlParserObjPtr->sha1CtxPtr,
+                                                                       pkgDwlObjPtr->dwlData,
+                                                                       pkgDwlObjPtr->downloadedLen))
+            {
+                LOG("Unable to update SHA1 digest");
+                pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                return DWL_FAULT;
+            }
+            break;
+
+        case DWL_TYPE_SIGN:
+            // Whole SIGN section is ignored for CRC computation and SHA1 digest
+            break;
+
+        default:
+            LOG_ARG("Unknown DWL section %u", dwlParserObjPtr->section);
+            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            return DWL_FAULT;
+            break;
+    }
+    LOG_ARG("Computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
+
+    return DWL_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check the package integrity:
+ * - compare the computed CRC with the package CRC
+ * - check if the computed SHA1 digest matches the package signature
+ *
+ * @return
+ *  - DWL_OK      The function succeeded
+ *  - DWL_FAULT   The function failed
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_DwlResult_t CheckCrcAndSignature
+(
+    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
+    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+)
+{
+    // Compare package CRC retrieved from first DWL prolog and computed CRC.
+    if (dwlParserObjPtr->packageCRC != dwlParserObjPtr->computedCRC)
+    {
+        LOG_ARG("Incorrect CRC: expected 0x%08x, computed 0x%08x",
+                dwlParserObjPtr->packageCRC, dwlParserObjPtr->computedCRC);
+        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+        return DWL_FAULT;
+    }
+
+    // Verify package signature
+    if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1End(dwlParserObjPtr->sha1CtxPtr,
+                                                             pkgDwlObjPtr->packageType,
+                                                             pkgDwlObjPtr->dwlData,
+                                                             pkgDwlObjPtr->downloadedLen))
+    {
+        LOG("Incorrect package signature");
+        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+        return DWL_FAULT;
+    }
+
+    return DWL_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Parse DWL prolog containing information about the next DWL section: type, size, CRC, comments...
  * See @ref DwlProlog_t structure for further details.
  *
@@ -395,7 +535,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
     DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
 )
 {
-    lwm2mcore_DwlResult_t result = DWL_OK;
+    lwm2mcore_DwlResult_t result;
     DwlProlog_t* dwlPrologPtr;
 
     // Check DWL prolog size
@@ -421,33 +561,31 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
     dwlParserObjPtr->section = dwlPrologPtr->dataType;
     LOG_ARG("Parse new DWL section 0x%08x", dwlParserObjPtr->section);
 
+    // Hash the prolog data
+    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    if (DWL_OK != result)
+    {
+        // updateResult is already set by HashData
+        return result;
+    }
+
     // Store necessary data and determine next awaited subsection
     switch (dwlParserObjPtr->section)
     {
         case DWL_TYPE_UPCK:
+            // Store prolog data
             dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
+            dwlParserObjPtr->packageCRC = dwlPrologPtr->crc32;
+            LOG_ARG("Package CRC: 0x%08x", dwlParserObjPtr->packageCRC);
 
             // Download DWL comments
             pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
             dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
             pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
-
-            // Store package CRC from first DWL prolog for further comparison
-            dwlParserObjPtr->packageCRC = dwlPrologPtr->crc32;
-            LOG_ARG("Package CRC: 0x%08x", dwlParserObjPtr->packageCRC);
-
-            // Initialize computed CRC
-            dwlParserObjPtr->computedCRC = crc32(0L, NULL, 0);
-
-            // Compute CRC starting from fileSize in first DWL prolog (ignore magic, file size, CRC)
-            size_t prologSizeForCrc = sizeof(DwlProlog_t) - (3 * sizeof(uint32_t));
-            dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                                 (uint8_t*)&dwlPrologPtr->fileSize,
-                                                 prologSizeForCrc);
-            LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
             break;
 
         case DWL_TYPE_BINA:
+            // Store prolog data
             dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
             dwlParserObjPtr->binarySize = dwlPrologPtr->fileSize
                                           - dwlParserObjPtr->commentSize
@@ -460,15 +598,10 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
             pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
             dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
             pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
-
-            // Not first DWL prolog, compute CRC with whole prolog
-            dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                                 pkgDwlObjPtr->dwlData,
-                                                 pkgDwlObjPtr->downloadedLen);
-            LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
             break;
 
         case DWL_TYPE_SIGN:
+            // Store prolog data
             dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
             dwlParserObjPtr->signatureSize = dwlPrologPtr->fileSize
                                              - dwlParserObjPtr->commentSize
@@ -478,14 +611,12 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
             pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
             dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
             pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
-
-            // Whole signature section is ignored for CRC computation
             break;
 
         default:
             LOG_ARG("Unexpected DWL prolog for section type 0x%08x", dwlParserObjPtr->section);
             pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            return DWL_FAULT;
+            result = DWL_FAULT;
             break;
     }
 
@@ -516,11 +647,13 @@ static lwm2mcore_DwlResult_t ParseDwlComments
     {
         LOG_ARG("DWL comments: %s", pkgDwlObjPtr->dwlData);
 
-        // Update CRC
-        dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                             pkgDwlObjPtr->dwlData,
-                                             pkgDwlObjPtr->downloadedLen);
-        LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
+        // Hash the comments data
+        result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+        if (DWL_OK != result)
+        {
+            // updateResult is already set by HashData
+            return result;
+        }
     }
 
     // Determine next awaited subsection
@@ -548,9 +681,9 @@ static lwm2mcore_DwlResult_t ParseDwlComments
             break;
 
         default:
-            LOG_ARG("Unexpected DWL prolog for section type 0x%08x", dwlParserObjPtr->section);
+            LOG_ARG("Unexpected DWL comments for section type 0x%08x", dwlParserObjPtr->section);
             pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            return DWL_FAULT;
+            result = DWL_FAULT;
             break;
     }
 
@@ -572,9 +705,17 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
     DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
 )
 {
-    lwm2mcore_DwlResult_t result = DWL_OK;
+    lwm2mcore_DwlResult_t result;
 
     LOG_ARG("Parse DWL header, length %u", pkgDwlObjPtr->downloadedLen);
+
+    // Hash the header data
+    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    if (DWL_OK != result)
+    {
+        // updateResult is already set by HashData
+        return result;
+    }
 
     // Parse header and determine next awaited subsection
     switch (dwlParserObjPtr->section)
@@ -591,9 +732,6 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
                 pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
                 return DWL_FAULT;
             }
-
-            // Set package type
-            pkgDwlObjPtr->packageType = LWM2MCORE_PKG_FW;
 
             // Download next DWL prolog
             pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
@@ -618,17 +756,11 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
             break;
 
         default:
-            LOG_ARG("Unexpected DWL prolog for section type 0x%08x", dwlParserObjPtr->section);
+            LOG_ARG("Unexpected DWL header for section type 0x%08x", dwlParserObjPtr->section);
             pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            return DWL_FAULT;
+            result = DWL_FAULT;
             break;
     }
-
-    // Update CRC
-    dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                         pkgDwlObjPtr->dwlData,
-                                         pkgDwlObjPtr->downloadedLen);
-    LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
 
     return result;
 }
@@ -648,7 +780,7 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
     DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
 )
 {
-    lwm2mcore_DwlResult_t result = DWL_OK;
+    lwm2mcore_DwlResult_t result;
 
     LOG_ARG("Parse DWL binary data, length %u", pkgDwlObjPtr->downloadedLen);
 
@@ -671,6 +803,14 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
                 pkgDwlObjPtr->downloadedLen, dwlParserObjPtr->remainingBinaryData);
         pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
         return DWL_FAULT;
+    }
+
+    // Hash the binary data
+    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    if (DWL_OK != result)
+    {
+        // updateResult is already set by HashData
+        return result;
     }
 
     // Store downloaded binary data
@@ -697,12 +837,6 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
         pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->paddingSize;
     }
 
-    // Update CRC
-    dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                         pkgDwlObjPtr->dwlData,
-                                         pkgDwlObjPtr->downloadedLen);
-    LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
-
     return result;
 }
 
@@ -721,7 +855,7 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
     DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
 )
 {
-    lwm2mcore_DwlResult_t result = DWL_OK;
+    lwm2mcore_DwlResult_t result;
 
     LOG_ARG("Parse DWL padding, length %u", pkgDwlObjPtr->downloadedLen);
 
@@ -733,16 +867,18 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
         return DWL_FAULT;
     }
 
+    // Hash the padding data
+    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    if (DWL_OK != result)
+    {
+        // updateResult is already set by HashData
+        return result;
+    }
+
     // Download next DWL prolog
     pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
     dwlParserObjPtr->subsection = DWL_SUB_PROLOG;
     pkgDwlObjPtr->lenToDownload = sizeof(DwlProlog_t);
-
-    // Update CRC
-    dwlParserObjPtr->computedCRC = crc32(dwlParserObjPtr->computedCRC,
-                                         pkgDwlObjPtr->dwlData,
-                                         pkgDwlObjPtr->downloadedLen);
-    LOG_ARG("New computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
 
     return result;
 }
@@ -762,7 +898,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
     DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
 )
 {
-    lwm2mcore_DwlResult_t result = DWL_OK;
+    lwm2mcore_DwlResult_t result;
 
     LOG_ARG("Parse DWL signature, length %u", pkgDwlObjPtr->downloadedLen);
 
@@ -774,14 +910,15 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
         return DWL_FAULT;
     }
 
-    // Whole signature section is ignored for CRC computation, no need to update it.
-    // Compare package CRC retrieved from first DWL prolog and computed CRC.
-    if (dwlParserObjPtr->packageCRC != dwlParserObjPtr->computedCRC)
+    // The signature subsection is ignored for CRC and SHA1 digest computation, no need to hash
+    // the data
+
+    // Check the package CRC and verify the signature
+    result = CheckCrcAndSignature(pkgDwlObjPtr, dwlParserObjPtr);
+    if (DWL_OK != result)
     {
-        LOG_ARG("Incorrect file CRC: expected 0x%08x, computed 0x%08x",
-                dwlParserObjPtr->packageCRC, dwlParserObjPtr->computedCRC);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
-        return DWL_FAULT;
+        // updateResult is already set by CheckCrcAndSignature
+        return result;
     }
 
     // End of file
@@ -817,7 +954,8 @@ static lwm2mcore_DwlResult_t DwlParser
         .binarySize = 0,
         .paddingSize = 0,
         .remainingBinaryData = 0,
-        .signatureSize = 0
+        .signatureSize = 0,
+        .sha1CtxPtr = NULL
     };
 
     // Check if data was downloaded
@@ -865,6 +1003,12 @@ static lwm2mcore_DwlResult_t DwlParser
     // Check if the DWL parsing is finished
     if ((DWL_OK != result) || (PKG_DWL_END == pkgDwlObjPtr->state))
     {
+        // Cancel the SHA1 computation and reset SHA1 context
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Cancel(&dwlParserObj.sha1CtxPtr))
+        {
+            LOG("Unable to reset SHA1 context");
+        }
+
         // Reset the DWL parser object for next use
         memset(&dwlParserObj, 0, sizeof(DwlParserObj_t));
         dwlParserObj.subsection = DWL_SUB_PROLOG;
@@ -928,6 +1072,27 @@ static void PkgDwlGetInfo
         pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
         pkgDwlObjPtr->state = PKG_DWL_ERROR;
         return;
+    }
+
+    // Set package type according to the update type
+    switch (pkgDwlPtr->data.updateType)
+    {
+        case LWM2MCORE_FW_UPDATE_TYPE:
+            pkgDwlObjPtr->packageType = LWM2MCORE_PKG_FW;
+            LOG("Receiving FW package");
+            break;
+
+        case LWM2MCORE_SW_UPDATE_TYPE:
+            pkgDwlObjPtr->packageType = LWM2MCORE_PKG_SW;
+            LOG("Receiving SW package");
+            break;
+
+        default:
+            LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
+            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            pkgDwlObjPtr->state = PKG_DWL_ERROR;
+            return;
+            break;
     }
 
     // Notify the application of the package size

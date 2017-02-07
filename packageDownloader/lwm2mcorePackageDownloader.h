@@ -48,6 +48,7 @@ typedef struct
 {
     char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_LEN]; ///< URI of package to download
     uint64_t packageSize;                               ///< Package size given by server
+    lwm2mcore_updateType_t updateType;                  ///< FW or SW update
 }
 lwm2mcore_PackageDownloaderData_t;
 

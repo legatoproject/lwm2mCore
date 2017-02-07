@@ -4,7 +4,10 @@ project (lwm2mclient C CXX)
 
 add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_BOOTSTRAP -DLWM2M_WITH_LOGS -DSIERRA)
 
-FIND_PACKAGE ( Threads REQUIRED )
+find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(ZLIB REQUIRED)
+
 set(LWM2MCORE_DIR ${CMAKE_CURRENT_LIST_DIR}/../..)
 
 
@@ -45,6 +48,7 @@ include_directories (${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
 include_directories (${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
 
 include_directories (${LWM2MCORE_DIR}/objectManager)
+include_directories (${LWM2MCORE_DIR}/packageDownloader)
 include_directories (${LWM2MCORE_DIR}/sessionManager)
 include_directories (${LWM2MCORE_DIR}/tinydtls)
 
@@ -72,6 +76,7 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/os/port/osPortDevice.c
     ${LWM2MCORE_DIR}/os/port/osPortSecurity.c
     ${LWM2MCORE_DIR}/os/port/osPortUpdate.c
+    ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
     ${LWM2MCORE_DIR}/tinydtls/dtls.c
@@ -112,5 +117,7 @@ endforeach()
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-TARGET_LINK_LIBRARIES ( ${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT} )
+target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${ZLIB_LIBRARIES})
 
