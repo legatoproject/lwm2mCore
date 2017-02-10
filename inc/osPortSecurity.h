@@ -99,21 +99,6 @@ lwm2mcore_sid_t os_portSecuritySetCredential
                                             ///< returned data
 );
 
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to check if all Device Management credentials were provisioned
- *
- * @note This API is called by LWM2MCore
- *
- * @return
- *      - true if  a Device Management server was provided
- *      - false else
- */
-//--------------------------------------------------------------------------------------------------
-bool os_portSecurityCheckDmCredentialsPresence
-(
-    void
-);
 
 //--------------------------------------------------------------------------------------------------
 /**

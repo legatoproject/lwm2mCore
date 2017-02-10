@@ -18,6 +18,7 @@
 #include "osUdp.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
+#include "osPortSecurity.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -368,6 +369,13 @@ void SendSessionEvent
                     LOG("REGISTER FAILURE");
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
                     SendStatusEvent(status);
+
+                    /* Delete DM credentials in order to forwe a connection to the BS server */
+                    LOG("DELETE DM CREDENTIALS");
+                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
+                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY);
+                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
+                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
                 }
                 break;
 

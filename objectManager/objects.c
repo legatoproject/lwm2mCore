@@ -1133,7 +1133,10 @@ static bool RegisterObjTable
     struct _lwm2mcore_objectsList *objectsListPtr = NULL;
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
-    if ((clientTable == false) && os_portSecurityCheckDmCredentialsPresence())
+    if ((clientTable == false)
+     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
+     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
+     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
     {
         dmServerPresence = true;
     }

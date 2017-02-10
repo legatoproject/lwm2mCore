@@ -70,12 +70,12 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/os/linux/osTimer.c
     ${LWM2MCORE_DIR}/os/linux/osUdp.c
     ${LWM2MCORE_DIR}/os/linux/main.c
+    ${LWM2MCORE_DIR}/os/linux/osPortDevice.c
+    ${LWM2MCORE_DIR}/os/linux/osPortSecurity.c
+    ${LWM2MCORE_DIR}/os/linux/osPortUpdate.c
     ${LWM2MCORE_DIR}/objectManager/handlers.c
     ${LWM2MCORE_DIR}/objectManager/objects.c
     ${LWM2MCORE_DIR}/objectManager/objectsTable.c
-    ${LWM2MCORE_DIR}/os/port/osPortDevice.c
-    ${LWM2MCORE_DIR}/os/port/osPortSecurity.c
-    ${LWM2MCORE_DIR}/os/port/osPortUpdate.c
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
