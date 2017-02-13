@@ -867,3 +867,57 @@ bool lwm2mcore_connectionGetType
     return result;
 }
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to push data to lwm2mCore
+ *
+ * @return
+ *      - true if a data push transaction is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_push
+(
+    int context,                ///< [IN] context
+    uint8_t* payloadPtr,        ///< [IN] payload
+    size_t payloadLength,       ///< [IN] payload length
+    void* callbackPtr           ///< [IN] callback for payload
+)
+{
+    int rc;
+    bool result = false;
+    ClientData_t* dataPtr = (ClientData_t*) context;
+
+    if (NULL != dataPtr)
+    {
+        /* Check that the device is registered to DM server */
+        bool registered = false;
+        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        {
+            /* Retrieve the serverID from list */
+            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+            if (NULL == targetPtr)
+            {
+                LOG("serverList is NULL");
+            }
+            else
+            {
+                LOG_ARG("shortServerId %d", targetPtr->shortID);
+                rc = lwm2m_data_push(dataPtr->lwm2mHPtr,
+                                    targetPtr->shortID,
+                                    payloadPtr,
+                                    payloadLength,
+                                    callbackPtr);
+
+                if (rc == COAP_NO_ERROR)
+                {
+                    result = true;
+                }
+            }
+        }
+    }
+
+    return result;
+}
+

@@ -554,5 +554,23 @@ bool lwm2mcore_connectionGetType
                                 ///< true: device management)
 );
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to push data to lwm2mCore
+ *
+ * @return
+ *      - true if a data push transaction is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_push
+(
+    int context,                ///< [IN] context
+    uint8_t* payloadPtr,        ///< [IN] payload
+    size_t payloadLength,       ///< [IN] payload length
+    void* callbackPtr           ///< [IN] callback for payload
+);
+
 #endif /*  __LWM2MCORE_H__ */
 
