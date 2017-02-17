@@ -22,13 +22,6 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximal length of a data chunk
- */
-//--------------------------------------------------------------------------------------------------
-#define MAX_DATA_BUFFER_CHUNK   32768
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Package downloader result codes
  */
 //--------------------------------------------------------------------------------------------------
@@ -130,11 +123,11 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetUpdateResult_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to download a package range
+ * Callback to download a package
  *
- * This callback should download data and store them in the buffer given as a parameter:
- * - bufSize bytes are requested to be downloaded, starting at offset startOffset
- * - *dwlLenPtr indicates the number of bytes really downloaded.
+ * This callback should download the package, starting at offset startOffset.
+ * Downloaded data should then be sequentially transmitted to the package downloader using
+ * the lwm2mcore_PackageDownloaderReceiveData() function.
  *
  * @return
  *  - DWL_OK    The function succeeded
@@ -143,12 +136,9 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetUpdateResult_t)
  * @warning This callback should be set to NULL if not implemented
  */
 //--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_DownloadRange_t)
+typedef lwm2mcore_DwlResult_t (*lwm2mcore_Download_t)
 (
-    uint8_t* bufPtr,            ///< Buffer to store downloaded data
-    size_t bufSize,             ///< Size of data to download
     uint64_t startOffset,       ///< Offset indicating where to start the download
-    size_t* dwlLenPtr,          ///< Length of data really downloaded
     void* ctxPtr                ///< Context pointer
 );
 
@@ -207,7 +197,7 @@ typedef struct
     lwm2mcore_GetPackageInfo_t        getInfo;          ///< Get package information
     lwm2mcore_SetUpdateState_t        setUpdateState;   ///< Set firmware update state
     lwm2mcore_SetUpdateResult_t       setUpdateResult;  ///< Set firmware update result
-    lwm2mcore_DownloadRange_t         downloadRange;    ///< Download callback
+    lwm2mcore_Download_t              download;         ///< Download callback
     lwm2mcore_StoreRange_t            storeRange;       ///< Storing callback
     lwm2mcore_EndDownload_t           endDownload;      ///< Ending callback
     void*                             ctxPtr;           ///< Context pointer
@@ -220,7 +210,9 @@ lwm2mcore_PackageDownloader_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Run the package downloader
+ * Run the package downloader.
+ *
+ * This function is called to launch the package downloader.
  *
  * @return
  *  - DWL_OK    The function succeeded
@@ -232,4 +224,20 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     lwm2mcore_PackageDownloader_t* packageDownloaderPtr ///< Pointer on package downloader structure
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Process the downloaded data.
+ *
+ * Downloaded data should be sequentially transmitted to the package downloader with this function.
+ *
+ * @return
+ *  - DWL_OK    The function succeeded
+ *  - DWL_FAULT The function failed
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
+(
+    uint8_t* bufPtr,    ///< Received data
+    size_t   bufSize    ///< Size of received data
+);
 #endif /* LWM2MCORE_PACKAGEDOWNLOADER_H */

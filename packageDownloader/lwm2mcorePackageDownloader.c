@@ -1,7 +1,13 @@
 /**
  * @file lwm2mcorePackageDownloader.c
  *
- * LWM2M Package Downloader and DWL parser
+ * @section lwm2mcorePackageDownloader LWM2M Package Downloader
+ *
+ * The LWM2M package downloader is launched with lwm2mcore_PackageDownloaderRun().
+ * When the package download starts, downloaded data should be sequentially transmitted to the
+ * package downloader using lwm2mcore_PackageDownloaderReceiveData().
+ *
+ * @section lwm2mcoreDwlParser DWL parser
  *
  * A simple DWL package is composed of the following sections:
  * - UPCK (Update Package): general information about the DWL package
@@ -21,6 +27,8 @@
  * - SIGN (Signature):
  *      - DWL comments: optional subsection containing comments about the package
  *      - Signature: package signature
+ *
+ * @section lwm2mcorePackageVerification Package verification
  *
  * The package CRC is retrieved in the first DWL prolog. A CRC is then computed with all binary data
  * from the package, starting from the first byte after the package CRC until the end of the BINA
@@ -58,26 +66,45 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Maximal length of a temporary DWL chunk.
+ *
+ * This chunk is used to store the downloaded data if the received length is too small
+ * compared to the awaited DWL subsection length. Each subsection has a indeed defined length,
+ * except for the comments:
+ * - DWL prolog:  32 bytes
+ * - Header:     128 bytes
+ * - Padding:      7 bytes (max)
+ * - Signature: 1024 bytes (max)
+ * - Comments: variable, given by the DWL prolog
+ *
+ * Considering this, the limit is arbitrarily set to 16k to handle all subsections
+ * and hopefully all comments lengths.
+ */
+//--------------------------------------------------------------------------------------------------
+#define TMP_DATA_MAX_LEN    16384
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Magic number identifying a DWL prolog
  */
 //--------------------------------------------------------------------------------------------------
-#define DWL_MAGIC_NUMBER  0x464c5744  ///< DWLF
+#define DWL_MAGIC_NUMBER    0x464c5744  ///< DWLF
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Possible types of DWL sections
  */
 //--------------------------------------------------------------------------------------------------
-#define DWL_TYPE_UPCK     0x4b435055  ///< UpdatePackage
-#define DWL_TYPE_SIGN     0x4e474953  ///< Signature
-#define DWL_TYPE_BINA     0x414e4942  ///< Binary
-#define DWL_TYPE_COMP     0x504d4f43  ///< CompBinary
-#define DWL_TYPE_XDWL     0x4c574458  ///< Downloader
-#define DWL_TYPE_E2PR     0x52503245  ///< EEPROM
-#define DWL_TYPE_DIFF     0x46464944  ///< Patch
-#define DWL_TYPE_DOTA     0x41544f44  ///< DotaCell
-#define DWL_TYPE_RAM_     0x5f4d4152  ///< Ram
-#define DWL_TYPE_BOOT     0x544f4f42  ///< Bootstrap
+#define DWL_TYPE_UPCK       0x4b435055  ///< UpdatePackage
+#define DWL_TYPE_SIGN       0x4e474953  ///< Signature
+#define DWL_TYPE_BINA       0x414e4942  ///< Binary
+#define DWL_TYPE_COMP       0x504d4f43  ///< CompBinary
+#define DWL_TYPE_XDWL       0x4c574458  ///< Downloader
+#define DWL_TYPE_E2PR       0x52503245  ///< EEPROM
+#define DWL_TYPE_DIFF       0x46464944  ///< Patch
+#define DWL_TYPE_DOTA       0x41544f44  ///< DotaCell
+#define DWL_TYPE_RAM_       0x5f4d4152  ///< Ram
+#define DWL_TYPE_BOOT       0x544f4f42  ///< Bootstrap
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -123,9 +150,9 @@ typedef enum
 {
     PKG_DWL_INIT,       ///< Package downloader initialization
     PKG_DWL_INFO,       ///< Retrieve information about the package
-    PKG_DWL_DOWNLOAD,   ///< Download file chunk
-    PKG_DWL_PARSE,      ///< Parse downloaded file chunk
-    PKG_DWL_STORE,      ///< Store downloaded file chunk
+    PKG_DWL_DOWNLOAD,   ///< Download file
+    PKG_DWL_PARSE,      ///< Parse downloaded data
+    PKG_DWL_STORE,      ///< Store downloaded data
     PKG_DWL_END,        ///< Download closing and clean up
     PKG_DWL_ERROR       ///< Package downloader error
 }
@@ -165,14 +192,15 @@ typedef struct
     bool                       endOfProcessing;     ///< End of package processing
     lwm2mcore_DwlResult_t      result;              ///< Current result of package downloader
     lwm2mcore_fwUpdateResult_t updateResult;        ///< Current package update result
-    bool                       firstDownload;       ///< Indicates if next download is the first one
     lwm2mcore_PkgDwlType_t     packageType;         ///< Package type (FW or SW)
     uint64_t                   offset;              ///< Current offset in the package
-    size_t                     lenToDownload;       ///< Length of next buffer to download
-    uint8_t dwlData[MAX_DATA_BUFFER_CHUNK];         ///< Buffer of downloaded data
-    size_t                     downloadedLen;       ///< Length of data really downloaded
-    double                     downloadProgress;    ///< Overall download progress
     uint64_t                   storageOffset;       ///< Current offset in data storage
+    uint8_t                    tmpData[TMP_DATA_MAX_LEN];   ///< Temporary data chunk
+    uint32_t                   tmpDataLen;          ///< Temporary data chunk length
+    uint8_t*                   dwlDataPtr;          ///< Downloaded data pointer
+    size_t                     downloadedLen;       ///< Length of downloaded data
+    size_t                     processedLen;        ///< Length of data processed by last parsing
+    uint32_t                   downloadProgress;    ///< Overall download progress
 }
 PackageDownloaderObj_t;
 
@@ -183,6 +211,8 @@ PackageDownloaderObj_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
+    uint8_t* dataToParsePtr;        ///< Data to parse
+    size_t   lenToParse;            ///< Length of next subsection to parse
     uint32_t section;               ///< Current DWL section
     uint8_t  subsection;            ///< Current DWL subsection
     uint32_t packageCRC;            ///< Package CRC read in first DWL prolog
@@ -233,6 +263,31 @@ typedef union
 UpckHeader_t;
 
 //--------------------------------------------------------------------------------------------------
+// Static variables
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Package Downloader object instance
+ */
+//--------------------------------------------------------------------------------------------------
+static PackageDownloaderObj_t PkgDwlObj;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Package Downloader structure pointer
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_PackageDownloader_t* PkgDwlPtr = NULL;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * DWL parser object instance
+ */
+//--------------------------------------------------------------------------------------------------
+static DwlParserObj_t DwlParserObj;
+
+//--------------------------------------------------------------------------------------------------
 // Static functions
 //--------------------------------------------------------------------------------------------------
 
@@ -244,8 +299,7 @@ UpckHeader_t;
 static void PkgDwlEvent
 (
     PackageDownloaderEvent_t eventId,           ///< Package downloader event
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     lwm2mcore_status_t status;
@@ -256,7 +310,7 @@ static void PkgDwlEvent
         case PKG_DWL_EVENT_DETAILS:
             LOG_ARG("Package download size: %llu bytes", pkgDwlPtr->data.packageSize);
             status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             status.u.pkgStatus.numBytes = (uint32_t)pkgDwlPtr->data.packageSize;
             status.u.pkgStatus.progress = 0;
             status.u.pkgStatus.errorCode = 0;
@@ -268,18 +322,18 @@ static void PkgDwlEvent
         case PKG_DWL_EVENT_DL_START:
             LOG("Package download start");
             status.event = LWM2MCORE_EVENT_DOWNLOAD_PROGRESS;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             status.u.pkgStatus.numBytes = 0;
             status.u.pkgStatus.progress = 0;
             status.u.pkgStatus.errorCode = 0;
             break;
 
         case PKG_DWL_EVENT_DL_PROGRESS:
-            LOG_ARG("Package download progress: %llu bytes, %.2f%%",
-                    pkgDwlObjPtr->offset, pkgDwlObjPtr->downloadProgress);
+            LOG_ARG("Package download progress: %llu bytes, %u%%",
+                    PkgDwlObj.offset, PkgDwlObj.downloadProgress);
 
-            if (   (100 < pkgDwlObjPtr->downloadProgress)
-                || (pkgDwlPtr->data.packageSize < pkgDwlObjPtr->offset)
+            if (   (100 < PkgDwlObj.downloadProgress)
+                || (pkgDwlPtr->data.packageSize < PkgDwlObj.offset)
                )
             {
                 // Incoherent download progress
@@ -287,15 +341,15 @@ static void PkgDwlEvent
             }
 
             status.event = LWM2MCORE_EVENT_DOWNLOAD_PROGRESS;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
-            status.u.pkgStatus.numBytes = (uint32_t)pkgDwlObjPtr->offset;
-            status.u.pkgStatus.progress = (uint32_t)pkgDwlObjPtr->downloadProgress;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
+            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
+            status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
             status.u.pkgStatus.errorCode = 0;
             break;
 
         case PKG_DWL_EVENT_DL_END:
             // Determine download status with update result
-            switch (pkgDwlObjPtr->updateResult)
+            switch (PkgDwlObj.updateResult)
             {
                 case LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED;
@@ -330,14 +384,14 @@ static void PkgDwlEvent
                     break;
 
                 default:
-                    LOG_ARG("Unknown update result %d", pkgDwlObjPtr->updateResult);
+                    LOG_ARG("Unknown update result %d", PkgDwlObj.updateResult);
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_ALTERNATE_DL_ERROR;
                     break;
             }
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
-            status.u.pkgStatus.numBytes = (uint32_t)pkgDwlObjPtr->offset;
-            status.u.pkgStatus.progress = (uint32_t)pkgDwlObjPtr->downloadProgress;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
+            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
+            status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
 
             LOG_ARG("Package download end: event %d, errorCode %d",
                     status.event, status.u.pkgStatus.errorCode);
@@ -346,31 +400,31 @@ static void PkgDwlEvent
         case PKG_DWL_EVENT_SIGN_OK:
             LOG("Signature check successful");
             status.event = LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_OK;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             break;
 
         case PKG_DWL_EVENT_SIGN_KO:
             LOG("Signature check failed");
             status.event = LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_NOT_OK;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             break;
 
         case PKG_DWL_EVENT_UPDATE_START:
             LOG("Package update is launched");
             status.event = LWM2MCORE_EVENT_UPDATE_STARTED;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             break;
 
         case PKG_DWL_EVENT_UPDATE_SUCCESS:
             LOG("Package update successful");
             status.event = LWM2MCORE_EVENT_UPDATE_FINISHED;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             break;
 
         case PKG_DWL_EVENT_UPDATE_FAILURE:
             LOG("Package update failed");
             status.event = LWM2MCORE_EVENT_UPDATE_FAILED;
-            status.u.pkgStatus.pkgType = pkgDwlObjPtr->packageType;
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             break;
 
         default:
@@ -395,53 +449,52 @@ static void PkgDwlEvent
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t HashData
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     // Initialize SHA1 context and CRC if not already done
-    if (!dwlParserObjPtr->sha1CtxPtr)
+    if (!DwlParserObj.sha1CtxPtr)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Start(&dwlParserObjPtr->sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Start(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to initialize SHA1 context");
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
             return DWL_FAULT;
         }
 
         // Initialize computed CRC
-        dwlParserObjPtr->computedCRC = os_portSecurityCrc32(0L, NULL, 0);
+        DwlParserObj.computedCRC = os_portSecurityCrc32(0L, NULL, 0);
     }
 
     // Some parts of the DWL data are excluded from the CRC computation and/or the SHA1 digest
-    switch (dwlParserObjPtr->section)
+    switch (DwlParserObj.section)
     {
         case DWL_TYPE_UPCK:
-            if (DWL_SUB_PROLOG == dwlParserObjPtr->subsection)
+            if (DWL_SUB_PROLOG == DwlParserObj.subsection)
             {
                 // Compute CRC starting from fileSize in UPCK DWL prolog,
                 // ignore DWLF magic, file size, CRC
-                DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)pkgDwlObjPtr->dwlData;
+                DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)DwlParserObj.dataToParsePtr;
                 size_t prologSizeForCrc = sizeof(DwlProlog_t) - (3 * sizeof(uint32_t));
-                dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
-                                                                  (uint8_t*)&dwlPrologPtr->fileSize,
-                                                                  prologSizeForCrc);
+                DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
+                                                                (uint8_t*)&dwlPrologPtr->fileSize,
+                                                                prologSizeForCrc);
             }
             else
             {
                 // All other UPCK subsections are used for CRC computation
-                dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
-                                                                    pkgDwlObjPtr->dwlData,
-                                                                    pkgDwlObjPtr->downloadedLen);
+                DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
+                                                                DwlParserObj.dataToParsePtr,
+                                                                PkgDwlObj.processedLen);
             }
 
             // SHA1 digest is updated with all UPCK data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(dwlParserObjPtr->sha1CtxPtr,
-                                                                       pkgDwlObjPtr->dwlData,
-                                                                       pkgDwlObjPtr->downloadedLen))
+            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
+                                                                      DwlParserObj.dataToParsePtr,
+                                                                      PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
-                pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
                 return DWL_FAULT;
             }
 
@@ -449,17 +502,17 @@ static lwm2mcore_DwlResult_t HashData
 
         case DWL_TYPE_BINA:
             // All BINA subsections are used for CRC computation
-            dwlParserObjPtr->computedCRC = os_portSecurityCrc32(dwlParserObjPtr->computedCRC,
-                                                                pkgDwlObjPtr->dwlData,
-                                                                pkgDwlObjPtr->downloadedLen);
+            DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
+                                                            DwlParserObj.dataToParsePtr,
+                                                            PkgDwlObj.processedLen);
 
             // SHA1 digest is updated with all BINA data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(dwlParserObjPtr->sha1CtxPtr,
-                                                                       pkgDwlObjPtr->dwlData,
-                                                                       pkgDwlObjPtr->downloadedLen))
+            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
+                                                                      DwlParserObj.dataToParsePtr,
+                                                                      PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
-                pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
                 return DWL_FAULT;
             }
             break;
@@ -469,12 +522,11 @@ static lwm2mcore_DwlResult_t HashData
             break;
 
         default:
-            LOG_ARG("Unknown DWL section %u", dwlParserObjPtr->section);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            LOG_ARG("Unknown DWL section 0x%08x", DwlParserObj.section);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
             return DWL_FAULT;
             break;
     }
-    LOG_ARG("Computed CRC: 0x%08x", dwlParserObjPtr->computedCRC);
 
     return DWL_OK;
 }
@@ -492,27 +544,26 @@ static lwm2mcore_DwlResult_t HashData
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t CheckCrcAndSignature
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     // Compare package CRC retrieved from first DWL prolog and computed CRC.
-    if (dwlParserObjPtr->packageCRC != dwlParserObjPtr->computedCRC)
+    if (DwlParserObj.packageCRC != DwlParserObj.computedCRC)
     {
         LOG_ARG("Incorrect CRC: expected 0x%08x, computed 0x%08x",
-                dwlParserObjPtr->packageCRC, dwlParserObjPtr->computedCRC);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                DwlParserObj.packageCRC, DwlParserObj.computedCRC);
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
         return DWL_FAULT;
     }
 
     // Verify package signature
-    if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1End(dwlParserObjPtr->sha1CtxPtr,
-                                                             pkgDwlObjPtr->packageType,
-                                                             pkgDwlObjPtr->dwlData,
-                                                             pkgDwlObjPtr->downloadedLen))
+    if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1End(DwlParserObj.sha1CtxPtr,
+                                                             PkgDwlObj.packageType,
+                                                             DwlParserObj.dataToParsePtr,
+                                                             PkgDwlObj.processedLen))
     {
         LOG("Incorrect package signature");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
         return DWL_FAULT;
     }
 
@@ -531,38 +582,33 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlProlog
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
-    DwlProlog_t* dwlPrologPtr;
-
-    // Check DWL prolog size
-    if (pkgDwlObjPtr->downloadedLen < sizeof(DwlProlog_t))
-    {
-        LOG_ARG("DWL prolog is too short, %u < %u",
-                pkgDwlObjPtr->downloadedLen, sizeof(DwlProlog_t));
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-        return DWL_FAULT;
-    }
-
-    dwlPrologPtr = (DwlProlog_t*)pkgDwlObjPtr->dwlData;
+    DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)DwlParserObj.dataToParsePtr;
 
     // Check DWL magic number
     if (DWL_MAGIC_NUMBER != dwlPrologPtr->magicNumber)
     {
         LOG_ARG("Unknown package format, magic number 0x%08x", dwlPrologPtr->magicNumber);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
         return DWL_FAULT;
     }
 
     // Store current DWL section
-    dwlParserObjPtr->section = dwlPrologPtr->dataType;
-    LOG_ARG("Parse new DWL section 0x%08x", dwlParserObjPtr->section);
+    DwlParserObj.section = dwlPrologPtr->dataType;
+    LOG_ARG("Parse new DWL section '%C%C%C%C'",
+            DwlParserObj.section & 0xFF,
+            (DwlParserObj.section >> 8) & 0xFF,
+            (DwlParserObj.section >> 16) & 0xFF,
+            (DwlParserObj.section >> 24) & 0xFF);
+
+    // The whole DWL prolog is processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Hash the prolog data
-    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    result = HashData();
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -570,52 +616,52 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
     }
 
     // Store necessary data and determine next awaited subsection
-    switch (dwlParserObjPtr->section)
+    switch (DwlParserObj.section)
     {
         case DWL_TYPE_UPCK:
             // Store prolog data
-            dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
-            dwlParserObjPtr->packageCRC = dwlPrologPtr->crc32;
-            LOG_ARG("Package CRC: 0x%08x", dwlParserObjPtr->packageCRC);
+            DwlParserObj.commentSize = (dwlPrologPtr->commentSize << 3);
+            DwlParserObj.packageCRC = dwlPrologPtr->crc32;
+            LOG_ARG("Package CRC: 0x%08x", DwlParserObj.packageCRC);
 
-            // Download DWL comments
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
-            pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
+            // Parse DWL comments
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_COMMENTS;
+            DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
 
         case DWL_TYPE_BINA:
             // Store prolog data
-            dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
-            dwlParserObjPtr->binarySize = dwlPrologPtr->fileSize
-                                          - dwlParserObjPtr->commentSize
-                                          - LWM2MCORE_BINA_HEADER_SIZE
-                                          - sizeof(DwlProlog_t);
-            dwlParserObjPtr->paddingSize = ((dwlPrologPtr->fileSize + 7) & 0xFFFFFFF8)
-                                           - dwlPrologPtr->fileSize;
+            DwlParserObj.commentSize = (dwlPrologPtr->commentSize << 3);
+            DwlParserObj.binarySize = dwlPrologPtr->fileSize
+                                      - DwlParserObj.commentSize
+                                      - LWM2MCORE_BINA_HEADER_SIZE
+                                      - sizeof(DwlProlog_t);
+            DwlParserObj.paddingSize = ((dwlPrologPtr->fileSize + 7) & 0xFFFFFFF8)
+                                       - dwlPrologPtr->fileSize;
 
-            // Download DWL comments
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
-            pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
+            // Parse DWL comments
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_COMMENTS;
+            DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
 
         case DWL_TYPE_SIGN:
             // Store prolog data
-            dwlParserObjPtr->commentSize = (dwlPrologPtr->commentSize << 3);
-            dwlParserObjPtr->signatureSize = dwlPrologPtr->fileSize
-                                             - dwlParserObjPtr->commentSize
-                                             - sizeof(DwlProlog_t);
+            DwlParserObj.commentSize = (dwlPrologPtr->commentSize << 3);
+            DwlParserObj.signatureSize = dwlPrologPtr->fileSize
+                                         - DwlParserObj.commentSize
+                                         - sizeof(DwlProlog_t);
 
-            // Download DWL comments
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_COMMENTS;
-            pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->commentSize;
+            // Parse DWL comments
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_COMMENTS;
+            DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
 
         default:
-            LOG_ARG("Unexpected DWL prolog for section type 0x%08x", dwlParserObjPtr->section);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            LOG_ARG("Unexpected DWL prolog for section type 0x%08x", DwlParserObj.section);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
             result = DWL_FAULT;
             break;
     }
@@ -634,21 +680,23 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlComments
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result = DWL_OK;
 
-    LOG_ARG("Parse DWL comments, length %u", pkgDwlObjPtr->downloadedLen);
+    LOG_ARG("Parse DWL comments, length %u", DwlParserObj.lenToParse);
+
+    // The comment section is processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Check if the comment section is not empty
-    if (0 != pkgDwlObjPtr->downloadedLen)
+    if (0 != DwlParserObj.lenToParse)
     {
-        LOG_ARG("DWL comments: %s", pkgDwlObjPtr->dwlData);
+        LOG_ARG("DWL comments: %s", PkgDwlObj.dwlDataPtr);
 
         // Hash the comments data
-        result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+        result = HashData();
         if (DWL_OK != result)
         {
             // updateResult is already set by HashData
@@ -657,32 +705,32 @@ static lwm2mcore_DwlResult_t ParseDwlComments
     }
 
     // Determine next awaited subsection
-    switch (dwlParserObjPtr->section)
+    switch (DwlParserObj.section)
     {
         case DWL_TYPE_UPCK:
-            // Download UPCK header
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_HEADER;
-            pkgDwlObjPtr->lenToDownload = LWM2MCORE_UPCK_HEADER_SIZE;
+            // Parse UPCK header
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_HEADER;
+            DwlParserObj.lenToParse = LWM2MCORE_UPCK_HEADER_SIZE;
             break;
 
         case DWL_TYPE_BINA:
-            // Download BINA header
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_HEADER;
-            pkgDwlObjPtr->lenToDownload = LWM2MCORE_BINA_HEADER_SIZE;
+            // Parse BINA header
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_HEADER;
+            DwlParserObj.lenToParse = LWM2MCORE_BINA_HEADER_SIZE;
             break;
 
         case DWL_TYPE_SIGN:
-            // Download signature
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_SIGNATURE;
-            pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->signatureSize;
+            // Parse signature
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_SIGNATURE;
+            DwlParserObj.lenToParse = DwlParserObj.signatureSize;
             break;
 
         default:
-            LOG_ARG("Unexpected DWL comments for section type 0x%08x", dwlParserObjPtr->section);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            LOG_ARG("Unexpected DWL comments for section type 0x%08x", DwlParserObj.section);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
             result = DWL_FAULT;
             break;
     }
@@ -701,16 +749,18 @@ static lwm2mcore_DwlResult_t ParseDwlComments
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlHeader
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
 
-    LOG_ARG("Parse DWL header, length %u", pkgDwlObjPtr->downloadedLen);
+    LOG_ARG("Parse DWL header, length %u", DwlParserObj.lenToParse);
+
+    // The header section is processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Hash the header data
-    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    result = HashData();
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -718,46 +768,40 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
     }
 
     // Parse header and determine next awaited subsection
-    switch (dwlParserObjPtr->section)
+    switch (DwlParserObj.section)
     {
         case DWL_TYPE_UPCK:
         {
             // Check UPCK type
-            uint32_t upckType = ((UpckHeader_t*)pkgDwlObjPtr->dwlData)->structHeader.upckType;
+            uint32_t upckType =
+                     ((UpckHeader_t*)DwlParserObj.dataToParsePtr)->structHeader.upckType;
             if (   (LWM2MCORE_UPCK_TYPE_FW != upckType)
                 && (LWM2MCORE_UPCK_TYPE_AMSS != upckType)
                )
             {
                 LOG_ARG("Incorrect Update Package type %u", upckType);
-                pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
                 return DWL_FAULT;
             }
 
-            // Download next DWL prolog
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_PROLOG;
-            pkgDwlObjPtr->lenToDownload = sizeof(DwlProlog_t);
+            // Parse next DWL prolog
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_PROLOG;
+            DwlParserObj.lenToParse = sizeof(DwlProlog_t);
         }
         break;
 
         case DWL_TYPE_BINA:
-            // Download DWL binary data
-            pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-            dwlParserObjPtr->subsection = DWL_SUB_BINARY;
-            dwlParserObjPtr->remainingBinaryData = dwlParserObjPtr->binarySize;
-            if (dwlParserObjPtr->remainingBinaryData > MAX_DATA_BUFFER_CHUNK)
-            {
-                pkgDwlObjPtr->lenToDownload = MAX_DATA_BUFFER_CHUNK;
-            }
-            else
-            {
-                pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->remainingBinaryData;
-            }
+            // Parse DWL binary data
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            DwlParserObj.subsection = DWL_SUB_BINARY;
+            DwlParserObj.lenToParse = DwlParserObj.binarySize;
+            DwlParserObj.remainingBinaryData = DwlParserObj.binarySize;
             break;
 
         default:
-            LOG_ARG("Unexpected DWL header for section type 0x%08x", dwlParserObjPtr->section);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            LOG_ARG("Unexpected DWL header for section type 0x%08x", DwlParserObj.section);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
             result = DWL_FAULT;
             break;
     }
@@ -776,37 +820,25 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlBinary
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
 
-    LOG_ARG("Parse DWL binary data, length %u", pkgDwlObjPtr->downloadedLen);
-
     // Check if subsection is expected in current DWL section
-    if (DWL_TYPE_BINA != dwlParserObjPtr->section)
+    if (DWL_TYPE_BINA != DwlParserObj.section)
     {
-        LOG_ARG("Unexpected DWL binary data for section type 0x%08x", dwlParserObjPtr->section);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        LOG_ARG("Unexpected DWL binary data for section type 0x%08x", DwlParserObj.section);
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
         return DWL_FAULT;
     }
 
-    // Update remaining length to download
-    if (pkgDwlObjPtr->downloadedLen <= dwlParserObjPtr->remainingBinaryData)
-    {
-        dwlParserObjPtr->remainingBinaryData -= pkgDwlObjPtr->downloadedLen;
-    }
-    else
-    {
-        LOG_ARG("Received too much binary data: %u > %llu",
-                pkgDwlObjPtr->downloadedLen, dwlParserObjPtr->remainingBinaryData);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        return DWL_FAULT;
-    }
+    // The binary data are processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
+    DwlParserObj.remainingBinaryData -= DwlParserObj.lenToParse;
 
     // Hash the binary data
-    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    result = HashData();
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -814,27 +846,14 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
     }
 
     // Store downloaded binary data
-    pkgDwlObjPtr->state = PKG_DWL_STORE;
+    PkgDwlObj.state = PKG_DWL_STORE;
 
-    // Check if there are more binary data
-    if (dwlParserObjPtr->remainingBinaryData)
-    {
-        // Prepare download of next binary data
-        dwlParserObjPtr->subsection = DWL_SUB_BINARY;
-        if (dwlParserObjPtr->remainingBinaryData > MAX_DATA_BUFFER_CHUNK)
-        {
-            pkgDwlObjPtr->lenToDownload = MAX_DATA_BUFFER_CHUNK;
-        }
-        else
-        {
-            pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->remainingBinaryData;
-        }
-    }
-    else
+    // Check if all binary data is received
+    if (0 == DwlParserObj.remainingBinaryData)
     {
         // End of binary data, prepare download of DWL padding data
-        dwlParserObjPtr->subsection = DWL_SUB_PADDING;
-        pkgDwlObjPtr->lenToDownload = dwlParserObjPtr->paddingSize;
+        DwlParserObj.subsection = DWL_SUB_PADDING;
+        DwlParserObj.lenToParse = DwlParserObj.paddingSize;
     }
 
     return result;
@@ -851,34 +870,36 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlPadding
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
 
-    LOG_ARG("Parse DWL padding, length %u", pkgDwlObjPtr->downloadedLen);
+    LOG_ARG("Parse DWL padding, length %u", PkgDwlObj.processedLen);
 
     // Check if subsection is expected in current DWL section
-    if (DWL_TYPE_BINA != dwlParserObjPtr->section)
+    if (DWL_TYPE_BINA != DwlParserObj.section)
     {
-        LOG_ARG("Unexpected DWL padding data for section type 0x%08x", dwlParserObjPtr->section);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        LOG_ARG("Unexpected DWL padding data for section type 0x%08x", DwlParserObj.section);
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
         return DWL_FAULT;
     }
 
+    // The padding section is processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
+
     // Hash the padding data
-    result = HashData(pkgDwlObjPtr, dwlParserObjPtr);
+    result = HashData();
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
         return result;
     }
 
-    // Download next DWL prolog
-    pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-    dwlParserObjPtr->subsection = DWL_SUB_PROLOG;
-    pkgDwlObjPtr->lenToDownload = sizeof(DwlProlog_t);
+    // Parse next DWL prolog
+    PkgDwlObj.state = PKG_DWL_PARSE;
+    DwlParserObj.subsection = DWL_SUB_PROLOG;
+    DwlParserObj.lenToParse = sizeof(DwlProlog_t);
 
     return result;
 }
@@ -894,27 +915,29 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlSignature
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr,   ///< Package downloader object
-    DwlParserObj_t* dwlParserObjPtr         ///< DWL parser object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
 
-    LOG_ARG("Parse DWL signature, length %u", pkgDwlObjPtr->downloadedLen);
+    LOG_ARG("Parse DWL signature, length %u", DwlParserObj.lenToParse);
 
     // Check if subsection is expected in current DWL section
-    if (DWL_TYPE_SIGN != dwlParserObjPtr->section)
+    if (DWL_TYPE_SIGN != DwlParserObj.section)
     {
-        LOG_ARG("Unexpected DWL signature for section type 0x%08x", dwlParserObjPtr->section);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        LOG_ARG("Unexpected DWL signature for section type 0x%08x", DwlParserObj.section);
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
         return DWL_FAULT;
     }
 
-    // The signature subsection is ignored for CRC and SHA1 digest computation, no need to hash
-    // the data
+    // The padding section is processed
+    PkgDwlObj.processedLen = DwlParserObj.lenToParse;
+
+    // The signature subsection is ignored for CRC and SHA1 digest computation,
+    // no need to hash the data
 
     // Check the package CRC and verify the signature
-    result = CheckCrcAndSignature(pkgDwlObjPtr, dwlParserObjPtr);
+    result = CheckCrcAndSignature();
     if (DWL_OK != result)
     {
         // updateResult is already set by CheckCrcAndSignature
@@ -922,7 +945,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
     }
 
     // End of file
-    pkgDwlObjPtr->state = PKG_DWL_END;
+    PkgDwlObj.state = PKG_DWL_END;
 
     return result;
 }
@@ -940,81 +963,174 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t DwlParser
 (
-    PackageDownloaderObj_t* pkgDwlObjPtr    ///< Package downloader object
+    void
 )
 {
     lwm2mcore_DwlResult_t result;
-    static DwlParserObj_t dwlParserObj =
-    {
-        .section = 0,
-        .subsection = DWL_SUB_PROLOG,
-        .packageCRC = 0,
-        .computedCRC = 0,
-        .commentSize = 0,
-        .binarySize = 0,
-        .paddingSize = 0,
-        .remainingBinaryData = 0,
-        .signatureSize = 0,
-        .sha1CtxPtr = NULL
-    };
 
     // Check if data was downloaded
-    if (!pkgDwlObjPtr->dwlData)
+    if (!PkgDwlObj.dwlDataPtr)
     {
         LOG("NULL data pointer in DWL parser");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
         return DWL_FAULT;
     }
 
     // Parse the downloaded data based on the current subsection
-    switch (dwlParserObj.subsection)
+    switch (DwlParserObj.subsection)
     {
         case DWL_SUB_PROLOG:
-            result = ParseDwlProlog(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlProlog();
             break;
 
         case DWL_SUB_COMMENTS:
-            result = ParseDwlComments(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlComments();
             break;
 
         case DWL_SUB_HEADER:
-            result = ParseDwlHeader(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlHeader();
             break;
 
         case DWL_SUB_BINARY:
-            result = ParseDwlBinary(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlBinary();
             break;
 
         case DWL_SUB_PADDING:
-            result = ParseDwlPadding(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlPadding();
             break;
 
         case DWL_SUB_SIGNATURE:
-            result = ParseDwlSignature(pkgDwlObjPtr, &dwlParserObj);
+            result = ParseDwlSignature();
             break;
 
         default:
-            LOG_ARG("Unknown DWL subsection %u", dwlParserObj.subsection);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            LOG_ARG("Unknown DWL subsection %u", DwlParserObj.subsection);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
             result = DWL_FAULT;
             break;
     }
 
     // Check if the DWL parsing is finished
-    if ((DWL_OK != result) || (PKG_DWL_END == pkgDwlObjPtr->state))
+    if ((DWL_OK != result) || (PKG_DWL_END == PkgDwlObj.state))
     {
         // Cancel the SHA1 computation and reset SHA1 context
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Cancel(&dwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Cancel(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to reset SHA1 context");
         }
 
         // Reset the DWL parser object for next use
-        memset(&dwlParserObj, 0, sizeof(DwlParserObj_t));
-        dwlParserObj.subsection = DWL_SUB_PROLOG;
+        memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
+        DwlParserObj.subsection = DWL_SUB_PROLOG;
     }
 
     return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Buffer the downloaded data if necessary in order to parse it.
+ *
+ * This function checks if the downloaded data should be buffered before being parsed by the DWL
+ * parser. The next awaited DWL subsection should indeed be fully downloaded before being processed,
+ * except for the binary data subsection.
+ *
+ * @return
+ *  - DWL_OK      The function succeeded
+ *  - DWL_FAULT   The function failed
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_DwlResult_t BufferAndSetDataToParse
+(
+    bool* parseData     ///< Indicates if the data should be parsed
+)
+{
+    // Check input argument
+    if (!parseData)
+    {
+        LOG("Null pointer passed to BufferAndSetDataToParse");
+        return DWL_FAULT;
+    }
+
+    // Data will not be parsed by default
+    *parseData = false;
+
+    // The binary data subsection can handle any length
+    if (DWL_SUB_BINARY == DwlParserObj.subsection)
+    {
+        // Check if all the data are binary data
+        if (PkgDwlObj.downloadedLen <= DwlParserObj.remainingBinaryData)
+        {
+            DwlParserObj.lenToParse = PkgDwlObj.downloadedLen;
+        }
+        else
+        {
+            DwlParserObj.lenToParse = DwlParserObj.remainingBinaryData;
+        }
+
+        // Parse downloaded data with the correct length
+        *parseData = true;
+        DwlParserObj.dataToParsePtr = PkgDwlObj.dwlDataPtr;
+        return DWL_OK;
+    }
+
+    // Check if enough data are received for the next DWL subsection
+    if ((PkgDwlObj.tmpDataLen + PkgDwlObj.downloadedLen) < DwlParserObj.lenToParse)
+    {
+        if ((PkgDwlObj.tmpDataLen + PkgDwlObj.downloadedLen) <= TMP_DATA_MAX_LEN)
+        {
+            // Store the data to use it later
+            memcpy(&PkgDwlObj.tmpData[PkgDwlObj.tmpDataLen],
+                   PkgDwlObj.dwlDataPtr,
+                   PkgDwlObj.downloadedLen);
+            PkgDwlObj.tmpDataLen += PkgDwlObj.downloadedLen;
+            PkgDwlObj.processedLen = PkgDwlObj.downloadedLen;
+            return DWL_OK;
+        }
+        else
+        {
+            LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max = %d",
+                    PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return DWL_FAULT;
+        }
+    }
+    // Enough data for the next DWL subsection, check if the temporary buffer is being used
+    if (PkgDwlObj.tmpDataLen)
+    {
+        if ((PkgDwlObj.tmpDataLen + DwlParserObj.lenToParse) <= TMP_DATA_MAX_LEN)
+        {
+            // Copy the required data into the temporary buffer
+            uint32_t lenToCopy = (DwlParserObj.lenToParse - PkgDwlObj.tmpDataLen);
+            memcpy(&PkgDwlObj.tmpData[PkgDwlObj.tmpDataLen],
+                   PkgDwlObj.dwlDataPtr,
+                   lenToCopy);
+            PkgDwlObj.tmpDataLen += lenToCopy;
+
+            // Update the downloaded data pointer
+            PkgDwlObj.dwlDataPtr += lenToCopy;
+            PkgDwlObj.downloadedLen -= lenToCopy;
+
+            // Parse the temporary buffer
+            *parseData = true;
+            DwlParserObj.dataToParsePtr = PkgDwlObj.tmpData;
+            return DWL_OK;
+        }
+        else
+        {
+            LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max=%d",
+                    PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return DWL_FAULT;
+        }
+    }
+
+    // No temporary buffer, the data can be parsed 'as is'
+    *parseData = true;
+    DwlParserObj.dataToParsePtr = PkgDwlObj.dwlDataPtr;
+    return DWL_OK;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1024,33 +1140,32 @@ static lwm2mcore_DwlResult_t DwlParser
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlInit
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     // Initialize download
-    pkgDwlObjPtr->result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error during download initialization");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
     // Set update result to 'Normal' when the updating process is initiated
-    pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
-    pkgDwlObjPtr->result=pkgDwlPtr->setUpdateResult(pkgDwlObjPtr->updateResult);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
+    PkgDwlObj.result = pkgDwlPtr->setUpdateResult(PkgDwlObj.updateResult);
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
     // Retrieve package information
-    pkgDwlObjPtr->state = PKG_DWL_INFO;
+    PkgDwlObj.state = PKG_DWL_INFO;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1060,17 +1175,16 @@ static void PkgDwlInit
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlGetInfo
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     // Get information about the package
-    pkgDwlObjPtr->result = pkgDwlPtr->getInfo(&pkgDwlPtr->data, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.result = pkgDwlPtr->getInfo(&pkgDwlPtr->data, pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error while getting the package information");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
@@ -1078,183 +1192,121 @@ static void PkgDwlGetInfo
     switch (pkgDwlPtr->data.updateType)
     {
         case LWM2MCORE_FW_UPDATE_TYPE:
-            pkgDwlObjPtr->packageType = LWM2MCORE_PKG_FW;
+            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
             LOG("Receiving FW package");
             break;
 
         case LWM2MCORE_SW_UPDATE_TYPE:
-            pkgDwlObjPtr->packageType = LWM2MCORE_PKG_SW;
+            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
             LOG("Receiving SW package");
             break;
 
         default:
             LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            pkgDwlObjPtr->state = PKG_DWL_ERROR;
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            PkgDwlObj.state = PKG_DWL_ERROR;
             return;
             break;
     }
 
     // Notify the application of the package size
-    PkgDwlEvent(PKG_DWL_EVENT_DETAILS, pkgDwlPtr, pkgDwlObjPtr);
+    PkgDwlEvent(PKG_DWL_EVENT_DETAILS, pkgDwlPtr);
 
-    // Download first package chunk
-    pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
-    // Download length of DWL prolog, enough to determine file type
-    pkgDwlObjPtr->lenToDownload = sizeof(DwlProlog_t);
+    // Download the package
+    PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+    // Require to parse at least the length of DWL prolog, enough to determine the file type
+    memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
+    DwlParserObj.subsection = DWL_SUB_PROLOG;
+    DwlParserObj.lenToParse = sizeof(DwlProlog_t);
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Download a data chunk and determine next state
+ * Download the package
  */
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlDownload
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    size_t   remainingLen = pkgDwlObjPtr->lenToDownload;
-    size_t   readLen = 0;
-    uint32_t bufOffset = 0;
-
-    // Reset download buffer
-    pkgDwlObjPtr->downloadedLen = 0;
-    memset(&pkgDwlObjPtr->dwlData, 0, sizeof(pkgDwlObjPtr->dwlData));
-
-    // Check if the download will not go beyond the end of the file
-    if ((pkgDwlObjPtr->offset + pkgDwlObjPtr->lenToDownload) > pkgDwlPtr->data.packageSize)
-    {
-        LOG_ARG("Download after end of file: offset %llu, to download %u, file size %llu",
-                 pkgDwlObjPtr->offset, pkgDwlObjPtr->lenToDownload, pkgDwlPtr->data.packageSize);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        pkgDwlObjPtr->result = DWL_FAULT;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
-        return;
-    }
-
     // Notify the download beginning
-    if (true == pkgDwlObjPtr->firstDownload)
+    // Set update state to 'Downloading'
+    PkgDwlObj.result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
+    if (DWL_OK != PkgDwlObj.result)
     {
-        // Set update state to 'Downloading'
-        pkgDwlObjPtr->result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
-        if (DWL_OK != pkgDwlObjPtr->result)
-        {
-            LOG("Unable to set update state");
-            pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-            pkgDwlObjPtr->state = PKG_DWL_ERROR;
-            return;
-        }
-        pkgDwlObjPtr->firstDownload = false;
-
-        // Notify the application of the download start
-        PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr, pkgDwlObjPtr);
-    }
-
-    // Check if any data to download
-    if (0 == pkgDwlObjPtr->lenToDownload)
-    {
-        // No data to download, next state will be determined by parser
-        LOG("No data to download");
-        pkgDwlObjPtr->state = PKG_DWL_PARSE;
+        LOG("Unable to set update state");
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
-    // Callback could download less bytes than requested.
-    // Loop until everything is downloaded or a download request failed
-    LOG_ARG("Download %u bytes at offset %llu", remainingLen, pkgDwlObjPtr->offset);
-    do
-    {
-        pkgDwlObjPtr->result = pkgDwlPtr->downloadRange(&pkgDwlObjPtr->dwlData[bufOffset],
-                                                        remainingLen,
-                                                        pkgDwlObjPtr->offset,
-                                                        &readLen,
-                                                        pkgDwlPtr->ctxPtr);
-        LOG_ARG("Downloaded %u bytes, result %d", readLen, pkgDwlObjPtr->result);
-        if (DWL_OK == pkgDwlObjPtr->result)
-        {
-            // Update remaining length and offsets
-            remainingLen -= readLen;
-            pkgDwlObjPtr->offset += readLen;
-            bufOffset += readLen;
-            pkgDwlObjPtr->downloadedLen += readLen;
-        }
-    } while ((remainingLen > 0) && (DWL_OK == pkgDwlObjPtr->result) && (readLen > 0));
+    // Notify the application of the download start
+    PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
 
-    if ((DWL_OK != pkgDwlObjPtr->result) || (remainingLen > 0))
+    // Be ready to parse downloaded data
+    PkgDwlObj.state = PKG_DWL_PARSE;
+
+    // Start downloading
+    LOG_ARG("Download starting at offset %llu", PkgDwlObj.offset);
+    PkgDwlObj.result = pkgDwlPtr->download(PkgDwlObj.offset, pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
     {
-        LOG_ARG("Error during download of %u bytes (%u remaining, result %d)",
-                pkgDwlObjPtr->lenToDownload, remainingLen, pkgDwlObjPtr->result);
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
+        LOG_ARG("Error during download, result %d", PkgDwlObj.result);
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
-
-    // Update overall download progress
-    pkgDwlObjPtr->downloadProgress = (100.0 * pkgDwlObjPtr->offset) / pkgDwlPtr->data.packageSize;
-    // Notify the application of the download progress
-    // Note: the downloader has far more information about the progress (e.g. ETA) and a callback
-    // could be implemented to retrieve these data instead of computing it here.
-    PkgDwlEvent(PKG_DWL_EVENT_DL_PROGRESS, pkgDwlPtr, pkgDwlObjPtr);
-
-    // Parse downloaded data
-    pkgDwlObjPtr->state = PKG_DWL_PARSE;
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Parse a data chunk and determine next state
+ * Parse downloaded data and determine next state
  */
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlParse
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     // Parse downloaded data and determine next state
-    pkgDwlObjPtr->result = DwlParser(pkgDwlObjPtr);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.result = DwlParser();
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error while parsing the DWL package");
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
         // No need to change update result, already set by DWL parser
+        PkgDwlObj.state = PKG_DWL_ERROR;
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Store a downloaded data chunk and determine next state
+ * Store downloaded data and determine next state
  */
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlStore
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    LOG_ARG("Store %u bytes at offset %llu",
-            pkgDwlObjPtr->downloadedLen, pkgDwlObjPtr->storageOffset);
-
     // Store downloaded data
-    pkgDwlObjPtr->result = pkgDwlPtr->storeRange(pkgDwlObjPtr->dwlData,
-                                                 pkgDwlObjPtr->downloadedLen,
-                                                 pkgDwlObjPtr->storageOffset,
-                                                 pkgDwlPtr->ctxPtr);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.result = pkgDwlPtr->storeRange(DwlParserObj.dataToParsePtr,
+                                             PkgDwlObj.processedLen,
+                                             PkgDwlObj.storageOffset,
+                                             pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error during data storage");
-        pkgDwlObjPtr->updateResult = LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY;
-        pkgDwlObjPtr->state = PKG_DWL_ERROR;
+        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
     // Update storage offset
-    pkgDwlObjPtr->storageOffset += pkgDwlObjPtr->downloadedLen;
+    PkgDwlObj.storageOffset += PkgDwlObj.processedLen;
 
-    // Download next package chunk
-    pkgDwlObjPtr->state = PKG_DWL_DOWNLOAD;
+    // Parse next downloaded data
+    PkgDwlObj.state = PKG_DWL_PARSE;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1264,8 +1316,7 @@ static void PkgDwlStore
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlError
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     // Error during package downloading
@@ -1276,7 +1327,7 @@ static void PkgDwlError
     // by the 'download end' event.
     // One exception for the signature check error, which should also be notified by a dedicated
     // event.
-    switch (pkgDwlObjPtr->updateResult)
+    switch (PkgDwlObj.updateResult)
     {
         case LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE:
             snprintf(error, ERROR_STR_MAX_LEN, "not enough space");
@@ -1294,7 +1345,7 @@ static void PkgDwlError
             snprintf(error, ERROR_STR_MAX_LEN, "package check error");
 
             // Notify the application of the signature check error
-            PkgDwlEvent(PKG_DWL_EVENT_SIGN_KO, pkgDwlPtr, pkgDwlObjPtr);
+            PkgDwlEvent(PKG_DWL_EVENT_SIGN_KO, pkgDwlPtr);
             break;
 
         case LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE:
@@ -1315,10 +1366,10 @@ static void PkgDwlError
     }
 
     LOG_ARG("Error during package downloading: %s (update result = %d)",
-            error, pkgDwlObjPtr->updateResult);
+            error, PkgDwlObj.updateResult);
 
     // End of download
-    pkgDwlObjPtr->state = PKG_DWL_END;
+    PkgDwlObj.state = PKG_DWL_END;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1328,17 +1379,16 @@ static void PkgDwlError
 //--------------------------------------------------------------------------------------------------
 static void PkgDwlEnd
 (
-    lwm2mcore_PackageDownloader_t* pkgDwlPtr,   ///< Package downloader
-    PackageDownloaderObj_t* pkgDwlObjPtr        ///< Package downloader object
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
     // Check if an error was detected during the package download or parsing
-    if (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL != pkgDwlObjPtr->updateResult)
+    if (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL != PkgDwlObj.updateResult)
     {
         // Error during download or parsing, set update result accordingly.
         // No need to change the update state, it should remain set to 'Downloading'.
-        pkgDwlObjPtr->result = pkgDwlPtr->setUpdateResult(pkgDwlObjPtr->updateResult);
-        if (DWL_OK != pkgDwlObjPtr->result)
+        PkgDwlObj.result = pkgDwlPtr->setUpdateResult(PkgDwlObj.updateResult);
+        if (DWL_OK != PkgDwlObj.result)
         {
             LOG("Unable to set update result");
         }
@@ -1346,29 +1396,29 @@ static void PkgDwlEnd
     else
     {
         // Notify the application of the signature validation
-        PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, pkgDwlPtr, pkgDwlObjPtr);
+        PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, pkgDwlPtr);
 
         // Successful download: set update state to 'Downloaded'.
         // No need to change the update result, it was already set to 'Normal' at the beginning.
-        pkgDwlObjPtr->result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
-        if (DWL_OK != pkgDwlObjPtr->result)
+        PkgDwlObj.result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
+        if (DWL_OK != PkgDwlObj.result)
         {
             LOG("Unable to set update state");
         }
     }
 
     // Notify the application of the download end
-    PkgDwlEvent(PKG_DWL_EVENT_DL_END, pkgDwlPtr, pkgDwlObjPtr);
+    PkgDwlEvent(PKG_DWL_EVENT_DL_END, pkgDwlPtr);
 
     // End of download
-    pkgDwlObjPtr->result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
-    if (DWL_OK != pkgDwlObjPtr->result)
+    PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error while ending the download");
     }
 
     // End of processing
-    pkgDwlObjPtr->endOfProcessing = true;
+    PkgDwlObj.endOfProcessing = true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1377,7 +1427,9 @@ static void PkgDwlEnd
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Run the package downloader
+ * Run the package downloader.
+ *
+ * This function is called to launch the package downloader.
  *
  * @return
  *  - DWL_OK    The function succeeded
@@ -1389,9 +1441,13 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    PackageDownloaderObj_t pkgDwlObj;
-
     // Check input parameters
+    if (!pkgDwlPtr)
+    {
+        LOG("No package downloader object");
+        return DWL_FAULT;
+    }
+
     if (!pkgDwlPtr->data.packageUri)
     {
         LOG("No package URI");
@@ -1422,7 +1478,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
         return DWL_FAULT;
     }
 
-    if (!pkgDwlPtr->downloadRange)
+    if (!pkgDwlPtr->download)
     {
         LOG("Missing download callback");
         return DWL_FAULT;
@@ -1440,55 +1496,166 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
         return DWL_FAULT;
     }
 
-    // Package downloader initialization
-    memset(&pkgDwlObj, 0, sizeof(PackageDownloaderObj_t));
-    pkgDwlObj.state = PKG_DWL_INIT;
-    pkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
-    pkgDwlObj.endOfProcessing = false;
-    pkgDwlObj.firstDownload = true;
-    pkgDwlObj.packageType = LWM2MCORE_PKG_NONE;
+    // Store the package downloader
+    PkgDwlPtr = pkgDwlPtr;
+
+    // Package downloader object initialization
+    memset(&PkgDwlObj, 0, sizeof(PackageDownloaderObj_t));
+    PkgDwlObj.state = PKG_DWL_INIT;
+    PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
+    PkgDwlObj.endOfProcessing = false;
+    PkgDwlObj.packageType = LWM2MCORE_PKG_NONE;
 
     // Run the package downloader until end of processing is reached (end of file, error...)
-    while (!pkgDwlObj.endOfProcessing)
+    while (!PkgDwlObj.endOfProcessing)
     {
         // Run the package downloader action based on the current state
-        switch (pkgDwlObj.state)
+        switch (PkgDwlObj.state)
         {
             case PKG_DWL_INIT:
-                PkgDwlInit(pkgDwlPtr, &pkgDwlObj);
+                PkgDwlInit(pkgDwlPtr);
                 break;
 
             case PKG_DWL_INFO:
-                PkgDwlGetInfo(pkgDwlPtr, &pkgDwlObj);
+                PkgDwlGetInfo(pkgDwlPtr);
                 break;
 
             case PKG_DWL_DOWNLOAD:
-                PkgDwlDownload(pkgDwlPtr, &pkgDwlObj);
+                PkgDwlDownload(pkgDwlPtr);
                 break;
 
             case PKG_DWL_PARSE:
-                PkgDwlParse(pkgDwlPtr, &pkgDwlObj);
-                break;
-
             case PKG_DWL_STORE:
-                PkgDwlStore(pkgDwlPtr, &pkgDwlObj);
+                // Nothing to do, just wait for the parsing and storing end
                 break;
 
             case PKG_DWL_ERROR:
-                PkgDwlError(pkgDwlPtr, &pkgDwlObj);
+                PkgDwlError(pkgDwlPtr);
                 break;
 
             case PKG_DWL_END:
-                PkgDwlEnd(pkgDwlPtr, &pkgDwlObj);
+                PkgDwlEnd(pkgDwlPtr);
                 break;
 
             default:
-                LOG_ARG("Unknown package downloader state %d", pkgDwlObj.state);
-                pkgDwlObj.result = DWL_FAULT;
-                pkgDwlObj.endOfProcessing = true;
+                LOG_ARG("Unknown package downloader state %d in Run", PkgDwlObj.state);
+                PkgDwlObj.result = DWL_FAULT;
+                PkgDwlObj.endOfProcessing = true;
                 break;
         }
     }
 
-    return pkgDwlObj.result;
+    return PkgDwlObj.result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Process the downloaded data.
+ *
+ * Downloaded data should be sequentially transmitted to the package downloader with this function.
+ *
+ * @return
+ *  - DWL_OK    The function succeeded
+ *  - DWL_FAULT The function failed
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
+(
+    uint8_t* bufPtr,    ///< Received data
+    size_t   bufSize    ///< Size of received data
+)
+{
+    // Check if the necessary callback is correctly set
+    if ((!PkgDwlPtr) || (!PkgDwlPtr->storeRange))
+    {
+        LOG("Missing storing callback");
+        return DWL_FAULT;
+    }
+
+    // Check downloaded buffer
+    if (!bufPtr)
+    {
+        LOG("Null data pointer");
+        return DWL_FAULT;
+    }
+    if (0 == bufSize)
+    {
+        LOG("No data to process");
+        return DWL_OK;
+    }
+
+    // Copy the received data
+    PkgDwlObj.dwlDataPtr = bufPtr;
+    PkgDwlObj.downloadedLen = bufSize;
+
+    // Parse and store all the received data
+    while ((PkgDwlObj.downloadedLen > 0) && (DWL_OK == PkgDwlObj.result))
+    {
+        switch (PkgDwlObj.state)
+        {
+            case PKG_DWL_PARSE:
+            {
+                // Buffer and set data to parse
+                bool parseData = false;
+                lwm2mcore_DwlResult_t result = BufferAndSetDataToParse(&parseData);
+                if ((DWL_OK != result) || (!parseData))
+                {
+                    return result;
+                }
+                // Reset processed length
+                PkgDwlObj.processedLen = 0;
+                // Parse data
+                PkgDwlParse(PkgDwlPtr);
+            }
+            break;
+
+            case PKG_DWL_STORE:
+                PkgDwlStore(PkgDwlPtr);
+                break;
+
+            default:
+                LOG_ARG("Unexpected package downloader state %d in ReceiveData", PkgDwlObj.state);
+                PkgDwlObj.result = DWL_FAULT;
+                PkgDwlObj.endOfProcessing = true;
+                break;
+        }
+
+        // Update data pointer and length according to processed data
+        // If storing is necessary, processing is not complete yet
+        if (PKG_DWL_STORE != PkgDwlObj.state)
+        {
+            double downloadProgress;
+
+            // Update offset
+            PkgDwlObj.offset += PkgDwlObj.processedLen;
+
+            // Compute download progress
+            downloadProgress = (100 * PkgDwlObj.offset) / PkgDwlPtr->data.packageSize;
+
+            if (downloadProgress != PkgDwlObj.downloadProgress)
+            {
+                // Update overall download progress
+                PkgDwlObj.downloadProgress = (uint32_t)downloadProgress;
+                // Notify the application of the download progress if it changed since last time
+                // Note: the downloader has far more information about the progress (e.g. ETA) and
+                // a callback could be implemented to retrieve these data.
+                PkgDwlEvent(PKG_DWL_EVENT_DL_PROGRESS, PkgDwlPtr);
+            }
+
+            if (PkgDwlObj.tmpDataLen)
+            {
+                // Reset temporary buffer now that it is parsed
+                memset(PkgDwlObj.tmpData, 0, TMP_DATA_MAX_LEN);
+                PkgDwlObj.tmpDataLen = 0;
+            }
+            else
+            {
+                // Update downloaded data pointer
+                PkgDwlObj.dwlDataPtr += PkgDwlObj.processedLen;
+                PkgDwlObj.downloadedLen -= PkgDwlObj.processedLen;
+            }
+        }
+    }
+
+    return PkgDwlObj.result;
 }
