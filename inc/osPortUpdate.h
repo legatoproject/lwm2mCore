@@ -83,6 +83,59 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Enumeration for software update state (object 9 (firmware update), resource 7)
+ * These values are defined in the LWM2M specification
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SW_UPDATE_STATE_INITIAL           = 0,    ///< Before downloading (LWM2M
+                                                        ///< specification)
+    LWM2MCORE_SW_UPDATE_STATE_DOWNLOAD_STARTED  = 1,    ///< The downloading process has started and
+                                                        ///< is on-going (LWM2M specification)
+    LWM2MCORE_SW_UPDATE_STATE_DOWNLOADED        = 2,    ///< The package has been completely
+                                                        ///< downloaded (LWM2M specification)
+    LWM2MCORE_SW_UPDATE_STATE_DELIVERED         = 3,    ///< In that state, the package has been
+                                                        ///< correctly downloaded and is ready to be
+                                                        ///< installed.(LWM2M specification)
+    LWM2MCORE_SW_UPDATE_STATE_INSTALLED         = 4,    ///< In that state the software is correctly
+                                                        ///< installed and can be activated or
+                                                        ///< deactivated (LWM2M specification)
+    LWM2MCORE_SW_UPDATE_STATE_WAITINSTALLRESULT = 5     ///< FW update: install result
+}lwm2mcore_swUpdateState_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for software update result (object 9 (firmware update), resource 9)
+ * These values are defined in the LWM2M specification
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SW_UPDATE_RESULT_INITIAL          = 0,    ///< Prior to download any new package in
+                                                        ///< the Device, Update Result MUST be reset
+                                                        ///< to this initial value
+    LWM2MCORE_SW_UPDATE_RESULT_DOWNLOADING      = 1,    ///< Downloading. The package downloading
+                                                        ///< process is on-going
+    LWM2MCORE_SW_UPDATE_RESULT_INSTALLED        = 2,    ///< Software successfully installed
+    LWM2MCORE_SW_UPDATE_RESULT_DOWNLOADED       = 3,    ///< Successfully Downloaded and package
+                                                        ///< integrity verified
+    LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY= 50,   ///< Not enough storage for the new software
+                                                        ///< package
+    LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY    = 51,   ///< Out of memory during downloading
+                                                        ///< process
+    LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST  = 52,   ///< Connection lost during downloading
+                                                        ///< process
+    LWM2MCORE_SW_UPDATE_RESULT_CHECK_FAILURE    = 53,   ///< Package integrity check failure
+    LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE = 54,   ///< Unsupported package type
+    LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI      = 56,   ///< Invalid URI
+    LWM2MCORE_SW_UPDATE_RESULT_DEVICE_ERROR     = 57,   ///< Device defined update error
+    LWM2MCORE_SW_UPDATE_RESULT_INSTALL_FAILURE  = 58,   ///< Software installation failure
+    LWM2MCORE_SW_UPDATE_RESULT_UNINSTALL_FAILURE= 59    ///< Uninstallation Failure
+}lwm2mcore_swUpdateResult_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * The server pushes a package to the LWM2M client
  *
  * @return
