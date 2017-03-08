@@ -76,6 +76,7 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/objectManager/handlers.c
     ${LWM2MCORE_DIR}/objectManager/objects.c
     ${LWM2MCORE_DIR}/objectManager/objectsTable.c
+    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreCoapHandlers.c
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c

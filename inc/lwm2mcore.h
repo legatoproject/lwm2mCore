@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "lwm2mcoreCoapHandlers.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -73,6 +74,7 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
+    LWM2MCORE_ERR_ASYNC_OPERATION       = 1,    ///< Handler will respond asynchronously.
     LWM2MCORE_ERR_COMPLETED_OK          = 0,    ///< Handler treatment is OK
     LWM2MCORE_ERR_GENERAL_ERROR         = -1,   ///< Handler treatment failed
     LWM2MCORE_ERR_INCORRECT_RANGE       = -2,   ///< Bad parameter range (WRITE operation)

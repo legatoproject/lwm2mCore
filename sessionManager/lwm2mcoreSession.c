@@ -19,6 +19,7 @@
 #include "dtlsConnection.h"
 #include "sessionManager.h"
 #include "osPortSecurity.h"
+#include "lwm2mcoreCoapHandlers.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -270,6 +271,62 @@ static void Lwm2mClientStepHandler
     UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mHPtr);
 
     LOG("lwm2m step completed.");
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Convert coap response code to lwm2m standard error codes
+ */
+//--------------------------------------------------------------------------------------------------
+static uint32_t ConvertToCoapCode
+(
+    CoapResponseCode_t response
+)
+{
+    uint32_t coapCode;
+
+    switch(response)
+    {
+        case COAP_RESOURCE_CHANGED:
+        {
+           coapCode = CHANGED_2_04;
+           break;
+        }
+        case COAP_CONTENT_AVAILABLE:
+        {
+            coapCode =  CONTENT_2_05;
+            break;
+        }
+        case COAP_BAD_REQUEST:
+        {
+            coapCode = BAD_REQUEST_4_00;
+            break;
+        }
+        case COAP_METHOD_UNAUTHORIZED:
+        {
+            coapCode = UNAUTHORIZED_4_01;
+            break;
+        }
+        case COAP_RESOURCE_NOT_FOUND:
+        {
+            coapCode = NOT_FOUND_4_04;
+            break;
+        }
+        case COAP_METHOD_NOT_ALLOWED:
+        {
+            coapCode = METHOD_NOT_ALLOWED_4_05;
+            break;
+        }
+        case COAP_INTERNAL_ERROR:
+        {
+            coapCode = INTERNAL_SERVER_ERROR_5_00;
+            break;
+        }
+        default:
+            coapCode = INTERNAL_SERVER_ERROR_5_00;
+    }
+
+    return coapCode;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -870,7 +927,6 @@ bool lwm2mcore_connectionGetType
     return result;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to push data to lwm2mCore
@@ -922,5 +978,53 @@ bool lwm2mcore_push
     }
 
     return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send an async response to server.
+ *
+ * @return
+ *      - true if an async response is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SendAsyncResponse
+(
+    int context,                                ///< [IN] context
+    lwm2mcore_coapRequest_t* requestPtr,        ///< [IN] coap request refernce
+    lwm2mcore_coapResponse_t* responsePtr       ///< [IN] coap response
+)
+{
+    bool result = false;
+    ClientData_t* dataPtr = (ClientData_t*) context;
+
+    if (NULL != dataPtr)
+    {
+        /* Check that the device is registered to DM server */
+        bool registered = false;
+        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        {
+            /* Retrieve the serverID from list */
+            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+            if (NULL == targetPtr)
+            {
+                LOG("serverList is NULL");
+                return false;
+            }
+            else
+            {
+                return lwm2m_async_response(dataPtr->lwm2mHPtr,
+                                            targetPtr->shortID,
+                                            requestPtr->messageId,
+                                            ConvertToCoapCode(responsePtr->code),
+                                            responsePtr->token,
+                                            responsePtr->tokenLength,
+                                            responsePtr->contentType,
+                                            responsePtr->payload,
+                                            responsePtr->payloadLength);
+            }
+        }
+    }
 }
 
