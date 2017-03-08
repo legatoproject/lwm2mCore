@@ -180,4 +180,23 @@ lwm2mcore_sid_t os_portSecuritySha1Cancel
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Convert a DER key to PEM key
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the conversion succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the conversion fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_sid_t os_portSecurityConvertDERToPEM
+(
+    unsigned char*  derKeyPtr,      ///< [IN]       DER key
+    int             derKeyLen,      ///< [IN]       DER key length
+    unsigned char*  pemKeyPtr,      ///< [OUT]      PEM key
+    int*            pemKeyLenPtr    ///< [IN/OUT]   PEM key length
+);
+
 #endif /* __OS_PORTSECURITY_H__ */
