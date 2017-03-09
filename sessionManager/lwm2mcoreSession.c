@@ -654,8 +654,6 @@ void lwm2mcore_free
     if (NULL != dataPtr)
     {
         /* Free objects */
-        connection_free(dataPtr->connListPtr);
-
         ObjectsFree();
 
         if (NULL != dataPtr->lwm2mcoreCtxPtr)
@@ -815,6 +813,9 @@ bool lwm2mcore_disconnect
 
         /* Stop the agent */
         lwm2m_close(dataPtr->lwm2mHPtr);
+        connection_free(dataPtr->connListPtr);
+        dataPtr->lwm2mHPtr = NULL;
+        dataPtr->connListPtr = NULL;
 
         /* Close the socket */
         result = os_udpClose(SocketConfig);
