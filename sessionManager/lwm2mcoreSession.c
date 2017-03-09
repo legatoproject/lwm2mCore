@@ -456,11 +456,12 @@ void SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("AUTHENTICATION DONE");
-                    status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                    SendStatusEvent(status);
 
                     if (BootstrapSession)
                     {
+                        status.event = LWM2MCORE_EVENT_SESSION_STARTED;
+                        SendStatusEvent(status);
+
                         status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
                         SendStatusEvent(status);
