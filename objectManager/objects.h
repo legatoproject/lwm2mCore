@@ -145,20 +145,21 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_SECURITY_OID = 0,             ///< Security
-    LWM2MCORE_SERVER_OID,                   ///< Server
-    LWM2MCORE_ACL_OID,                      ///< Access Control
-    LWM2MCORE_DEVICE_OID,                   ///< Device
-    LWM2MCORE_CONN_MONITOR_OID,             ///< Connectivity monitoring
-    LWM2MCORE_FIRMWARE_UPDATE_OID,          ///< Firmware update
-    LWM2MCORE_LOCATION_OID,                 ///< Location
-    LWM2MCORE_CONN_STATS_OID,               ///< Connectivity statistics
-    LWM2MCORE_APP_UPDATE_OID = 9,           ///< Application update
-    LWM2M_SWI_SUBSCRIPTION_OID = 10241,     ///< Sierra Wireless proprietary object ID: Subscription
-    LWM2M_SWI_EXT_CONN_STATS_OID,           ///< Sierra Wireless proprietary object ID: Extended
-                                            ///< connectivity statistics
-    LWM2M_SWI_SSL_CERTIFS_OID               ///< Sierra Wireless proprietary object ID: SSL
-                                            ///< certificate
+    LWM2MCORE_SECURITY_OID          = 0,        ///< Security
+    LWM2MCORE_SERVER_OID            = 1,        ///< Server
+    LWM2MCORE_ACL_OID               = 2,        ///< Access Control
+    LWM2MCORE_DEVICE_OID            = 3,        ///< Device
+    LWM2MCORE_CONN_MONITOR_OID      = 4,        ///< Connectivity monitoring
+    LWM2MCORE_FIRMWARE_UPDATE_OID   = 5,        ///< Firmware update
+    LWM2MCORE_LOCATION_OID          = 6,        ///< Location
+    LWM2MCORE_CONN_STATS_OID        = 7,        ///< Connectivity statistics
+    LWM2MCORE_SOFTWARE_UPDATE_OID   = 9,        ///< Application update
+    LWM2M_SWI_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object ID:
+                                                ///< Subscription
+    LWM2M_SWI_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object ID: Extended
+                                                ///< connectivity statistics
+    LWM2M_SWI_SSL_CERTIFS_OID       = 10243     ///< Sierra Wireless proprietary object ID: SSL
+                                                ///< certificate
 } lwm2mcore_objectEnum_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -245,6 +246,34 @@ typedef enum
     LWM2MCORE_FW_UPDATE_PROTO_SUPPORT_RID,      ///< Fw update protocol support
     LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID,    ///< Fw update delivery method
 }lwm2mcore_fwUpdateResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* Enumeration for LWM2M object 9 (software update) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID = 0,       ///< Package name
+    LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID,        ///< Package version
+    LWM2MCORE_SW_UPDATE_PACKAGE_RID,                ///< Software package (push mode)
+    LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID,            ///< Package URI (pull mode)
+    LWM2MCORE_SW_UPDATE_INSTALL_RID,                ///< Install software
+    LWM2MCORE_SW_UPDATE_CHECKPOINT_RID,             ///< Checkpoint
+    LWM2MCORE_SW_UPDATE_UNINSTALL_RID,              ///< Uninstall software
+    LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID,           ///< Update state
+    LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID,   ///< Update supported objects
+    LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID,          ///< Update result
+    LWM2MCORE_SW_UPDATE_ACTIVATE_RID,               ///< Activate software
+    LWM2MCORE_SW_UPDATE_DEACTIVATE_RID,             ///< Deactivate software
+    LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID,       ///< Activation state
+    LWM2MCORE_SW_UPDATE_PACKAGE_SETTINGS_RID,       ///< Package settings
+    LWM2MCORE_SW_UPDATE_USER_NAME_RID,              ///< User name for pull mode
+    LWM2MCORE_SW_UPDATE_PASSWORD_RID,               ///< Password for pull mode
+    LWM2MCORE_SW_STATUS_REASON_RID,                 ///< Status
+    LWM2MCORE_SW_COMPONENT_LINK_RID,                ///< Reference to software components
+    LWM2MCORE_SW_COMPONENT_TREE_LENGTH_RID,         ///< Software component tree length
+}lwm2mcore_swUpdateResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**

@@ -159,7 +159,7 @@ static size_t FormatValueToBytes
                 {
                     /* Value shall be coded in 2 bytes */
                     u16Value = (uint16_t*)u;
-                    updatedSize = sizeof (uint16_t);
+                    updatedSize = sizeof(uint16_t);
                 }
             }
             else if (size == sizeof(uint16_t))
@@ -169,38 +169,38 @@ static size_t FormatValueToBytes
                 {
                     /* Value shall be coded in 4 bytes */
                     u32Value = (uint32_t*)u;
-                    updatedSize = sizeof (uint32_t);
+                    updatedSize = sizeof(uint32_t);
                 }
                 else if (*u16Value <= 0x7F)
                 {
                     /* the value could be coded in 1 byte */
                     u8Value = (uint8_t*)u;
-                    updatedSize = sizeof (uint8_t);
+                    updatedSize = sizeof(uint8_t);
                 }
             }
-            else if (size == sizeof (uint32_t))
+            else if (size == sizeof(uint32_t))
             {
                 u32Value = (uint32_t*)u;
                 if (*u32Value > 0x7FFFFFFF)
                 {
                     /* Value shall be coded in 8 bytes */
                     u64Value = (uint64_t*)u;
-                    updatedSize = sizeof (uint64_t);
+                    updatedSize = sizeof(uint64_t);
                 }
                 else if (*u32Value <= 0x7F)
                 {
                     /* the value could be coded in 1 byte */
                     u8Value = (uint8_t*)u;
-                    updatedSize = sizeof (uint8_t);
+                    updatedSize = sizeof(uint8_t);
                 }
                 else if (*u32Value <= 0x7FFF)
                 {
                     /* the value could be coded in 2 bytes */
                     u16Value = (uint16_t*)u;
-                    updatedSize = sizeof (uint16_t);
+                    updatedSize = sizeof(uint16_t);
                 }
             }
-            else if (size == sizeof (uint64_t))
+            else if (size == sizeof(uint64_t))
             {
                 u64Value = (uint64_t*)u;
                 if (*u64Value >> 63)
@@ -211,19 +211,19 @@ static size_t FormatValueToBytes
                 {
                     /* the value could be coded in 1 byte */
                     u8Value = (uint8_t*)u;
-                    updatedSize = sizeof (uint8_t);
+                    updatedSize = sizeof(uint8_t);
                 }
                 else if (*u64Value <= 0x7FFF)
                 {
                     /* the value could be coded in 2 bytes */
                     u16Value = (uint16_t*)u;
-                    updatedSize = sizeof (uint16_t);
+                    updatedSize = sizeof(uint16_t);
                 }
                 else if (*u64Value <= 0x7FFFFFFF)
                 {
                     /* the value could be coded in 4 bytes */
                     u32Value = (uint32_t*)u;
-                    updatedSize = sizeof (uint32_t);
+                    updatedSize = sizeof(uint32_t);
                 }
             }
             else
@@ -237,7 +237,7 @@ static size_t FormatValueToBytes
             case 1:
             {
                 uint8_t* u8Value = (uint8_t*)u;
-                lReturn = sizeof (uint8_t);
+                lReturn = sizeof(uint8_t);
                 bytesPtr[ 0 ] = *u8Value;
             }
             break;
@@ -288,7 +288,7 @@ static size_t FormatValueToBytes
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -310,219 +310,210 @@ int WriteSecurityObj
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Check that the server which tries to read/write is the bootstrap one
+     * The Device Management server can not access to this resource
+     */
+    //TODO
+
+    if ((uriPtr->op & LWM2MCORE_OP_WRITE) == 0)
     {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_WRITE;
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
 
-        /* Check that the server which tries to read/write is the bootstrap one
-         * The Device Management server can not access to this resource
-         */
-        //TODO
+    /* Check that the object instance Id is in the correct range */
+    if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT
+                       + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: LWM2M server URI */
+        case LWM2MCORE_SECURITY_SERVER_URI_RID:
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-        }
-        else
-        {
-            /* Check that the object instance Id is in the correct range */
-            if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT \
-                               + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
+            if (LWM2MCORE_BUFFER_MAX_LEN < len)
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             }
             else
             {
-                switch (uriPtr->rid)
+                /* Write operation */
+                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                 {
-                    /* Resource 0: LWM2M server URI */
-                    case LWM2MCORE_SECURITY_SERVER_URI_RID:
-                    {
-                        if (LWM2MCORE_BUFFER_MAX_LEN < len)
-                        {
-                            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                        }
-                        else
-                        {
-                            /* Write operation */
-                            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                            {
-                                /* Bootstrap server */
-                                memcpy(BsAddr, bufferPtr, len);
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                            else
-                            {
-                                /* Device Management server */
-                                memcpy(DmAddr, bufferPtr, len);
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                        }
-                    }
-                    break;
-
-                    /* Resource 1: Bootstrap server (true or false) */
-                    case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                    }
-                    break;
-
-                    /* Resource 2: Security mode */
-                    case LWM2MCORE_SECURITY_MODE_RID:
-                    {
-                        /* Write operation */
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 3: Public key or identity */
-                    case LWM2MCORE_SECURITY_PKID_RID:
-                    {
-                        if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
-                        {
-                            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                        }
-                        else
-                        {
-#ifdef CREDENTIALS_DEBUG
-                            os_debug_data_dump("PSK ID write", bufferPtr, len);
-#endif
-                            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                            {
-                                /* Bootstrap server */
-                                memcpy(BsPskId, bufferPtr, len);
-                                BsPskIdLen = len;
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                            else
-                            {
-                                /* Device Management server */
-                                memcpy(DmPskId, bufferPtr, len);
-                                DmPskIdLen = len;
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                        }
-                    }
-                    break;
-
-                    /* Resource 4: Server public key */
-                    case LWM2MCORE_SECURITY_SERVER_KEY_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 5: Secret key */
-                    case LWM2MCORE_SECURITY_SECRET_KEY_RID:
-                    {
-                        if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
-                        {
-                            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                        }
-                        else
-                        {
-#ifdef CREDENTIALS_DEBUG
-                            os_debug_data_dump("PSK secret write", bufferPtr, len);
-#endif
-                            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                            {
-                                /* Bootstrap server */
-                                memcpy(BsPsk, bufferPtr, len);
-                                BsPskLen = len;
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                            else
-                            {
-                                /* Device Management server */
-                                memcpy(DmPsk, bufferPtr, len);
-                                DmPskLen = len;
-                                sID = LWM2MCORE_ERR_COMPLETED_OK;
-                            }
-                        }
-                    }
-                    break;
-
-                    /* Resource 6: SMS security mode */
-                    case LWM2MCORE_SECURITY_SMS_SECURITY_MODE_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 7: SMS binding key parameters */
-                    case LWM2MCORE_SECURITY_SMS_BINDING_KEY_PAR_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 8: SMS binding secret key(s) */
-                    case LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 9: LWM2M server SMS number */
-                    case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 10: Short server ID */
-                    case LWM2MCORE_SECURITY_SERVER_ID_RID:
-                    {
-                        if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
-                        {
-                            /* Bootstrap server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                    }
-                    break;
-
-                    /* Resource 11: Client hold of time */
-                    case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
-                    {
-                        if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
-                        {
-                            /* Bootstrap server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
+                    /* Bootstrap server */
+                    memcpy(BsAddr, bufferPtr, len);
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
                 }
-
+                else
+                {
+                    /* Device Management server */
+                    memcpy(DmAddr, bufferPtr, len);
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
             }
         }
+        break;
+
+        /* Resource 1: Bootstrap server (true or false) */
+        case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                /* Device Management server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        /* Resource 2: Security mode */
+        case LWM2MCORE_SECURITY_MODE_RID:
+        {
+            /* Write operation */
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 3: Public key or identity */
+        case LWM2MCORE_SECURITY_PKID_RID:
+        {
+            if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            else
+            {
+#ifdef CREDENTIALS_DEBUG
+                os_debug_data_dump("PSK ID write", bufferPtr, len);
+#endif
+                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                {
+                    /* Bootstrap server */
+                    memcpy(BsPskId, bufferPtr, len);
+                    BsPskIdLen = len;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else
+                {
+                    /* Device Management server */
+                    memcpy(DmPskId, bufferPtr, len);
+                    DmPskIdLen = len;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+            }
+        }
+        break;
+
+        /* Resource 4: Server public key */
+        case LWM2MCORE_SECURITY_SERVER_KEY_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 5: Secret key */
+        case LWM2MCORE_SECURITY_SECRET_KEY_RID:
+        {
+            if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            else
+            {
+#ifdef CREDENTIALS_DEBUG
+                os_debug_data_dump("PSK secret write", bufferPtr, len);
+#endif
+                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                {
+                    /* Bootstrap server */
+                    memcpy(BsPsk, bufferPtr, len);
+                    BsPskLen = len;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else
+                {
+                    /* Device Management server */
+                    memcpy(DmPsk, bufferPtr, len);
+                    DmPskLen = len;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+            }
+        }
+        break;
+
+        /* Resource 6: SMS security mode */
+        case LWM2MCORE_SECURITY_SMS_SECURITY_MODE_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 7: SMS binding key parameters */
+        case LWM2MCORE_SECURITY_SMS_BINDING_KEY_PAR_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 8: SMS binding secret key(s) */
+        case LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 9: LWM2M server SMS number */
+        case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 10: Short server ID */
+        case LWM2MCORE_SECURITY_SERVER_ID_RID:
+        {
+            if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+            {
+                /* Bootstrap server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                /* Device Management server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        /* Resource 11: Client hold of time */
+        case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
+        {
+            if (uriPtr->oiid == LWM2MCORE_BS_SERVER_OIID)
+            {
+                /* Bootstrap server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                /* Device Management server */
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
     return sID;
 }
@@ -534,7 +525,7 @@ int WriteSecurityObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -558,222 +549,200 @@ int ReadSecurityObj
 
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Check that the server which tries to read/write is the bootstrap one
+     * The Device Management server can not access to this resource
+     */
+    //TODO
+
+    if ((uriPtr->op & LWM2MCORE_OP_READ) == 0)
     {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ;
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
 
-        /* Check that the server which tries to read/write is the bootstrap one
-         * The Device Management server can not access to this resource
-         */
-        //TODO
+    /* Check that the object instance Id is in the correct range */
+    if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: LWM2M server URI */
+        case LWM2MCORE_SECURITY_SERVER_URI_RID:
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-        }
-        else
-        {
-            /* Check that the object instance Id is in the correct range */
-            if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT \
-                               + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
             {
-                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+                /* Bootstrap server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                                   bufferPtr,
+                                                   lenPtr);
             }
             else
             {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 0: LWM2M server URI */
-                    case LWM2MCORE_SECURITY_SERVER_URI_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-                    }
-                    break;
-
-                    /* Resource 1: Bootstrap server (true or false) */
-                    case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            bufferPtr[0] = 1;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            bufferPtr[0] = 0;
-                        }
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 2: Security mode */
-                    case LWM2MCORE_SECURITY_MODE_RID:
-                    {
-                        bufferPtr[0] = SEC_PSK;
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 3: Public key or identity */
-                    case LWM2MCORE_SECURITY_PKID_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-#ifdef CREDENTIALS_DEBUG
-                        os_debug_data_dump("PSK ID read", bufferPtr, *lenPtr);
-#endif
-                    }
-                    break;
-
-                    /* Resource 4: Server public key */
-                    case LWM2MCORE_SECURITY_SERVER_KEY_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 5: Secret key */
-                    case LWM2MCORE_SECURITY_SECRET_KEY_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            sID = os_portSecurityGetCredential(
-                                                        (uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                                        bufferPtr,
-                                                        lenPtr
-                                                              );
-                        }
-#ifdef CREDENTIALS_DEBUG
-                        os_debug_data_dump("PSK secret read", bufferPtr, *lenPtr);
-#endif
-                    }
-                    break;
-
-                    /* Resource 6: SMS security mode */
-                    case LWM2MCORE_SECURITY_SMS_SECURITY_MODE_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 7: SMS binding key parameters */
-                    case LWM2MCORE_SECURITY_SMS_BINDING_KEY_PAR_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 8: SMS binding secret key(s) */
-                    case LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 9: LWM2M server SMS number */
-                    case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 10: Short server ID */
-                    case LWM2MCORE_SECURITY_SERVER_ID_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            bufferPtr[0] = 0;
-                            *lenPtr = 1;
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            bufferPtr[0] = 1;
-                            *lenPtr = 1;
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                    }
-                    break;
-
-                    /* Resource 11: Client hold of time */
-                    case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
-                    {
-                        if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                        {
-                            /* Bootstrap server */
-                            bufferPtr[0] = 0;
-                            *lenPtr = 1;
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                        else
-                        {
-                            /* Device Management server */
-                            bufferPtr[0] = 0;
-                            *lenPtr = 1;
-                            sID = LWM2MCORE_ERR_COMPLETED_OK;
-                        }
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-
+                /* Device Management server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                                   bufferPtr,
+                                                   lenPtr);
             }
         }
+        break;
+
+        /* Resource 1: Bootstrap server (true or false) */
+        case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                bufferPtr[0] = 1;
+            }
+            else
+            {
+                /* Device Management server */
+                bufferPtr[0] = 0;
+            }
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 2: Security mode */
+        case LWM2MCORE_SECURITY_MODE_RID:
+        {
+            bufferPtr[0] = SEC_PSK;
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 3: Public key or identity */
+        case LWM2MCORE_SECURITY_PKID_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                                   bufferPtr,
+                                                   lenPtr);
+            }
+            else
+            {
+                /* Device Management server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                                   bufferPtr,
+                                                   lenPtr);
+            }
+#ifdef CREDENTIALS_DEBUG
+            os_debug_data_dump("PSK ID read", bufferPtr, *lenPtr);
+#endif
+        }
+        break;
+
+        /* Resource 4: Server public key */
+        case LWM2MCORE_SECURITY_SERVER_KEY_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 5: Secret key */
+        case LWM2MCORE_SECURITY_SECRET_KEY_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                                   bufferPtr,
+                                                   lenPtr);
+            }
+            else
+            {
+                /* Device Management server */
+                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                                   bufferPtr,
+                                                   lenPtr);
+            }
+#ifdef CREDENTIALS_DEBUG
+            os_debug_data_dump("PSK secret read", bufferPtr, *lenPtr);
+#endif
+        }
+        break;
+
+        /* Resource 6: SMS security mode */
+        case LWM2MCORE_SECURITY_SMS_SECURITY_MODE_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 7: SMS binding key parameters */
+        case LWM2MCORE_SECURITY_SMS_BINDING_KEY_PAR_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 8: SMS binding secret key(s) */
+        case LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 9: LWM2M server SMS number */
+        case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 10: Short server ID */
+        case LWM2MCORE_SECURITY_SERVER_ID_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                bufferPtr[0] = 0;
+                *lenPtr = 1;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                /* Device Management server */
+                bufferPtr[0] = 1;
+                *lenPtr = 1;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        /* Resource 11: Client hold of time */
+        case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
+        {
+            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            {
+                /* Bootstrap server */
+                bufferPtr[0] = 0;
+                *lenPtr = 1;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                /* Device Management server */
+                bufferPtr[0] = 0;
+                *lenPtr = 1;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
     return sID;
 }
@@ -861,7 +830,7 @@ bool StoreCredentials
  * Resources: 6, 7, 8, 9
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -884,34 +853,28 @@ int SmsDummy
 
     if ((NULL ==uriPtr) || (NULL == bufferPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the server which tries to read/write is the bootstrap one
+     * The Device Management server can not access to this resource
+     */
+    //TODO
+
+    if ((uriPtr->op & (LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE)) == 0)
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    /* Check that the object instance Id is in the correct range */
+    if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT
+                       + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
+    {
+        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
     }
     else
     {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
-
-        /* Check that the server which tries to read/write is the bootstrap one
-         * The Device Management server can not access to this resource
-         */
-        //TODO
-
-        if ((uriPtr->op & supported_op_mask) == 0)
-        {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-        }
-        else
-        {
-            /* Check that the object instance Id is in the correct range */
-            if (uriPtr->oiid >= (LWM2MCORE_DM_SERVER_MAX_COUNT \
-                               + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT))
-            {
-                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-            }
-            else
-            {
-                sID = LWM2MCORE_ERR_COMPLETED_OK;
-            }
-        }
+        sID = LWM2MCORE_ERR_COMPLETED_OK;
     }
     return sID;
 }
@@ -929,7 +892,7 @@ int SmsDummy
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -951,88 +914,80 @@ int WriteServerObj
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    if ((uriPtr->op & LWM2MCORE_OP_WRITE) == 0)
     {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_WRITE;
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+    /* Check that the object instance Id is in the correct range */
+    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Server short ID */
+        case LWM2MCORE_SERVER_SHORT_ID_RID:
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+            /* Write operation */
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
         }
-        else
+        break;
+
+        /* Resource 1: Server lifetime */
+        case LWM2MCORE_SERVER_LIFETIME_RID:
         {
-            /* Check that the object instance Id is in the correct range */
-            if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
-            {
-                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-            }
-            else
-            {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 0: Server short ID */
-                    case LWM2MCORE_SERVER_SHORT_ID_RID:
-                    {
-                        /* Write operation */
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
 
-                    /* Resource 1: Server lifetime */
-                    case LWM2MCORE_SERVER_LIFETIME_RID:
-                    {
-
-                        Lifetime = (uint64_t)BytesToInt((uint8_t*)bufferPtr, len);
-                        LOG_ARG("lifetime write %s, %d", bufferPtr, Lifetime);
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 2: Server default minimum period */
-                    case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 3: Server default minimum period */
-                    case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 5: Disable timeout */
-                    case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 6: Notification storing when disabled or offline */
-                    case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 7: Binding */
-                    case LWM2MCORE_SERVER_BINDING_MODE_RID:
-                    {
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-            }
+            Lifetime = (uint64_t)BytesToInt((uint8_t*)bufferPtr, len);
+            LOG_ARG("lifetime write %s, %d", bufferPtr, Lifetime);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
         }
+        break;
+
+        /* Resource 2: Server default minimum period */
+        case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 3: Server default minimum period */
+        case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 5: Disable timeout */
+        case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 6: Notification storing when disabled or offline */
+        case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 7: Binding */
+        case LWM2MCORE_SERVER_BINDING_MODE_RID:
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
     return sID;
 }
@@ -1044,7 +999,7 @@ int WriteServerObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1068,99 +1023,87 @@ int ReadServerObj
 
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    if ((uriPtr->op & LWM2MCORE_OP_READ) == 0)
     {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ;
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
 
-        if ((uriPtr->op & supported_op_mask) == 0)
+    /* Check that the object instance Id is in the correct range */
+    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Server short ID */
+        case LWM2MCORE_SERVER_SHORT_ID_RID:
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+            bufferPtr[0] = 1;
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
         }
-        else
+        break;
+
+        /* Resource 1: Server lifetime */
+        case LWM2MCORE_SERVER_LIFETIME_RID:
         {
-            /* Check that the object instance Id is in the correct range */
-            if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
-            {
-                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-            }
-            else
-            {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 0: Server short ID */
-                    case LWM2MCORE_SERVER_SHORT_ID_RID:
-                    {
-                        bufferPtr[0] = 1;
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 1: Server lifetime */
-                    case LWM2MCORE_SERVER_LIFETIME_RID:
-                    {
-                        *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
-                                                     &Lifetime,
-                                                     sizeof (Lifetime),
-                                                     false);
-                        LOG_ARG("lifetime read len %d", *lenPtr);
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 2: Server default minimum period */
-                    case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-                    {
-                        bufferPtr[0] = LWM2MCORE_PMIN_DEFAULT_VALUE;
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 3: Server default minimum period */
-                    case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-                    {
-                        bufferPtr[0] = LWM2MCORE_PMAX_DEFAULT_VALUE;
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 5: Disable timeout */
-                    case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    /* Resource 6: Notification storing when disabled or offline */
-                    case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-                    {
-                        bufferPtr[0] = 0;
-                        *lenPtr = 1;
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    /* Resource 7: Binding */
-                    case LWM2MCORE_SERVER_BINDING_MODE_RID:
-                    {
-                        *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-
-            }
+            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr, &Lifetime, sizeof(Lifetime), false);
+            LOG_ARG("lifetime read len %d", *lenPtr);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
         }
+        break;
+
+        /* Resource 2: Server default minimum period */
+        case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
+        {
+            bufferPtr[0] = LWM2MCORE_PMIN_DEFAULT_VALUE;
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 3: Server default minimum period */
+        case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
+        {
+            bufferPtr[0] = LWM2MCORE_PMAX_DEFAULT_VALUE;
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 5: Disable timeout */
+        case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        /* Resource 6: Notification storing when disabled or offline */
+        case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
+        {
+            bufferPtr[0] = 0;
+            *lenPtr = 1;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        /* Resource 7: Binding */
+        case LWM2MCORE_SERVER_BINDING_MODE_RID:
+        {
+            *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
     return sID;
 }
@@ -1179,7 +1122,7 @@ int ReadServerObj
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1200,50 +1143,42 @@ int WriteDeviceObj
     int sID;
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Check that the object instance Id is in the correct range */
+    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
     {
-        /* Check that the object instance Id is in the correct range */
-        if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    if (0 ==(uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 13: Current time */
+        case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+
+        /* Resource 16: Supported binding mode */
+        case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
+        {
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        }
+        break;
+
+        default:
         {
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
         }
-        else
-        {
-            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_WRITE;
-
-            if (0 ==(uriPtr->op & supportedMask))
-            {
-                sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-            }
-            else
-            {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 13: Current time */
-                    case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-
-                    /* Resource 16: Supported binding mode */
-                    case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
-                    {
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-            }
-        }
+        break;
     }
     return sID;
 }
@@ -1255,7 +1190,7 @@ int WriteDeviceObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1278,102 +1213,91 @@ int ReadDeviceObj
     int sID;
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Check that the object instance Id is in the correct range */
+    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
     {
-        /* Check that the object instance Id is in the correct range */
-        if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Manufacturer */
+        case LWM2MCORE_DEVICE_MANUFACTURER_RID:
+        {
+            sID = os_portDeviceManufacturer((char*)bufferPtr, (uint32_t*) lenPtr);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 1: Device number */
+        case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
+        {
+            sID = os_portDeviceModelNumber((char*)bufferPtr, (uint32_t*) lenPtr);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 2: Serial number */
+        case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
+        {
+            sID = os_portDeviceSerialNumber((char*)bufferPtr, (uint32_t*) lenPtr);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 3: Firmware */
+        case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
+        {
+            sID = os_portDeviceFirmwareVersion((char*)bufferPtr, (uint32_t*) lenPtr);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 13: Current time */
+        case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
+        {
+            uint64_t time;
+            sID = os_portDeviceCurrentTime(&time);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr, &time, sizeof(time), false);
+            }
+        }
+        break;
+
+        /* Resource 16: Supported binding mode */
+        case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
+        {
+            *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
+        default:
         {
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
         }
-        else
-        {
-            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_READ;
-
-            if (0 == (uriPtr->op & supportedMask))
-            {
-                sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-            }
-            else
-            {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 0: Manufacturer */
-                    case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-                    {
-                        sID = os_portDeviceManufacturer((char*)bufferPtr, (uint32_t*) lenPtr);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = ( size_t )strlen((char*)bufferPtr);
-                        }
-                    }
-                    break;
-
-                    /* Resource 1: Device number */
-                    case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-                    {
-                        sID = os_portDeviceModelNumber((char*)bufferPtr, (uint32_t*) lenPtr);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = ( size_t )strlen((char*)bufferPtr);
-                        }
-                    }
-                    break;
-
-                    /* Resource 2: Serial number */
-                    case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-                    {
-                        sID = os_portDeviceSerialNumber((char*)bufferPtr, (uint32_t*) lenPtr);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = ( size_t )strlen((char*)bufferPtr);
-                        }
-                    }
-                    break;
-
-                    /* Resource 3: Firmware */
-                    case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-                    {
-                        sID = os_portDeviceFirmwareVersion((char*)bufferPtr, (uint32_t*) lenPtr);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = ( size_t )strlen((char*)bufferPtr);
-                        }
-                    }
-                    break;
-
-                    /* Resource 13: Current time */
-                    case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
-                    {
-                        uint64_t time;
-                        sID = os_portDeviceCurrentTime(&time);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
-                                                         &time,
-                                                         sizeof (time),
-                                                         false);
-                        }
-                    }
-                    break;
-
-                    /* Resource 16: Supported binding mode */
-                    case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
-                    {
-                        *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
-                        sID = LWM2MCORE_ERR_COMPLETED_OK;
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-            }
-        }
+        break;
     }
     return sID;
 }
@@ -1392,7 +1316,7 @@ int ReadDeviceObj
  * Resource: all with write operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1413,51 +1337,44 @@ int WriteFwUpdateObj
     int sID;
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Only one object instance */
+    if (0 < uriPtr->oiid)
     {
-        /* Only one object instance */
-        if (0 < uriPtr->oiid)
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 1: Package URI */
+        case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
         {
-            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-        }
-        else
-        {
-            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_WRITE;
-            if (0 == (uriPtr->op & supportedMask))
+            if (LWM2MCORE_BUFFER_MAX_LEN < len)
             {
-                sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             }
             else
             {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 1: Package URI */
-                    case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
-                    {
-                        if (LWM2MCORE_BUFFER_MAX_LEN < len)
-                        {
-                            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                        }
-                        else
-                        {
-                            sID = os_portUpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                             uriPtr->oid,
-                                                             bufferPtr,
-                                                             len);
-                        }
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
+                sID = os_portUpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                                 uriPtr->oid,
+                                                 bufferPtr,
+                                                 len);
             }
         }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
     return sID;
 }
@@ -1469,7 +1386,7 @@ int WriteFwUpdateObj
  * Resource: all with read operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1492,93 +1409,85 @@ int ReadFwUpdateObj
     int sID;
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
+
+    /* Only one object instance */
+    if (0 < uriPtr->oiid)
     {
-        /* Only one object instance */
-        if (0 < uriPtr->oiid)
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 1: Package URI */
+        case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
+        {
+            sID = os_portUpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                             uriPtr->oid,
+                                             bufferPtr,
+                                             lenPtr);
+        }
+        break;
+
+        /* Resource 3: Update state */
+        case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
+        {
+            uint8_t updateState;
+            sID = os_portUpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
+                                              uriPtr->oiid,
+                                              &updateState);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &updateState,
+                                             sizeof(updateState),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 5: Update result */
+        case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
+        {
+            uint8_t updateResult;
+            sID = os_portUpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
+                                               uriPtr->oiid,
+                                               &updateResult);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                            &updateResult,
+                                            sizeof(updateResult),
+                                            false);
+            }
+        }
+        break;
+
+        /* Resource 6: Package name */
+        case LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID:
+        {
+            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+        }
+        break;
+
+        /* Resource 7: Package version */
+        case LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID:
+        {
+            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+        }
+        break;
+
+        default:
         {
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
         }
-        else
-        {
-            lwm2mcore_opType_t supportedMask = LWM2MCORE_OP_READ;
-            if (0 == (uriPtr->op & supportedMask))
-            {
-                sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-            }
-            else
-            {
-                switch (uriPtr->rid)
-                {
-                    /* Resource 1: Package URI */
-                    case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
-                    {
-
-                        sID = os_portUpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                         uriPtr->oid,
-                                                         bufferPtr,
-                                                         lenPtr);
-                    }
-                    break;
-
-                    /* Resource 3: Update state */
-                    case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
-                    {
-                        uint8_t updateState;
-                        sID = os_portUpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
-                                                          uriPtr->oid,
-                                                          &updateState);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
-                                                         &updateState,
-                                                         sizeof (updateState),
-                                                         false);
-                        }
-                    }
-                    break;
-
-                    /* Resource 5: Update result */
-                    case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
-                    {
-                        uint8_t updateResult;
-                        sID = os_portUpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
-                                                           uriPtr->oid,
-                                                           &updateResult);
-                        if (sID == LWM2MCORE_ERR_COMPLETED_OK)
-                        {
-                            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
-                                                        &updateResult,
-                                                        sizeof (updateResult),
-                                                        false);
-                        }
-                    }
-                    break;
-
-                    /* Resource 6: Package name */
-                    case LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID:
-                    {
-                        sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-                    }
-                    break;
-
-                    /* Resource 7: Package version */
-                    case LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID:
-                    {
-                        sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
-                    }
-                    break;
-
-                    default:
-                    {
-                        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                    }
-                    break;
-                }
-            }
-        }
+        break;
     }
     return sID;
 }
@@ -1590,7 +1499,7 @@ int ReadFwUpdateObj
  * Resource: all with execute operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1609,41 +1518,365 @@ int ExecFwUpdate
 )
 {
     int sID;
-    /* Only one object instance */
+
+    if ((NULL == uriPtr) || (NULL == bufferPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
     if (0 < uriPtr->oiid)
     {
-        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        /* Only one object instance */
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
-    else
+
+    /* Check if the related command is EXECUTE */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_EXECUTE))
     {
-        lwm2mcore_opType_t supportedMaskExec = LWM2MCORE_OP_EXECUTE;
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
 
-        if (0 == (uriPtr->op & supportedMaskExec))
+    switch (uriPtr->rid)
+    {
+        /* Resource 2: Update */
+        case LWM2MCORE_FW_UPDATE_UPDATE_RID:
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+            sID = os_portUpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
+                                            uriPtr->oiid,
+                                            bufferPtr,
+                                            len);
         }
-        else
-        {
-            switch (uriPtr->rid)
-            {
-                /* Resource 2: Update */
-                case LWM2MCORE_FW_UPDATE_UPDATE_RID:
-                {
-                    sID = os_portUpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
-                                                    uriPtr->oiid,
-                                                    bufferPtr,
-                                                    len);
-                }
-                break;
+        break;
 
-                default:
-                {
-                    sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-                }
-                break;
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
+    }
+
+    return sID;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                  OBJECT 9: SOFTWARE UPDATE
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a ressource of object 9
+ * Object: 9 - software update
+ * Resource: all with write operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int WriteSwUpdateObj
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID;
+    if ((NULL == uriPtr) || (NULL == bufferPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check if the related command is WRITE */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    LOG_ARG("WriteSwUpdateObj rid %d", uriPtr->rid);
+    switch (uriPtr->rid)
+    {
+        /* Resource 3: Package URI */
+        case LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID:
+        {
+            LOG_ARG("WriteSwUpdateObj len %d", len);
+            if (LWM2MCORE_BUFFER_MAX_LEN < len)
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            else
+            {
+                sID = os_portUpdateSetPackageUri(LWM2MCORE_SW_UPDATE_TYPE,
+                                                 uriPtr->oid,
+                                                 bufferPtr,
+                                                 len);
             }
         }
+        break;
+
+        /* Resource 8: Update Supported Objects */
+        case LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID:
+        {
+            if (LWM2MCORE_BUFFER_MAX_LEN < len)
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            else
+            {
+                sID = os_portUpdateSetSwSupportedObjects(uriPtr->oiid,
+                                                         (bool)BytesToInt(bufferPtr, len));
+            }
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
     }
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a ressource of object 9
+ * Object: 9 - Software update
+ * Resource: all with read operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadSwUpdateObj
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+)
+{
+    int sID;
+    if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check if the related command is READ */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: package name */
+        case LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID:
+        {
+            sID = os_portUpdateGetPackageName(LWM2MCORE_SW_UPDATE_TYPE,
+                                              uriPtr->oiid,
+                                              bufferPtr,
+                                              (uint32_t)*lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 1: package version */
+        case LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID:
+        {
+            sID = os_portUpdateGetPackageVersion(LWM2MCORE_SW_UPDATE_TYPE,
+                                                 uriPtr->oiid,
+                                                 bufferPtr,
+                                                 (uint32_t)*lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+        }
+        break;
+
+        /* Resource 7: Update State */
+        case LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID:
+        {
+            uint8_t updateResult;
+            sID = os_portUpdateGetUpdateState(LWM2MCORE_SW_UPDATE_TYPE,
+                                              uriPtr->oiid,
+                                              &updateResult);
+            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &updateResult,
+                                             sizeof(updateResult),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 8: Update Supported Objects */
+        case LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID:
+        {
+            bool value;
+            sID = os_portUpdateGetSwSupportedObjects(uriPtr->oiid,
+                                                     &value);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &value,
+                                             sizeof(value),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 9: Update result */
+        case LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID:
+        {
+            uint8_t updateResult;
+            sID = os_portUpdateGetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE,
+                                               uriPtr->oiid,
+                                               &updateResult);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &updateResult,
+                                             sizeof(updateResult),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 12: Activation state */
+        case LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID:
+        {
+            bool value;
+            sID = os_portUpdateGetSwActivationState(uriPtr->oiid,
+                                                    &value);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &value,
+                                             sizeof(value),
+                                             false);
+            }
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
+    }
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a ressource of object 9
+ * Object: 9 - Software update
+ * Resource: all with execute operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ExecSwUpdate
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID;
+
+    if ((NULL == uriPtr) || ((NULL == bufferPtr) && len))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check if the related command is EXECUTE */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_EXECUTE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 4: Install */
+        case LWM2MCORE_SW_UPDATE_INSTALL_RID:
+        {
+            sID = os_portUpdateLaunchUpdate(LWM2MCORE_SW_UPDATE_TYPE,
+                                            uriPtr->oiid,
+                                            bufferPtr,
+                                            len);
+        }
+        break;
+
+        /* Resource 6: Uninstall */
+        case LWM2MCORE_SW_UPDATE_UNINSTALL_RID:
+        {
+            sID = os_portUpdateLaunchSwUninstall(uriPtr->oiid,
+                                                 bufferPtr,
+                                                 len);
+        }
+        break;
+
+        /* Resource 10: Activate */
+        case LWM2MCORE_SW_UPDATE_ACTIVATE_RID:
+        {
+            sID = os_portUpdateActivateSoftware(true,
+                                                uriPtr->oiid,
+                                                bufferPtr,
+                                                len);
+        }
+        break;
+
+        /* Resource 11: Deactivate */
+        case LWM2MCORE_SW_UPDATE_DEACTIVATE_RID:
+        {
+            sID = os_portUpdateActivateSoftware(false,
+                                                uriPtr->oiid,
+                                                bufferPtr,
+                                                len);
+        }
+        break;
+
+        default:
+        {
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        }
+        break;
+    }
+
     return sID;
 }
 
@@ -1661,7 +1894,7 @@ int ExecFwUpdate
  * Resource: 0
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -1684,47 +1917,39 @@ int OnSslCertif
     int sID;
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
-        sID = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        lwm2mcore_opType_t supported_op_mask = LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE;
 
-        if (0 == (uriPtr->op & supported_op_mask))
+    if (0 == (uriPtr->op & (LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE)))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    /* Only one instance */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* This resource needs the BLOCK1 option support */
+    if (uriPtr->op & LWM2MCORE_OP_READ)
+    {
+        /* Read operation */
+        if (0 == *lenPtr)
         {
-            sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+            /* Delete the certificates */
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
         }
         else
         {
-            /* Only one instance */
-            if (0 < uriPtr->oiid)
-            {
-                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-            }
-            else
-            {
-                /* This resource needs the BLOCK1 option support */
-                if (uriPtr->op & LWM2MCORE_OP_READ)
-                {
-                    /* Read operation */
-                    if (0 == *lenPtr)
-                    {
-                        /* Delete the certificates */
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                    else
-                    {
-                        /* Read the stored certificates */
-                        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                    }
-                }
-                else
-                {
-                    /* Write a certificate */
-                    sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-                }
-            }
+            /* Read the stored certificates */
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
         }
+    }
+    else
+    {
+        /* Write a certificate */
+        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
     }
     return sID;
 }
@@ -1736,7 +1961,7 @@ int OnSslCertif
  * Function for not registered objects
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented

@@ -15,6 +15,7 @@
 #include "sessionManager.h"
 #include "osPortSecurity.h"
 #include "internals.h"
+#include "osPortUpdate.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -22,6 +23,13 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define OBJ_COUNT 10
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define for supported object instance list
+ */
+//--------------------------------------------------------------------------------------------------
+#define ONE_PATH_MAX_LEN 90
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -51,6 +59,13 @@ extern lwm2mcore_handler_t Lwm2mcoreHandlers;
  */
 //--------------------------------------------------------------------------------------------------
 extern lwm2mcore_context_t* Lwm2mcoreCtxPtr;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Static string for software object instance list
+ */
+//--------------------------------------------------------------------------------------------------
+char SwObjectInstanceListPtr[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -161,6 +176,11 @@ static lwm2mcore_internalObject_t* FindObject
 {
     lwm2mcore_internalObject_t* objPtr = NULL;
 
+    if (NULL == ctxPtr)
+    {
+        return NULL;
+    }
+
     for (objPtr = DLIST_FIRST(&(ctxPtr->objects_list)); objPtr; objPtr = DLIST_NEXT(objPtr, list))
     {
         if (objPtr->id == oid)
@@ -213,7 +233,7 @@ static uint16_t BytesToUint16
     const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 )
 {
-    return ((bytesPtr[0] << 8) | bytesPtr[1]);
+    return (NULL == bytesPtr) ? 0 : ((bytesPtr[0] << 8) | bytesPtr[1]);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -229,7 +249,8 @@ static uint32_t BytesToUint32
     const uint8_t* bytesPtr
 )
 {
-    return ((bytesPtr[0] << 24) | (bytesPtr[1] << 16) | (bytesPtr[2] << 8) | bytesPtr[3]);
+    return (NULL == bytesPtr) ? 0 :
+                    ((bytesPtr[0] << 24) | (bytesPtr[1] << 16) | (bytesPtr[2] << 8) | bytesPtr[3]);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -245,8 +266,8 @@ static uint64_t BytesToUint64
     const uint8_t* bytesPtr
 )
 {
-    return (((uint64_t)BytesToUint32(bytesPtr) << 32)
-            | BytesToUint32(bytesPtr + 4));
+    return (NULL == bytesPtr) ? 0 : (((uint64_t)BytesToUint32(bytesPtr) << 32)
+                                      | BytesToUint32(bytesPtr + 4));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -264,6 +285,11 @@ inline int64_t BytesToInt
 )
 {
     int64_t value;
+
+    if (NULL == bytesPtr)
+    {
+        return 0;
+    }
 
     switch(len)
     {
@@ -315,23 +341,25 @@ static uint8_t ReadCb
 (
     uint16_t instanceId,            ///< [IN] Object ID
     int* numDataPtr,                ///< [IN] Number of resources to be read
-    lwm2m_data_t ** dataArrayPtr,   ///< [IN] Array of requested resources to be read
-    lwm2m_object_t * objectPtr      ///< [IN] Pointer on object
+    lwm2m_data_t** dataArrayPtr,    ///< [IN] Array of requested resources to be read
+    lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
 )
 {
     uint8_t result;
     int i;
+    if ((NULL == objectPtr) || (NULL == dataArrayPtr))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     LOG_ARG("ReadCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_uri_t uri;
+        lwm2mcore_uri_t uri = { 0 };
         lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
-
-        memset(&uri, 0, sizeof (lwm2mcore_uri_t));
 
         uri.op = LWM2MCORE_OP_READ;
         uri.oid = objectPtr->objID;
@@ -363,9 +391,12 @@ static uint8_t ReadCb
                      resourcePtr;
                      resourcePtr = DLIST_NEXT(resourcePtr, list))
                 {
-                    resList[ i ] = resourcePtr->id;
-                    LOG_ARG("resList[ %d ] %d", i, resList[ i ]);
-                    i++;
+                    if (NULL != resourcePtr->read)
+                    {
+                        resList[ i ] = resourcePtr->id;
+                        LOG_ARG("resList[ %d ] %d", i, resList[ i ]);
+                        i++;
+                    }
                 }
 
                 nbRes = i;
@@ -395,12 +426,9 @@ static uint8_t ReadCb
                     if (NULL != resourcePtr->read)
                     {
                         async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
-                        memset( async_buf, 0, async_buf_len);
+                        memset(async_buf, 0, async_buf_len);
                         LOG_ARG("READ / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                        sid  = resourcePtr->read(&uri,
-                                                async_buf,
-                                                &async_buf_len,
-                                                NULL);
+                        sid  = resourcePtr->read(&uri, async_buf, &async_buf_len, NULL);
 
                         /* Define the CoAP result */
                         result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -563,6 +591,11 @@ static uint8_t WriteCb
     uint8_t result;
     int i;
 
+    if ((NULL == objectPtr) || (NULL == dataArrayPtr))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
     LOG_ARG("WriteCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
@@ -641,8 +674,8 @@ static uint8_t WriteCb
                             case LWM2M_TYPE_STRING:
                             {
                                 LOG("WriteCb string");
-                                if (dataArrayPtr[i].value.asBuffer.length <= \
-                                                LWM2MCORE_BUFFER_MAX_LEN)
+                                if (dataArrayPtr[i].value.asBuffer.length <=
+                                                                        LWM2MCORE_BUFFER_MAX_LEN)
                                 {
                                     memcpy(async_buf,
                                            dataArrayPtr[i].value.asBuffer.buffer,
@@ -655,8 +688,8 @@ static uint8_t WriteCb
                             case LWM2M_TYPE_OPAQUE:
                             {
                                 LOG("WriteCb opaque");
-                                if (dataArrayPtr[i].value.asBuffer.length <= \
-                                                    LWM2MCORE_BUFFER_MAX_LEN)
+                                if (dataArrayPtr[i].value.asBuffer.length <=
+                                                                        LWM2MCORE_BUFFER_MAX_LEN)
                                 {
                                     memcpy(async_buf,
                                            dataArrayPtr[i].value.asBuffer.buffer,
@@ -716,7 +749,7 @@ static uint8_t WriteCb
                     }
                     else
                     {
-                        LOG("READ callback NULL");
+                        LOG("WRITE callback NULL");
                         result = COAP_404_NOT_FOUND;
                     }
                 }
@@ -744,6 +777,7 @@ static uint8_t WriteCb
  *
  * @return
  *      - COAP_404_NOT_FOUND if the object instance does not exist
+ *      - COAP_500_INTERNAL_SERVER_ERROR in case of error
  *      - COAP_202_DELETED if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
@@ -754,7 +788,12 @@ static uint8_t DeleteObjInstance
 )
 {
     lwm2m_list_t* instancePtr;
-    LOG("Enter");
+
+    if (NULL == objectPtr)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
     objectPtr->instanceList = lwm2m_list_remove(objectPtr->instanceList,
                                                 id,
                                                 (lwm2m_list_t **)&instancePtr);
@@ -788,7 +827,22 @@ static uint8_t CreateCb
 {
     uint8_t result;
     bool instanceCreated = false;
+
+    if ((NULL == objectPtr) || (NULL == dataArrayPtr))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
     LOG_ARG("CreateCb oid %d oiid %d", objectPtr->objID, instanceId);
+
+    if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
+    {
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateSoftwareInstance(true, instanceId))
+        {
+            LOG("Error from client to create object instance");
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
 
     if (NULL == objectPtr->instanceList)
     {
@@ -800,37 +854,87 @@ static uint8_t CreateCb
             instanceCreated = true;
         }
     }
-    else
-        LOG("objectPtr->instanceList != NULL");
-
     /* Search if the object was registered */
-    if ((LWM2M_LIST_FIND(objectPtr->instanceList, instanceId) == NULL)
-     || instanceCreated)
+    else if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId) == NULL)
     {
         lwm2m_list_t* instancePtr;
         /* Add the object instance in the Wakaama format */
         instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
         instancePtr->id = instanceId;
         objectPtr->instanceList = LWM2M_LIST_ADD(objectPtr->instanceList, instancePtr);
-
-        result = WriteCb(instanceId, numData, dataArrayPtr, objectPtr);
-        if (COAP_204_CHANGED != result)
-        {
-            LOG_ARG("CreateCb --> delete oiid %d", instanceId);
-            (void)DeleteObjInstance(instanceId, objectPtr);
-            result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        else
-        {
-            result = COAP_201_CREATED;
-        }
     }
     else
     {
         LOG("Object instance already exists");
+        return COAP_400_BAD_REQUEST;
+    }
+
+    if (COAP_204_CHANGED != WriteCb(instanceId, numData, dataArrayPtr, objectPtr))
+    {
+        LOG_ARG("CreateCb --> delete oiid %d", instanceId);
+        DeleteObjInstance(instanceId, objectPtr);
+        result = COAP_500_INTERNAL_SERVER_ERROR;
+    }
+    else
+    {
+        result = COAP_201_CREATED;
+    }
+
+    LOG_ARG("CreateCb result %d", result);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Generic function when a DELETE command is treated for a specific object (Wakaama)
+ *
+ * @return
+ *      - COAP_400_BAD_REQUEST if the object instance does not exist
+ *      - COAP_500_INTERNAL_SERVER_ERROR in case of error
+ *      - COAP_202_DELETED if the request is well treated
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t DeleteCb
+(
+    uint16_t instanceId,            ///< [IN] Object instance ID
+    lwm2m_object_t* objectPtr      ///< [IN] Pointer on object
+)
+{
+    uint8_t result;
+    lwm2m_list_t* instancePtr;
+
+    if (NULL == objectPtr)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    LOG_ARG("DeleteCb oid %d oiid %d", objectPtr->objID, instanceId);
+
+    if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
+    {
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateSoftwareInstance(false, instanceId))
+        {
+            LOG("Error from client to delete object instance");
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+    }
+
+    /* Search if the object instance was registered */
+    instancePtr = LWM2M_LIST_FIND(objectPtr->instanceList, instanceId);
+
+    if (NULL != instancePtr)
+    {
+        lwm2m_client_t* clientP;
+        /* Delete the object instance in the Wakaama format */
+        objectPtr->instanceList = LWM2M_LIST_RM(objectPtr->instanceList, instanceId, &clientP);
+        result = COAP_202_DELETED;
+    }
+    else
+    {
+        LOG("Object instance does not exist");
         result = COAP_400_BAD_REQUEST;
     }
-    LOG_ARG("CreateCb result %d", result);
+    LOG_ARG("DeleteCb result %d", result);
     return result;
 }
 
@@ -850,6 +954,10 @@ static uint8_t DiscoverCb
     lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
 )
 {
+    if ((NULL == objectPtr) || (NULL == dataArrayPtr))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
     return 0;
 }
 
@@ -858,7 +966,9 @@ static uint8_t DiscoverCb
  * Generic function when a EXECUTE command is treated for a specific object (Wakaama)
  *
  * @return
- *      - 0
+ *      - COAP_404_NOT_FOUND if the object / object instance / resource instance does not exist
+ *      - COAP_500_INTERNAL_SERVER_ERROR in case of error
+ *      - COAP_204_CHANGED if the request is well treated
  */
 //--------------------------------------------------------------------------------------------------
 static uint8_t ExecuteCb
@@ -871,6 +981,11 @@ static uint8_t ExecuteCb
 )
 {
     uint8_t result;
+
+    if ((NULL == objectPtr) || ((NULL == bufferPtr) && length))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     LOG_ARG("ExecuteCb oid %d oiid %d rid %d", objectPtr->objID, instanceId, resourceId);
 
@@ -980,9 +1095,14 @@ static lwm2mcore_internalObject_t* InitObject
     lwm2mcore_internalResource_t* resourcePtr = NULL;
     lwm2mcore_resource_t *client_resourcePtr = NULL;
 
+    if (NULL == client_objPtr)
+    {
+        return NULL;
+    }
+
     LOG_ARG("InitObject /%d/%d, multiple %d", client_objPtr->id, iid, multiple);
 
-    objPtr = (lwm2mcore_internalObject_t*)malloc (sizeof (lwm2mcore_internalObject_t));
+    objPtr = (lwm2mcore_internalObject_t*)lwm2m_malloc(sizeof (lwm2mcore_internalObject_t));
 
     OS_ASSERT(objPtr);
 
@@ -1002,8 +1122,20 @@ static lwm2mcore_internalObject_t* InitObject
 
     DLIST_INIT(&(objPtr->resource_list));
 
-    for (j = 0; j < client_objPtr->res_cnt; j++) {
-        resourcePtr = (lwm2mcore_internalResource_t*)malloc (sizeof (lwm2mcore_internalResource_t));
+    if ((LWM2MCORE_SOFTWARE_UPDATE_OID == client_objPtr->id)
+     && (LWM2MCORE_ID_NONE == iid))
+    {
+        /* Object 9 without any object instance
+         * Get information from host
+         */
+        LOG("Object 9 without any object instance");
+
+    }
+
+    for (j = 0; j < client_objPtr->res_cnt; j++)
+    {
+        resourcePtr =
+                (lwm2mcore_internalResource_t*)lwm2m_malloc(sizeof(lwm2mcore_internalResource_t));
 
         OS_ASSERT(resourcePtr);
         memset(resourcePtr, 0, sizeof(lwm2mcore_internalResource_t));
@@ -1038,13 +1170,18 @@ static void InitObjectsList
     int i, j;
     lwm2mcore_internalObject_t* objPtr = NULL;
 
+    if ((NULL == objects_list) || (NULL == clientHandlerPtr))
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
     LOG_ARG("obj_cnt %d", clientHandlerPtr->obj_cnt);
 
     for (i = 0; i < clientHandlerPtr->obj_cnt; i++)
     {
         if (LWM2MCORE_ID_NONE == (clientHandlerPtr->objects + i)->max_obj_inst_cnt)
         {
-            /*Unknown object instance count is always assumed to be multiple*/
+            /*Unknown object instance count is always assumed to be multiple */
             objPtr = InitObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
@@ -1081,7 +1218,7 @@ void ObjectsFree
     void
 )
 {
-    struct _lwm2mcore_objectsList* objectsListPtr = GetObjectsList ();
+    struct _lwm2mcore_objectsList* objectsListPtr = GetObjectsList();
     lwm2mcore_internalObject_t* objPtr = NULL;
     lwm2mcore_internalResource_t* resPtr = NULL;
     uint32_t i = 0;
@@ -1132,6 +1269,11 @@ static bool RegisterObjTable
     bool dmServerPresence = false;
     struct _lwm2mcore_objectsList *objectsListPtr = NULL;
 
+    if ((NULL == handlerPtr) || (NULL == registeredObjNbPtr))
+    {
+        return false;
+    }
+
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false)
      && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
@@ -1146,8 +1288,7 @@ static bool RegisterObjTable
     for (i = 0; i < handlerPtr->obj_cnt; i++)
     {
         /* Memory allocation for one object */
-        ObjectArray[ObjNb]  = \
-                        (lwm2m_object_t *)lwm2m_malloc (sizeof (lwm2m_object_t));
+        ObjectArray[ObjNb]  = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
         if (NULL != ObjectArray[ObjNb])
         {
             memset(ObjectArray[ObjNb], 0, sizeof(lwm2m_object_t));
@@ -1175,12 +1316,12 @@ static bool RegisterObjTable
             if (LWM2MCORE_ID_NONE == objInstanceNb)
             {
                 /* Unknown object instance count is always assumed to be multiple */
-                /* TODO */
+                LOG_ARG("Object with multiple instances oid %d", ObjectArray[ObjNb]->objID);
             }
             else if (1 < objInstanceNb)
             {
                 lwm2m_list_t* instancePtr;
-                ObjectArray[ObjNb]->instanceList = \
+                ObjectArray[ObjNb]->instanceList =
                         (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
                 memset(ObjectArray[ObjNb]->instanceList, 0, sizeof(lwm2m_list_t));
                 for (j = 0; j < objInstanceNb; j++)
@@ -1188,7 +1329,7 @@ static bool RegisterObjTable
                     /* Add the object instance in the Wakaama format */
                     instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
                     instancePtr->id = j;
-                    ObjectArray[ObjNb]->instanceList = \
+                    ObjectArray[ObjNb]->instanceList =
                         LWM2M_LIST_ADD (ObjectArray[ObjNb]->instanceList,
                                         instancePtr);
                 }
@@ -1208,7 +1349,7 @@ static bool RegisterObjTable
             else if (objInstanceNb == 1)
             {
                 /* Allocate the unique object instance */
-                ObjectArray[ObjNb]->instanceList = \
+                ObjectArray[ObjNb]->instanceList =
                                             (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
                 if (ObjectArray[ObjNb]->instanceList != NULL)
                 {
@@ -1246,6 +1387,7 @@ static bool RegisterObjTable
             ObjectArray[ObjNb]->writeFunc    = WriteCb;
             ObjectArray[ObjNb]->executeFunc  = ExecuteCb;
             ObjectArray[ObjNb]->createFunc   = CreateCb;
+            ObjectArray[ObjNb]->deleteFunc   = DeleteCb;
 
             ObjectArray[ObjNb]->userData = NULL;
             ObjNb++;
@@ -1259,6 +1401,138 @@ static bool RegisterObjTable
     objectsListPtr = GetObjectsList();
     InitObjectsList(objectsListPtr, handlerPtr);
     *registeredObjNbPtr = ObjNb;
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to notify Wakaama of supported object instance list for software and asset data
+ *
+ * @return
+ *      - true if the list was successfully treated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+static bool UpdateSwListWakaama
+(
+    int context
+)
+{
+    ClientData_t* dataPtr = (ClientData_t*) context;
+
+    LOG_ARG("UpdateSwListWakaama strlen list %d", strlen(SwObjectInstanceListPtr));
+
+    if ((NULL == dataPtr)
+    || (!strlen(SwObjectInstanceListPtr)))
+    {
+        return false;
+    }
+
+    char tempPath[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
+    bool newObjectInstance = false;
+    uint16_t LenToCopy = 0;
+    uint16_t oid;
+    uint16_t oiid;
+    char aOnePath[ ONE_PATH_MAX_LEN ];
+    char prefix[ LWM2MCORE_NAME_LEN + 1];
+    char* aData = NULL;
+    char* cSavePtr = NULL;
+    char* cSaveOnePathPtr = NULL;
+
+    /* Treat the list:
+     * All object instances of object 9 needs to be registered in Wakaama
+     */
+    tempPath[0] = 0;
+    snprintf(tempPath, LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN, "%s", SwObjectInstanceListPtr);
+
+    aData = strtok_r(tempPath, REG_PATH_END, &cSavePtr);
+    while (NULL != aData)
+    {
+        memset(aOnePath, 0, ONE_PATH_MAX_LEN);
+        strncpy(aOnePath, aData, strlen(aData));
+
+        /* Get the object instance string
+         * The path format shall be
+         *  </path(prefix)/ObjectId/InstanceId>,
+         */
+        aData = strtok_r(aOnePath, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
+        if (NULL != aData)
+        {
+            aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
+            if (NULL != aData)
+            {
+                memset(prefix, 0, LWM2MCORE_NAME_LEN + 1);
+                strncpy(prefix, aData, strlen(aData));
+                aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
+                if (NULL != aData)
+                {
+                    int ListPos = 0;
+                    oid = atoi(aData);
+                    aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
+                    /* check if aData is digit
+                     * if yes, oiid is present
+                     * else no oiid
+                     */
+                    if (NULL != aData)
+                    {
+                        oiid = atoi(aData);
+                    }
+                    else
+                    {
+                        oiid = LWM2MCORE_ID_NONE;
+                    }
+
+                    LOG_ARG("lwm2mcore_portUpdateSwList: /%s/%d/%d", prefix, oid, oiid);
+
+                    /* If object Id is 9, check if the object instance Id exist in Wakaama */
+                    if (LWM2M_SOFTWARE_UPDATE_OBJECT_ID == oid)
+                    {
+                        lwm2m_object_t* targetPtr =
+                            (lwm2m_object_t*)LWM2M_LIST_FIND(dataPtr->lwm2mHPtr->objectList, oid);
+                        if (NULL != targetPtr)
+                        {
+                            lwm2m_list_t* instancePtr;
+                            LOG("Obj 9 is registered");
+                            instancePtr = LWM2M_LIST_FIND(targetPtr->instanceList, oiid);
+                            if (NULL != instancePtr)
+                            {
+                                LOG("Obj instance is registered");
+                            }
+                            else
+                            {
+                                instancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
+                                LOG("Obj instance is NOT registered");
+                                memset(instancePtr, 0, sizeof(lwm2m_list_t));
+                                instancePtr->id = oiid;
+                                targetPtr->instanceList =
+                                            LWM2M_LIST_ADD(targetPtr->instanceList, instancePtr);
+                                newObjectInstance = true;
+                            }
+                        }
+                        else
+                        {
+                            LOG("Obj 9 is not registered: AOTA is not possible");
+                        }
+                    }
+                }
+            }
+        }
+        aData = strtok_r(NULL, REG_PATH_END, &cSavePtr);
+    }
+    LOG("lwm2mcore_updateSwList END");
+    LOG_ARG("%s", SwObjectInstanceListPtr);
+
+    // if a new object instance is added and if the device is registered to the DM server,
+    // send a registration update
+    // TODO: For the moment: always send the registration update
+    //if (newObjectInstance)
+    {
+        bool registered = false;
+        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        {
+            lwm2mcore_update(context);
+        }
+    }
     return true;
 }
 
@@ -1348,9 +1622,46 @@ uint16_t lwm2mcore_objectRegister
                 {
                     LOG("configure lwm2m client OK");
                 }
+
+                // Check if some software object instance exist
+                UpdateSwListWakaama(context);
             }
         }
     }
     return RegisteredObjNb;
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to notify LWM2MCore of supported object instance list for software and asset data
+ *
+ * @return
+ *      - true if the list was successfully treated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_updateSwList
+(
+    int context,                    ///< [IN] Context (Set to 0 if this API is used if
+                                    ///< lwm2mcore_init API was no called)
+    const char* listPtr,            ///< [IN] Formatted list
+    size_t ListLen                  ///< [IN] Size of the update list
+)
+{
+    if ((LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN < ListLen)
+     || (NULL == listPtr))
+    {
+        return false;
+    }
+    // store the string
+    SwObjectInstanceListPtr[0] = 0;
+    snprintf(SwObjectInstanceListPtr, LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN, "%s", listPtr);
+
+    if (0 == context)
+    {
+        return true;
+    }
+    return UpdateSwListWakaama(context);
+}
+
 

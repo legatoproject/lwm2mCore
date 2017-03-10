@@ -207,48 +207,48 @@ static lwm2mcore_resource_t DeviceResources[] =
         LWM2MCORE_DEVICE_MANUFACTURER_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        NULL,
+        ReadDeviceObj,                              //.read
+        NULL,                                       //.write
         NULL,                                       //.exec
     },
     {
         LWM2MCORE_DEVICE_MODEL_NUMBER_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        NULL,
+        ReadDeviceObj,                              //.read
+        NULL,                                       //.write
         NULL,                                       //.exec
     },
     {
         LWM2MCORE_DEVICE_SERIAL_NUMBER_RID,         //.id
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        NULL,
+        ReadDeviceObj,                              //.read
+        NULL,                                       //.write
         NULL,                                       //.exec
     },
     {
         LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID,      //.id
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        NULL,
+        ReadDeviceObj,                              //.read
+        NULL,                                       //.write
         NULL,                                       //.exec
     },
     {
         LWM2MCORE_DEVICE_CURRENT_TIME_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_TIME,               //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        WriteDeviceObj,
+        ReadDeviceObj,                              //.read
+        WriteDeviceObj,                             //.write
         NULL,                                       //.exec
     },
     {
         LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID, //.id
         LWM2MCORE_RESOURCE_TYPE_STRING,              //.type
         1,                                          //.max_res_inst_cnt
-        ReadDeviceObj,
-        WriteDeviceObj,
+        ReadDeviceObj,                              //.read
+        WriteDeviceObj,                             //.write
         NULL,                                       //.exec
     }
 };
@@ -273,8 +273,8 @@ static lwm2mcore_resource_t FirmwareUpdateResources[] =
     },
     {
         LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID,        //.id
-        1,                                          //.max_res_inst_cnt
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.max_res_inst_cnt
         ReadFwUpdateObj,                            //.read
         WriteFwUpdateObj,                           //.write
         NULL                                        //.exec
@@ -302,26 +302,107 @@ static lwm2mcore_resource_t FirmwareUpdateResources[] =
         ReadFwUpdateObj,                            //.read
         NULL,                                       //.write
         NULL                                        //.exec
-    },
-    {
-        LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID,       //.id
-        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
-        1,                                          //.max_res_inst_cnt
-        ReadFwUpdateObj,                            //.read
-        NULL,                                       //.write
-        NULL                                        //.exec
-    },
-    {
-        LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID,    //.id
-        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
-        1,                                          //.max_res_inst_cnt
-        ReadFwUpdateObj,                            //.read
-        NULL,                                       //.write
-        NULL                                        //.exec
     }
 };
 
-
+//--------------------------------------------------------------------------------------------------
+/**
+ * SoftwareResources: supported resources defined for LWM2M software update object (9)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_resource_t SoftwareUpdateResources[] =
+{
+    {
+        LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID,       //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID,    //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID,        //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.max_res_inst_cnt
+        NULL,                                       //.read
+        WriteSwUpdateObj,                           //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_INSTALL_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.max_res_inst_cnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecSwUpdate,                               //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_UNINSTALL_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.max_res_inst_cnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecSwUpdate,                               //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID,       //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_BOOL,               //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        WriteSwUpdateObj,                           //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_ACTIVATE_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.max_res_inst_cnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecSwUpdate,                               //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_DEACTIVATE_RID,         //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.max_res_inst_cnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecSwUpdate,                               //.exec
+    },
+    {
+        LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID,   //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.max_res_inst_cnt
+        ReadSwUpdateObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    }
+};
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -382,6 +463,13 @@ lwm2mcore_object_t ObjArray[] =
         1,                                                                      //.max_obj_inst_cnt
         ARRAYSIZE(FirmwareUpdateResources),                                     //.res_cnt
         FirmwareUpdateResources                                                 //.resources
+    },
+    /* object 9, software update */
+    {
+        LWM2MCORE_SOFTWARE_UPDATE_OID,                                          //.id
+        LWM2MCORE_ID_NONE,                                                      //.max_obj_inst_cnt
+        ARRAYSIZE(SoftwareUpdateResources),                                     //.res_cnt
+        SoftwareUpdateResources                                                 //.resources
     },
     /* object 10243, SSL certificate */
     {

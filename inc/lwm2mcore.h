@@ -33,7 +33,7 @@
  * Maximum length of a resource name
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2M_NAME_LEN                          64
+#define LWM2MCORE_NAME_LEN                      64
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -51,7 +51,7 @@
  * Define values to indicate that an object can be supported without any defined ressource
  */
 //--------------------------------------------------------------------------------------------------
-#define    LWM2MCORE_ID_NONE                    0xFFFF
+#define LWM2MCORE_ID_NONE                       0xFFFF
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -260,7 +260,7 @@ typedef struct
                                         ///< 0 for default LWM2M standard object
     bool standard_path;                 ///< flag indicate if the path name is lwm2m standard path
                                         ///< "lwm2m"
-    uint8_t  path_name[LWM2M_NAME_LEN]; ///< alternative path name
+    uint8_t  path_name[LWM2MCORE_NAME_LEN]; ///< alternative path name
 }lwm2mcore_uri_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -570,6 +570,23 @@ bool lwm2mcore_push
     uint8_t* payloadPtr,        ///< [IN] payload
     size_t payloadLength,       ///< [IN] payload length
     void* callbackPtr           ///< [IN] callback for payload
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to notify LWM2MCore of supported object instance list for software and asset data
+ *
+ * @return
+ *      - true if the list was successfully treated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_updateSwList
+(
+    int context,                    ///< [IN] Context (Set to 0 if this API is used if
+                                    ///< lwm2mcore_init API was no called)
+    const char* ListPtr,            ///< [IN] Formatted list
+    size_t listLen                  ///< [IN] Size of the update list
 );
 
 #endif /*  __LWM2MCORE_H__ */

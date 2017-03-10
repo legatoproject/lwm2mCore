@@ -319,7 +319,7 @@ int OnUnlistedObject
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a ressource of object 5
+ * Function to write a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with write operation
  *
@@ -344,7 +344,7 @@ int WriteFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a ressource of object 5
+ * Function to read a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with read operation
  *
@@ -371,7 +371,7 @@ int ReadFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a ressource of object 5
+ * Function to execute a resource of object 5
  * Object: 5 - Firwmare update
  * Resource: all
  *
@@ -392,6 +392,90 @@ int ExecFwUpdate
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [INOUT] length of input buffer
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                  OBJECT 9: SOFTWARE UPDATE
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a resource of object 9
+ * Object: 9 - software update
+ * Resource: all with write operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int WriteSwUpdateObj
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 9
+ * Object: 9 - Software update
+ * Resource: all with read operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadSwUpdateObj
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a resource of object 9
+ * Object: 9 - Software update
+ * Resource: all with execute operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ExecSwUpdate
+(
+    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 );
 
 #endif /* __HANDLERS_H__ */

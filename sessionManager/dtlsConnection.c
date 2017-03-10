@@ -146,7 +146,7 @@ static char* SecurityGetPublicId
         char* buffPtr;
 
         buffPtr = (char*)lwm2m_malloc(dataPtr->value.asBuffer.length);
-        if (0 != buffPtr)
+        if (NULL != buffPtr)
         {
             memcpy(buffPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
             *lengthPtr = dataPtr->value.asBuffer.length;
@@ -655,7 +655,7 @@ dtls_connection_t* connection_newIncoming
 {
     dtls_connection_t* connPtr;
 
-    connPtr = (dtls_connection_t*)malloc(sizeof(dtls_connection_t));
+    connPtr = (dtls_connection_t*)lwm2m_malloc(sizeof(dtls_connection_t));
     if (NULL != connPtr)
     {
         connPtr->sock = sock;
@@ -663,7 +663,7 @@ dtls_connection_t* connection_newIncoming
         connPtr->addrLen = addrLen;
         connPtr->nextPtr = connListPtr;
 
-        connPtr->dtlsSessionPtr = (session_t*)malloc(sizeof(session_t));
+        connPtr->dtlsSessionPtr = (session_t*)lwm2m_malloc(sizeof(session_t));
         connPtr->dtlsSessionPtr->addr.sin6 = connPtr->addr;
         connPtr->dtlsSessionPtr->size = connPtr->addrLen;
         connPtr->lastSend = lwm2m_gettime();
@@ -804,7 +804,7 @@ dtls_connection_t* connection_create
 
     if (NULL != servinfoPtr)
     {
-        free(servinfoPtr);
+        lwm2m_free(servinfoPtr);
     }
 
     return connPtr;
@@ -825,7 +825,7 @@ void connection_free
         dtls_connection_t* nextPtr;
 
         nextPtr = connListPtr->nextPtr;
-        free(connListPtr);
+        lwm2m_free(connListPtr);
 
         connListPtr = nextPtr;
     }

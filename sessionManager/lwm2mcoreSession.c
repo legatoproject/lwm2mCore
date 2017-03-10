@@ -83,7 +83,7 @@ static lwm2mcore_context_t* InitContext
     lwm2m_endpoint_type_t epType   ///< [IN] Lwm2m endpoint type, e.g. server/client.
 )
 {
-    dataPtr->lwm2mcoreCtxPtr = (lwm2mcore_context_t*)malloc(sizeof(lwm2mcore_context_t));
+    dataPtr->lwm2mcoreCtxPtr = (lwm2mcore_context_t*)lwm2m_malloc(sizeof(lwm2mcore_context_t));
     OS_ASSERT(dataPtr->lwm2mcoreCtxPtr);
     memset(dataPtr->lwm2mcoreCtxPtr, 0, sizeof(lwm2mcore_context_t));
     return dataPtr->lwm2mcoreCtxPtr;
@@ -849,7 +849,7 @@ bool lwm2mcore_connectionGetType
                                 ///< true: device management)
 )
 {
-    bool result = true;
+    bool result = false;
     ClientData_t* dataPtr = (ClientData_t*) context;
 
     if ((NULL != dataPtr) && (NULL != isDeviceManagement))
@@ -862,6 +862,7 @@ bool lwm2mcore_connectionGetType
         {
             *isDeviceManagement = false;
         }
+        result = true;
 
         LOG_ARG("state %d --> isDeviceManagement %d",
                 dataPtr->lwm2mHPtr->state, *isDeviceManagement);
