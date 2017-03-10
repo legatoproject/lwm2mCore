@@ -968,8 +968,8 @@ static lwm2mcore_DwlResult_t DwlParser
 {
     lwm2mcore_DwlResult_t result;
 
-    // Check if there are data to parse
-    if (!DwlParserObj.dataToParsePtr)
+    // Check if data was downloaded
+    if (!PkgDwlObj.dwlDataPtr)
     {
         LOG("NULL data pointer in DWL parser");
         PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
@@ -1153,29 +1153,9 @@ static void PkgDwlInit
         return;
     }
 
-    // Set the package type and the update result according to the update type
-    switch (pkgDwlPtr->data.updateType)
-    {
-        case LWM2MCORE_FW_UPDATE_TYPE:
-            LOG("Receiving FW package");
-            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
-            break;
-
-        case LWM2MCORE_SW_UPDATE_TYPE:
-            LOG("Receiving SW package");
-            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
-            break;
-
-        default:
-            LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            PkgDwlObj.state = PKG_DWL_ERROR;
-            return;
-    }
-
     // Set update result to 'Normal' when the updating process is initiated
     PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
-    PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult);
+    PkgDwlObj.result = pkgDwlPtr->setUpdateResult(PkgDwlObj.updateResult);
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
@@ -1208,6 +1188,27 @@ static void PkgDwlGetInfo
         return;
     }
 
+    // Set package type according to the update type
+    switch (pkgDwlPtr->data.updateType)
+    {
+        case LWM2MCORE_FW_UPDATE_TYPE:
+            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
+            LOG("Receiving FW package");
+            break;
+
+        case LWM2MCORE_SW_UPDATE_TYPE:
+            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
+            LOG("Receiving SW package");
+            break;
+
+        default:
+            LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
+            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return;
+            break;
+    }
+
     // Notify the application of the package size
     PkgDwlEvent(PKG_DWL_EVENT_DETAILS, pkgDwlPtr);
 
@@ -1231,7 +1232,7 @@ static void PkgDwlDownload
 {
     // Notify the download beginning
     // Set update state to 'Downloading'
-    PkgDwlObj.result = pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
+    PkgDwlObj.result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update state");
@@ -1386,7 +1387,7 @@ static void PkgDwlEnd
     {
         // Error during download or parsing, set update result accordingly.
         // No need to change the update state, it should remain set to 'Downloading'.
-        PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult);
+        PkgDwlObj.result = pkgDwlPtr->setUpdateResult(PkgDwlObj.updateResult);
         if (DWL_OK != PkgDwlObj.result)
         {
             LOG("Unable to set update result");
@@ -1399,7 +1400,7 @@ static void PkgDwlEnd
 
         // Successful download: set update state to 'Downloaded'.
         // No need to change the update result, it was already set to 'Normal' at the beginning.
-        PkgDwlObj.result = pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
+        PkgDwlObj.result = pkgDwlPtr->setUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
         if (DWL_OK != PkgDwlObj.result)
         {
             LOG("Unable to set update state");
@@ -1465,27 +1466,15 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
         return DWL_FAULT;
     }
 
-    if (!pkgDwlPtr->setFwUpdateState)
+    if (!pkgDwlPtr->setUpdateState)
     {
         LOG("Missing firmware update state callback");
         return DWL_FAULT;
     }
 
-    if (!pkgDwlPtr->setFwUpdateResult)
+    if (!pkgDwlPtr->setUpdateResult)
     {
         LOG("Missing firmware update result callback");
-        return DWL_FAULT;
-    }
-
-    if (!pkgDwlPtr->setSwUpdateState)
-    {
-        LOG("Missing software update state callback");
-        return DWL_FAULT;
-    }
-
-    if (!pkgDwlPtr->setSwUpdateResult)
-    {
-        LOG("Missing software update result callback");
         return DWL_FAULT;
     }
 

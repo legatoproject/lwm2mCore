@@ -98,9 +98,9 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_GetPackageInfo_t)
  * @warning This callback should be set to NULL if not implemented
  */
 //--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
+typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetUpdateState_t)
 (
-    lwm2mcore_fwUpdateState_t updateState       ///< New update state
+    lwm2mcore_fwUpdateState_t updateState     ///< New update state
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -116,45 +116,9 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
  * @warning This callback should be set to NULL if not implemented
  */
 //--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
+typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetUpdateResult_t)
 (
-    lwm2mcore_fwUpdateResult_t updateResult     ///< New update result
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Callback to set the software update state
- *
- * This callback should set the new given software update state.
- *
- * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
- *
- * @warning This callback should be set to NULL if not implemented
- */
-//--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
-(
-    lwm2mcore_swUpdateState_t updateState       ///< New update state
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Callback to set the software update result
- *
- * This callback should set the new given software update result.
- *
- * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
- *
- * @warning This callback should be set to NULL if not implemented
- */
-//--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateResult_t)
-(
-    lwm2mcore_swUpdateResult_t updateResult     ///< New update result
+    lwm2mcore_fwUpdateResult_t updateResult    ///< New update result
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -220,10 +184,6 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 );
 
 //--------------------------------------------------------------------------------------------------
-// Data structures
-//--------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------
 /**
  * Package downloader structure
  *
@@ -232,17 +192,15 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_PackageDownloaderData_t data;                 ///< Package downloader data
-    lwm2mcore_InitDownload_t          initDownload;         ///< Initialization callback
-    lwm2mcore_GetPackageInfo_t        getInfo;              ///< Get package information
-    lwm2mcore_SetFwUpdateState_t      setFwUpdateState;     ///< Set firmware update state
-    lwm2mcore_SetFwUpdateResult_t     setFwUpdateResult;    ///< Set firmware update result
-    lwm2mcore_SetSwUpdateState_t      setSwUpdateState;     ///< Set software update state
-    lwm2mcore_SetSwUpdateResult_t     setSwUpdateResult;    ///< Set software update result
-    lwm2mcore_Download_t              download;             ///< Download callback
-    lwm2mcore_StoreRange_t            storeRange;           ///< Storing callback
-    lwm2mcore_EndDownload_t           endDownload;          ///< Ending callback
-    void*                             ctxPtr;               ///< Context pointer
+    lwm2mcore_PackageDownloaderData_t data;             ///< Package downloader data
+    lwm2mcore_InitDownload_t          initDownload;     ///< Initialization callback
+    lwm2mcore_GetPackageInfo_t        getInfo;          ///< Get package information
+    lwm2mcore_SetUpdateState_t        setUpdateState;   ///< Set firmware update state
+    lwm2mcore_SetUpdateResult_t       setUpdateResult;  ///< Set firmware update result
+    lwm2mcore_Download_t              download;         ///< Download callback
+    lwm2mcore_StoreRange_t            storeRange;       ///< Storing callback
+    lwm2mcore_EndDownload_t           endDownload;      ///< Ending callback
+    void*                             ctxPtr;           ///< Context pointer
 }
 lwm2mcore_PackageDownloader_t;
 
