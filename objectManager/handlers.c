@@ -1519,7 +1519,8 @@ int ExecFwUpdate
 {
     int sID;
 
-    if ((NULL == uriPtr) || (NULL == bufferPtr))
+    // bufferPtr can be null as per spec (OMA-TS-LightweightM2M-V1_0-20151214-C.pdf, appendix E.6)
+    if (NULL == uriPtr)
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
