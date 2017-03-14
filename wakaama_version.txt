@@ -1,2 +1,2 @@
-7f40d63383bdc9f73824368e0bcd2de4b68c02b4
-January 20th, 2017
+https://github.com/eclipse/wakaama/tree/8fceb5654c2bd44c65d0ff638c8848009408acd6
+March 14th, 2017
