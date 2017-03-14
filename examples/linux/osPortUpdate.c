@@ -18,7 +18,7 @@
  * The server pushes a package to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -30,7 +30,7 @@
 lwm2mcore_sid_t os_portUpdatePushPackage
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
 )
@@ -47,7 +47,7 @@ lwm2mcore_sid_t os_portUpdatePushPackage
  * The server sends a package URI to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -59,7 +59,7 @@ lwm2mcore_sid_t os_portUpdatePushPackage
 lwm2mcore_sid_t os_portUpdateSetPackageUri
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
 )
@@ -105,7 +105,7 @@ lwm2mcore_sid_t os_portUpdateSetPackageUri
  * The server requires the current package URI stored in the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -117,7 +117,7 @@ lwm2mcore_sid_t os_portUpdateSetPackageUri
 lwm2mcore_sid_t os_portUpdateGetPackageUri
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
                                     ///< data
@@ -141,7 +141,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageUri
  * The server requests to launch an update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -153,7 +153,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageUri
 lwm2mcore_sid_t os_portUpdateLaunchUpdate
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
 )
@@ -190,7 +190,7 @@ lwm2mcore_sid_t os_portUpdateLaunchUpdate
 lwm2mcore_sid_t os_portUpdateGetUpdateState
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     uint8_t* updateStatePtr         ///< [OUT] Firmware update state
 )
 {
@@ -227,7 +227,7 @@ lwm2mcore_sid_t os_portUpdateGetUpdateState
  * The server requires the update result
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -239,7 +239,7 @@ lwm2mcore_sid_t os_portUpdateGetUpdateState
 lwm2mcore_sid_t os_portUpdateGetUpdateResult
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     uint8_t* updateResultPtr        ///< [OUT] Firmware update result
 )
 {
@@ -285,7 +285,7 @@ lwm2mcore_sid_t os_portUpdateGetUpdateResult
 lwm2mcore_sid_t os_portUpdateGetPackageName
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     uint32_t len                    ///< [IN] length of input buffer
 )
@@ -298,7 +298,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageName
  * The server requires the package version
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -310,7 +310,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageName
 lwm2mcore_sid_t os_portUpdateGetPackageVersion
 (
     lwm2mcore_updateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Intance Id (0 for FW, any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     uint32_t len                    ///< [IN] length of input buffer
 )
@@ -323,7 +323,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageVersion
  * The server sets the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -334,7 +334,7 @@ lwm2mcore_sid_t os_portUpdateGetPackageVersion
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_sid_t os_portUpdateSetSwSupportedObjects
 (
-    uint16_t instanceId,            ///< [IN] Intance Id (any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool value                      ///< [IN] Update supported objects field value
 )
 {
@@ -346,7 +346,7 @@ lwm2mcore_sid_t os_portUpdateSetSwSupportedObjects
  * The server requires the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -357,7 +357,7 @@ lwm2mcore_sid_t os_portUpdateSetSwSupportedObjects
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_sid_t os_portUpdateGetSwSupportedObjects
 (
-    uint16_t instanceId,            ///< [IN] Intance Id (any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool* valuePtr                  ///< [INOUT] Update supported objects field value
 )
 {
@@ -378,7 +378,7 @@ lwm2mcore_sid_t os_portUpdateGetSwSupportedObjects
  * The server requires the activation state for one embedded application
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -389,7 +389,7 @@ lwm2mcore_sid_t os_portUpdateGetSwSupportedObjects
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_sid_t os_portUpdateGetSwActivationState
 (
-    uint16_t instanceId,            ///< [IN] Intance Id (any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool* valuePtr                  ///< [INOUT] Activation state
 )
 {
@@ -409,7 +409,7 @@ lwm2mcore_sid_t os_portUpdateGetSwActivationState
  * The server requires an embedded application to be uninstalled (only for software update)
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -420,7 +420,7 @@ lwm2mcore_sid_t os_portUpdateGetSwActivationState
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_sid_t os_portUpdateLaunchSwUninstall
 (
-    uint16_t instanceId,            ///< [IN] Intance Id (any value for SW)
+    uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
 )
@@ -434,7 +434,7 @@ lwm2mcore_sid_t os_portUpdateLaunchSwUninstall
  * update)
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -446,7 +446,7 @@ lwm2mcore_sid_t os_portUpdateLaunchSwUninstall
 lwm2mcore_sid_t os_portUpdateActivateSoftware
 (
     bool activation,        ///< [IN] Requested activation (true: activate, false: deactivate)
-    uint16_t instanceId,    ///< [IN] Intance Id (any value for SW)
+    uint16_t instanceId,    ///< [IN] Instance Id (any value for SW)
     char* bufferPtr,        ///< [INOUT] data buffer
     size_t len              ///< [IN] length of input buffer
 )
@@ -466,7 +466,7 @@ lwm2mcore_sid_t os_portUpdateActivateSoftware
  * The server request to create or delete an object instance of object 9
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -482,5 +482,28 @@ lwm2mcore_sid_t os_portUpdateSoftwareInstance
 )
 {
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check if the update state/result should be changed after a FW install
+ * and update them if necessary
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_sid_t os_portUpdateFirmwareInstallResult
+(
+    void
+)
+{
+    return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 }
 

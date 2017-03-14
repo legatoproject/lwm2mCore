@@ -427,7 +427,7 @@ void SendSessionEvent
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
                     SendStatusEvent(status);
 
-                    /* Delete DM credentials in order to forwe a connection to the BS server */
+                    /* Delete DM credentials in order to force a connection to the BS server */
                     LOG("DELETE DM CREDENTIALS");
                     os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
                     os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY);
@@ -690,6 +690,12 @@ int lwm2mcore_init
 
         result = (int)dataPtr;
         DataCtxPtr = dataPtr;
+
+        // Check if the update state/result should be changed after a FW install
+        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateFirmwareInstallResult())
+        {
+            LOG("Error while checking update state");
+        }
     }
     LOG_ARG("lwm2mcore_init -> context %d", result);
     return (int)result;

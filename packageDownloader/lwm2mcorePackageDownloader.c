@@ -178,8 +178,37 @@ typedef enum
 PackageDownloaderEvent_t;
 
 //--------------------------------------------------------------------------------------------------
+/**
+ * Package downloader errors
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    PKG_DWL_NO_ERROR,               ///< No error (initial state)
+    PKG_DWL_ERROR_NO_SPACE,         ///< Not enough storage space for the package
+    PKG_DWL_ERROR_OUT_OF_MEMORY,    ///< Out of memory during download
+    PKG_DWL_ERROR_CONNECTION,       ///< Connection error during download
+    PKG_DWL_ERROR_VERIFY,           ///< Package integrity check failure
+    PKG_DWL_ERROR_PKG_TYPE,         ///< Unsupported package type
+    PKG_DWL_ERROR_URI               ///< Invalid URI
+}
+PackageDownloaderError_t;
+
+//--------------------------------------------------------------------------------------------------
 // Data structures
 //--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * FW or SW update result
+ */
+//--------------------------------------------------------------------------------------------------
+typedef union
+{
+    lwm2mcore_fwUpdateResult_t  fw;     ///< Firmware update result
+    lwm2mcore_swUpdateResult_t  sw;     ///< Software update result
+}
+UpdateResult_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -188,19 +217,19 @@ PackageDownloaderEvent_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    PackageDownloaderState_t   state;               ///< State of package downloader state machine
-    bool                       endOfProcessing;     ///< End of package processing
-    lwm2mcore_DwlResult_t      result;              ///< Current result of package downloader
-    lwm2mcore_fwUpdateResult_t updateResult;        ///< Current package update result
-    lwm2mcore_PkgDwlType_t     packageType;         ///< Package type (FW or SW)
-    uint64_t                   offset;              ///< Current offset in the package
-    uint64_t                   storageOffset;       ///< Current offset in data storage
-    uint8_t                    tmpData[TMP_DATA_MAX_LEN];   ///< Temporary data chunk
-    uint32_t                   tmpDataLen;          ///< Temporary data chunk length
-    uint8_t*                   dwlDataPtr;          ///< Downloaded data pointer
-    size_t                     downloadedLen;       ///< Length of downloaded data
-    size_t                     processedLen;        ///< Length of data processed by last parsing
-    uint32_t                   downloadProgress;    ///< Overall download progress
+    PackageDownloaderState_t    state;               ///< State of package downloader state machine
+    bool                        endOfProcessing;     ///< End of package processing
+    lwm2mcore_DwlResult_t       result;              ///< Current result of package downloader
+    UpdateResult_t              updateResult;        ///< Current package update result
+    lwm2mcore_PkgDwlType_t      packageType;         ///< Package type (FW or SW)
+    uint64_t                    offset;              ///< Current offset in the package
+    uint64_t                    storageOffset;       ///< Current offset in data storage
+    uint8_t                     tmpData[TMP_DATA_MAX_LEN];   ///< Temporary data chunk
+    uint32_t                    tmpDataLen;          ///< Temporary data chunk length
+    uint8_t*                    dwlDataPtr;          ///< Downloaded data pointer
+    size_t                      downloadedLen;       ///< Length of downloaded data
+    size_t                      processedLen;        ///< Length of data processed by last parsing
+    uint32_t                    downloadProgress;    ///< Overall download progress
 }
 PackageDownloaderObj_t;
 
@@ -293,6 +322,162 @@ static DwlParserObj_t DwlParserObj;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to set the update result according to the package type
+ */
+//--------------------------------------------------------------------------------------------------
+static void SetUpdateResult
+(
+    PackageDownloaderError_t error  ///< Package downloader error
+)
+{
+    switch (PkgDwlObj.packageType)
+    {
+        case LWM2MCORE_PKG_FW:
+            switch (error)
+            {
+                case PKG_DWL_NO_ERROR:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
+                    break;
+
+                case PKG_DWL_ERROR_NO_SPACE:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE;
+                    break;
+
+                case PKG_DWL_ERROR_OUT_OF_MEMORY:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY;
+                    break;
+
+                case PKG_DWL_ERROR_VERIFY:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                    break;
+
+                case PKG_DWL_ERROR_PKG_TYPE:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+                    break;
+
+                case PKG_DWL_ERROR_URI:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI;
+                    break;
+
+                case PKG_DWL_ERROR_CONNECTION:
+                default:
+                    PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+                    break;
+            }
+            break;
+
+        case LWM2MCORE_PKG_SW:
+            switch (error)
+            {
+                case PKG_DWL_NO_ERROR:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_INITIAL;
+                    break;
+
+                case PKG_DWL_ERROR_NO_SPACE:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY;
+                    break;
+
+                case PKG_DWL_ERROR_OUT_OF_MEMORY:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY;
+                    break;
+
+                case PKG_DWL_ERROR_VERIFY:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_CHECK_FAILURE;
+                    break;
+
+                case PKG_DWL_ERROR_PKG_TYPE:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE;
+                    break;
+
+                case PKG_DWL_ERROR_URI:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI;
+                    break;
+
+                case PKG_DWL_ERROR_CONNECTION:
+                default:
+                    PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST;
+                    break;
+            }
+            break;
+
+        default:
+            LOG_ARG("Set update result failed, unknown package type %d", PkgDwlObj.packageType);
+            break;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the package downloader error according to the package type
+ */
+//--------------------------------------------------------------------------------------------------
+static PackageDownloaderError_t GetPackageDownloaderError
+(
+    void
+)
+{
+    PackageDownloaderError_t error = PKG_DWL_ERROR_CONNECTION;
+
+    if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+            && (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL == PkgDwlObj.updateResult.fw))
+        || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+            && (LWM2MCORE_SW_UPDATE_RESULT_INITIAL == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_NO_ERROR;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_NO_SPACE;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_OUT_OF_MEMORY;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_CONNECTION;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_CHECK_FAILURE == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_VERIFY;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_PKG_TYPE;
+    }
+    else if (   (   (LWM2MCORE_PKG_FW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI == PkgDwlObj.updateResult.fw))
+             || (   (LWM2MCORE_PKG_SW == PkgDwlObj.packageType)
+                 && (LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI == PkgDwlObj.updateResult.sw)))
+    {
+        error = PKG_DWL_ERROR_URI;
+    }
+    else
+    {
+        LOG_ARG("Unknown update result: %d", ((LWM2MCORE_PKG_FW == PkgDwlObj.packageType) ?
+                PkgDwlObj.updateResult.fw : PkgDwlObj.updateResult.sw));
+    }
+
+    return error;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to notify package downloader events
  */
 //--------------------------------------------------------------------------------------------------
@@ -348,50 +533,52 @@ static void PkgDwlEvent
             break;
 
         case PKG_DWL_EVENT_DL_END:
+            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
+            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
+            status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
+
             // Determine download status with update result
-            switch (PkgDwlObj.updateResult)
+            switch (GetPackageDownloaderError())
             {
-                case LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL:
+                case PKG_DWL_NO_ERROR:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED;
                     status.u.pkgStatus.errorCode = 0;
                     break;
 
-                case LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE:
-                case LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY:
+                case PKG_DWL_ERROR_NO_SPACE:
+                case PKG_DWL_ERROR_OUT_OF_MEMORY:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_NO_SUFFICIENT_MEMORY;
                     break;
 
-                case LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR:
+                case PKG_DWL_ERROR_CONNECTION:
+                    status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
+                    status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_ALTERNATE_DL_ERROR;
+                    break;
+
+                case PKG_DWL_ERROR_VERIFY:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_FAILED_VALIDATION;
                     break;
 
-                case LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE:
+                case PKG_DWL_ERROR_PKG_TYPE:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_UNSUPPORTED_PKG;
                     break;
 
-                case LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI:
+                case PKG_DWL_ERROR_URI:
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_INVALID_URI;
                     break;
 
-                case LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR:
-                case LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL:
-                    status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
-                    status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_ALTERNATE_DL_ERROR;
-                    break;
-
                 default:
-                    LOG_ARG("Unknown update result %d", PkgDwlObj.updateResult);
+                    LOG_ARG("Unknown update result %d",
+                            ((LWM2MCORE_PKG_FW == PkgDwlObj.packageType) ?
+                            PkgDwlObj.updateResult.fw : PkgDwlObj.updateResult.sw));
                     status.event = LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED;
                     status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_ALTERNATE_DL_ERROR;
                     break;
             }
-            status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
-            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
-            status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
 
             LOG_ARG("Package download end: event %d, errorCode %d",
                     status.event, status.u.pkgStatus.errorCode);
@@ -458,7 +645,7 @@ static lwm2mcore_DwlResult_t HashData
         if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Start(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to initialize SHA1 context");
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+            SetUpdateResult(PKG_DWL_ERROR_VERIFY);
             return DWL_FAULT;
         }
 
@@ -490,11 +677,11 @@ static lwm2mcore_DwlResult_t HashData
 
             // SHA1 digest is updated with all UPCK data
             if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
-                                                                      DwlParserObj.dataToParsePtr,
-                                                                      PkgDwlObj.processedLen))
+                                                                       DwlParserObj.dataToParsePtr,
+                                                                       PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
-                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                SetUpdateResult(PKG_DWL_ERROR_VERIFY);
                 return DWL_FAULT;
             }
 
@@ -508,11 +695,11 @@ static lwm2mcore_DwlResult_t HashData
 
             // SHA1 digest is updated with all BINA data
             if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
-                                                                      DwlParserObj.dataToParsePtr,
-                                                                      PkgDwlObj.processedLen))
+                                                                       DwlParserObj.dataToParsePtr,
+                                                                       PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
-                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+                SetUpdateResult(PKG_DWL_ERROR_VERIFY);
                 return DWL_FAULT;
             }
             break;
@@ -523,9 +710,8 @@ static lwm2mcore_DwlResult_t HashData
 
         default:
             LOG_ARG("Unknown DWL section 0x%08x", DwlParserObj.section);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             return DWL_FAULT;
-            break;
     }
 
     return DWL_OK;
@@ -552,7 +738,7 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
     {
         LOG_ARG("Incorrect CRC: expected 0x%08x, computed 0x%08x",
                 DwlParserObj.packageCRC, DwlParserObj.computedCRC);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_VERIFY);
         return DWL_FAULT;
     }
 
@@ -563,7 +749,7 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
                                                              PkgDwlObj.processedLen))
     {
         LOG("Incorrect package signature");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_VERIFY);
         return DWL_FAULT;
     }
 
@@ -592,7 +778,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
     if (DWL_MAGIC_NUMBER != dwlPrologPtr->magicNumber)
     {
         LOG_ARG("Unknown package format, magic number 0x%08x", dwlPrologPtr->magicNumber);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
         return DWL_FAULT;
     }
 
@@ -661,7 +847,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
 
         default:
             LOG_ARG("Unexpected DWL prolog for section type 0x%08x", DwlParserObj.section);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             result = DWL_FAULT;
             break;
     }
@@ -730,7 +916,7 @@ static lwm2mcore_DwlResult_t ParseDwlComments
 
         default:
             LOG_ARG("Unexpected DWL comments for section type 0x%08x", DwlParserObj.section);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             result = DWL_FAULT;
             break;
     }
@@ -773,14 +959,13 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
         case DWL_TYPE_UPCK:
         {
             // Check UPCK type
-            uint32_t upckType =
-                     ((UpckHeader_t*)DwlParserObj.dataToParsePtr)->structHeader.upckType;
+            uint32_t upckType = ((UpckHeader_t*)DwlParserObj.dataToParsePtr)->structHeader.upckType;
             if (   (LWM2MCORE_UPCK_TYPE_FW != upckType)
                 && (LWM2MCORE_UPCK_TYPE_AMSS != upckType)
                )
             {
                 LOG_ARG("Incorrect Update Package type %u", upckType);
-                PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+                SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
                 return DWL_FAULT;
             }
 
@@ -801,7 +986,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
 
         default:
             LOG_ARG("Unexpected DWL header for section type 0x%08x", DwlParserObj.section);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             result = DWL_FAULT;
             break;
     }
@@ -829,7 +1014,7 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
     if (DWL_TYPE_BINA != DwlParserObj.section)
     {
         LOG_ARG("Unexpected DWL binary data for section type 0x%08x", DwlParserObj.section);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
         return DWL_FAULT;
     }
 
@@ -881,7 +1066,7 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
     if (DWL_TYPE_BINA != DwlParserObj.section)
     {
         LOG_ARG("Unexpected DWL padding data for section type 0x%08x", DwlParserObj.section);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
         return DWL_FAULT;
     }
 
@@ -926,7 +1111,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
     if (DWL_TYPE_SIGN != DwlParserObj.section)
     {
         LOG_ARG("Unexpected DWL signature for section type 0x%08x", DwlParserObj.section);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+        SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
         return DWL_FAULT;
     }
 
@@ -968,11 +1153,11 @@ static lwm2mcore_DwlResult_t DwlParser
 {
     lwm2mcore_DwlResult_t result;
 
-    // Check if data was downloaded
-    if (!PkgDwlObj.dwlDataPtr)
+    // Check if there are data to parse
+    if (!DwlParserObj.dataToParsePtr)
     {
         LOG("NULL data pointer in DWL parser");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         return DWL_FAULT;
     }
 
@@ -1005,7 +1190,7 @@ static lwm2mcore_DwlResult_t DwlParser
 
         default:
             LOG_ARG("Unknown DWL subsection %u", DwlParserObj.subsection);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             result = DWL_FAULT;
             break;
     }
@@ -1091,7 +1276,7 @@ static lwm2mcore_DwlResult_t BufferAndSetDataToParse
         {
             LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max = %d",
                     PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
             PkgDwlObj.state = PKG_DWL_ERROR;
             return DWL_FAULT;
         }
@@ -1121,7 +1306,7 @@ static lwm2mcore_DwlResult_t BufferAndSetDataToParse
         {
             LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max=%d",
                     PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
             PkgDwlObj.state = PKG_DWL_ERROR;
             return DWL_FAULT;
         }
@@ -1148,7 +1333,7 @@ static void PkgDwlInit
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error during download initialization");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
@@ -1156,29 +1341,29 @@ static void PkgDwlInit
     switch (pkgDwlPtr->data.updateType)
     {
         case LWM2MCORE_FW_UPDATE_TYPE:
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
-            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
-            // Set update result to 'Normal' when the updating process is initiated
-            PkgDwlObj.result=pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult);
             LOG("Receiving FW package");
+            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
+            SetUpdateResult(PKG_DWL_NO_ERROR);
+            PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
             break;
+
         case LWM2MCORE_SW_UPDATE_TYPE:
-            PkgDwlObj.updateResult = LWM2MCORE_SW_UPDATE_RESULT_INITIAL;
-            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
-            PkgDwlObj.result=pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult);
             LOG("Receiving SW package");
+            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
+            SetUpdateResult(PKG_DWL_NO_ERROR);
+            PkgDwlObj.result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult.sw);
             break;
+
         default:
             LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
+            SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
             PkgDwlObj.state = PKG_DWL_ERROR;
             return;
     }
-
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
@@ -1202,30 +1387,9 @@ static void PkgDwlGetInfo
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error while getting the package information");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
-    }
-
-    // Set package type according to the update type
-    switch (pkgDwlPtr->data.updateType)
-    {
-        case LWM2MCORE_FW_UPDATE_TYPE:
-            PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
-            LOG("Receiving FW package");
-            break;
-
-        case LWM2MCORE_SW_UPDATE_TYPE:
-            PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
-            LOG("Receiving SW package");
-            break;
-
-        default:
-            LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
-            PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE;
-            PkgDwlObj.state = PKG_DWL_ERROR;
-            return;
-            break;
     }
 
     // Notify the application of the package size
@@ -1258,7 +1422,7 @@ static void PkgDwlDownload
                     pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
             break;
         case LWM2MCORE_SW_UPDATE_TYPE:
-            PkgDwlObj.result = \
+            PkgDwlObj.result =
                     pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOAD_STARTED);
             break;
          default:
@@ -1266,11 +1430,10 @@ static void PkgDwlDownload
             PkgDwlObj.result = DWL_FAULT;
             break;
     }
-
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update state");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
@@ -1287,7 +1450,7 @@ static void PkgDwlDownload
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG_ARG("Error during download, result %d", PkgDwlObj.result);
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
@@ -1331,7 +1494,7 @@ static void PkgDwlStore
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Error during data storage");
-        PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY;
+        SetUpdateResult(PKG_DWL_ERROR_OUT_OF_MEMORY);
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
@@ -1361,37 +1524,33 @@ static void PkgDwlError
     // by the 'download end' event.
     // One exception for the signature check error, which should also be notified by a dedicated
     // event.
-    switch (PkgDwlObj.updateResult)
+    switch (GetPackageDownloaderError())
     {
-        case LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE:
+        case PKG_DWL_ERROR_NO_SPACE:
             snprintf(error, ERROR_STR_MAX_LEN, "not enough space");
             break;
 
-        case LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY:
+        case PKG_DWL_ERROR_OUT_OF_MEMORY:
             snprintf(error, ERROR_STR_MAX_LEN, "out of memory");
             break;
 
-        case LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR:
+        case PKG_DWL_ERROR_CONNECTION:
             snprintf(error, ERROR_STR_MAX_LEN, "communication error");
             break;
 
-        case LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR:
+        case PKG_DWL_ERROR_VERIFY:
             snprintf(error, ERROR_STR_MAX_LEN, "package check error");
 
             // Notify the application of the signature check error
             PkgDwlEvent(PKG_DWL_EVENT_SIGN_KO, pkgDwlPtr);
             break;
 
-        case LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE:
+        case PKG_DWL_ERROR_PKG_TYPE:
             snprintf(error, ERROR_STR_MAX_LEN, "unsupported package");
             break;
 
-        case LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI:
+        case PKG_DWL_ERROR_URI:
             snprintf(error, ERROR_STR_MAX_LEN, "invalid URI");
-            break;
-
-        case LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL:
-            snprintf(error, ERROR_STR_MAX_LEN, "unsupported protocol");
             break;
 
         default:
@@ -1399,8 +1558,9 @@ static void PkgDwlError
             break;
     }
 
-    LOG_ARG("Error during package downloading: %s (update result = %d)",
-            error, PkgDwlObj.updateResult);
+    LOG_ARG("Error during package downloading: %s (update result = %d)", error,
+            ((LWM2MCORE_PKG_FW == PkgDwlObj.packageType) ?
+            PkgDwlObj.updateResult.fw : PkgDwlObj.updateResult.sw));
 
     // End of download
     PkgDwlObj.state = PKG_DWL_END;
@@ -1417,22 +1577,20 @@ static void PkgDwlEnd
 )
 {
     // Check if an error was detected during the package download or parsing
-    if (((LWM2MCORE_FW_UPDATE_TYPE == pkgDwlPtr->data.updateType)
-         && (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL != PkgDwlObj.updateResult))
-     || ((LWM2MCORE_SW_UPDATE_TYPE == pkgDwlPtr->data.updateType)
-         && (LWM2MCORE_SW_UPDATE_RESULT_INITIAL != PkgDwlObj.updateResult)))
-
+    if (PKG_DWL_NO_ERROR != GetPackageDownloaderError())
     {
         // Error during download or parsing, set update result accordingly.
         // No need to change the update state, it should remain set to 'Downloading'.
         switch (pkgDwlPtr->data.updateType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
-                PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult);
+                PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
                 break;
+
             case LWM2MCORE_SW_UPDATE_TYPE:
-                PkgDwlObj.result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult);
+                PkgDwlObj.result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult.sw);
                 break;
+
             default:
                 LOG("unknown download type");
                 return;
@@ -1576,7 +1734,6 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     // Package downloader object initialization
     memset(&PkgDwlObj, 0, sizeof(PackageDownloaderObj_t));
     PkgDwlObj.state = PKG_DWL_INIT;
-    PkgDwlObj.updateResult = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
     PkgDwlObj.endOfProcessing = false;
     PkgDwlObj.packageType = LWM2MCORE_PKG_NONE;
 
