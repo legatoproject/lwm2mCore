@@ -199,6 +199,40 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Copy the SHA1 context in a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CopySha1
+(
+    void*  sha1CtxPtr,  ///< [IN] SHA1 context pointer
+    void*  bufPtr,      ///< [INOUT] Buffer
+    size_t bufSize      ///< [INOUT] Buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Restore the SHA1 context from a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreSha1
+(
+    void*  bufPtr,      ///< [IN] Buffer
+    size_t bufSize,     ///< [IN] Buffer length
+    void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Cancel and reset the SHA1 computation
  *
  * @return

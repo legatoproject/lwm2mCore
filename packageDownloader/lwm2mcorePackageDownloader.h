@@ -41,6 +41,7 @@ typedef struct
     char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_LEN]; ///< URI of package to download
     uint64_t packageSize;                               ///< Package size given by server
     lwm2mcore_UpdateType_t updateType;                  ///< FW or SW update
+    uint64_t updateOffset;                              ///< Update offset for download resume
 }
 lwm2mcore_PackageDownloaderData_t;
 
@@ -99,7 +100,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_GetPackageInfo_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
 (
-    lwm2mcore_FwUpdateState_t updateState     ///< New update state
+    lwm2mcore_FwUpdateState_t updateState       ///< New update state
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -117,7 +118,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
 (
-    lwm2mcore_FwUpdateResult_t updateResult    ///< New update result
+    lwm2mcore_FwUpdateResult_t updateResult     ///< New update result
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -135,7 +136,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
 (
-    lwm2mcore_SwUpdateState_t updateState      ///< New update state
+    lwm2mcore_SwUpdateState_t updateState       ///< New update state
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -153,7 +154,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateResult_t)
 (
-    lwm2mcore_SwUpdateResult_t updateResult    ///< New update result
+    lwm2mcore_SwUpdateResult_t updateResult     ///< New update result
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -181,9 +182,8 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_Download_t)
 /**
  * Callback to store a package range after treatment
  *
- * This callback should store the data given in the buffer for a firmware update:
- * - bufSize indicates the length of the buffer to store
- * - offset indicates the offset where the data should be stored, starting from file beginning.
+ * This callback should store the data given in the buffer for a firmware update.
+ * bufSize indicates the length of the buffer to store.
  *
  * @return
  *  - DWL_OK    The function succeeded
@@ -196,7 +196,6 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_StoreRange_t)
 (
     uint8_t* bufPtr,        ///< Buffer of data to store
     size_t bufSize,         ///< Size of buffer to store
-    uint64_t offset,        ///< Offset indicating where to start storing data
     void* ctxPtr            ///< Context pointer
 );
 
@@ -217,6 +216,10 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 (
     void* ctxPtr            ///< Context pointer
 );
+
+//--------------------------------------------------------------------------------------------------
+// Data structures
+//--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -277,4 +280,18 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
     uint8_t* bufPtr,    ///< Received data
     size_t   bufSize    ///< Size of received data
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Initialize the package downloader.
+ *
+ * This function is called to initialize the package downloader: the associated workspace is
+ * deleted if necessary to be able to start a new download.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderInit
+(
+    void
+);
+
 #endif /* LWM2MCORE_PACKAGEDOWNLOADER_H */

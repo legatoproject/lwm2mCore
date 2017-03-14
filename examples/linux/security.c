@@ -735,6 +735,86 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Copy the SHA1 context in a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CopySha1
+(
+    void*  sha1CtxPtr,  ///< [IN] SHA1 context pointer
+    void*  bufPtr,      ///< [INOUT] Buffer
+    size_t bufSize      ///< [INOUT] Buffer length
+)
+{
+    // Check if pointers are set
+    if ((!sha1CtxPtr) || (!bufPtr))
+    {
+        LOG("Null pointer provided");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Check buffer length
+    if (bufSize < sizeof(SHA_CTX))
+    {
+        LOG_ARG("Buffer is too short (%zu < %d)", bufSize, sizeof(SHA_CTX));
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Copy the SHA1 context
+    memset(bufPtr, 0, bufSize);
+    memcpy(bufPtr, sha1CtxPtr, sizeof(SHA_CTX));
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Restore the SHA1 context from a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreSha1
+(
+    void*  bufPtr,      ///< [IN] Buffer
+    size_t bufSize,     ///< [IN] Buffer length
+    void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
+)
+{
+    // Check if pointers are set
+    if ((!sha1CtxPtr) || (!bufPtr))
+    {
+        LOG("Null pointer provided");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Check buffer length
+    if (bufSize < sizeof(SHA_CTX))
+    {
+        LOG_ARG("Buffer is too short (%zu < %d)", bufSize, sizeof(SHA_CTX));
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Initialize SHA1 context
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha1(sha1CtxPtr))
+    {
+        LOG("Unable to initialize SHA1 context");
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // Restore the SHA1 context
+    memcpy(*sha1CtxPtr, bufPtr, sizeof(SHA_CTX));
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Cancel and reset the SHA1 computation
  *
  * @return

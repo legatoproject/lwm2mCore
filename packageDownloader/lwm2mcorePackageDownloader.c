@@ -51,6 +51,7 @@
 #include <lwm2mcore/security.h>
 #include <internals.h>
 #include "lwm2mcorePackageDownloader.h"
+#include "workspace.h"
 #include "sessionManager.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -223,13 +224,13 @@ typedef struct
     UpdateResult_t              updateResult;        ///< Current package update result
     lwm2mcore_PkgDwlType_t      packageType;         ///< Package type (FW or SW)
     uint64_t                    offset;              ///< Current offset in the package
-    uint64_t                    storageOffset;       ///< Current offset in data storage
     uint8_t                     tmpData[TMP_DATA_MAX_LEN];   ///< Temporary data chunk
     uint32_t                    tmpDataLen;          ///< Temporary data chunk length
     uint8_t*                    dwlDataPtr;          ///< Downloaded data pointer
     size_t                      downloadedLen;       ///< Length of downloaded data
     size_t                      processedLen;        ///< Length of data processed by last parsing
     uint32_t                    downloadProgress;    ///< Overall download progress
+    uint64_t                    updateGap;           ///< Gap between update and downloader offsets
 }
 PackageDownloaderObj_t;
 
@@ -315,6 +316,28 @@ static lwm2mcore_PackageDownloader_t* PkgDwlPtr = NULL;
  */
 //--------------------------------------------------------------------------------------------------
 static DwlParserObj_t DwlParserObj;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Package downloader workspace
+ * This structure needs to be stored in platform storage
+ */
+//--------------------------------------------------------------------------------------------------
+static PackageDownloaderWorkspace_t PkgDwlWorkspace =
+{
+    .version             = 0,
+    .offset              = 0,
+    .section             = 0,
+    .subsection          = 0,
+    .packageCRC          = 0,
+    .commentSize         = 0,
+    .binarySize          = 0,
+    .paddingSize         = 0,
+    .remainingBinaryData = 0,
+    .signatureSize       = 0,
+    .computedCRC         = 0,
+    .sha1Ctx             = {0}
+};
 
 //--------------------------------------------------------------------------------------------------
 // Static functions
@@ -625,6 +648,52 @@ static void PkgDwlEvent
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to update the package downloader workspace and store it in platform memory
+ */
+//--------------------------------------------------------------------------------------------------
+static void UpdateAndStorePkgDwlWorkspace
+(
+    void
+)
+{
+    // Check if package downloader structure is set
+    if (!PkgDwlPtr)
+    {
+        LOG("No package downloader structure set");
+        return;
+    }
+
+    // Update the workspace
+    PkgDwlWorkspace.offset = PkgDwlObj.offset;
+    PkgDwlWorkspace.section = DwlParserObj.section;
+    PkgDwlWorkspace.subsection = DwlParserObj.subsection;
+    PkgDwlWorkspace.packageCRC = DwlParserObj.packageCRC;
+    PkgDwlWorkspace.commentSize = DwlParserObj.commentSize;
+    PkgDwlWorkspace.binarySize = DwlParserObj.binarySize;
+    PkgDwlWorkspace.paddingSize = DwlParserObj.paddingSize;
+    PkgDwlWorkspace.remainingBinaryData = DwlParserObj.remainingBinaryData;
+    PkgDwlWorkspace.signatureSize = DwlParserObj.signatureSize;
+    PkgDwlWorkspace.computedCRC = DwlParserObj.computedCRC;
+    if (   (DwlParserObj.sha1CtxPtr)
+        && (strncmp((char*)PkgDwlWorkspace.sha1Ctx,
+                    DwlParserObj.sha1CtxPtr,
+                    SHA1_CTX_MAX_SIZE))
+       )
+    {
+        lwm2mcore_CopySha1(DwlParserObj.sha1CtxPtr,
+                           PkgDwlWorkspace.sha1Ctx,
+                           SHA1_CTX_MAX_SIZE);
+    }
+
+    // Store the workspace
+    if (DWL_OK != WritePkgDwlWorkspace(&PkgDwlWorkspace))
+    {
+        LOG("Error while saving the package downloader workspace");
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Hash data if necessary, based on the current DWL section/subsection:
  * - compute CRC32
  * - compute SHA1 digest
@@ -688,21 +757,42 @@ static lwm2mcore_DwlResult_t HashData
             break;
 
         case DWL_TYPE_BINA:
+        {
             // All BINA subsections are used for CRC computation
+            uint8_t* dataToHashPtr = DwlParserObj.dataToParsePtr;
+            size_t   lenToHash = PkgDwlObj.processedLen;
+
+            // Do not hash again the data already hashed but not processed by the update
+            if (PkgDwlObj.updateGap)
+            {
+                // Check if the whole chunk was already hashed
+                if (PkgDwlObj.processedLen <= PkgDwlObj.updateGap)
+                {
+                    PkgDwlObj.updateGap -= PkgDwlObj.processedLen;
+                    return DWL_OK;
+                }
+
+                // Only hash the unprocessed part of the chunk
+                dataToHashPtr += PkgDwlObj.updateGap;
+                lenToHash -= PkgDwlObj.updateGap;
+                PkgDwlObj.updateGap = 0;
+            }
+
             DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
-                                                       DwlParserObj.dataToParsePtr,
-                                                       PkgDwlObj.processedLen);
+                                                       dataToHashPtr,
+                                                       lenToHash);
 
             // SHA1 digest is updated with all BINA data
             if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_ProcessSha1(DwlParserObj.sha1CtxPtr,
-                                                                  DwlParserObj.dataToParsePtr,
-                                                                  PkgDwlObj.processedLen))
+                                                                  dataToHashPtr,
+                                                                  lenToHash))
             {
                 LOG("Unable to update SHA1 digest");
                 SetUpdateResult(PKG_DWL_ERROR_VERIFY);
                 return DWL_FAULT;
             }
-            break;
+        }
+        break;
 
         case DWL_TYPE_SIGN:
             // Whole SIGN section is ignored for CRC computation and SHA1 digest
@@ -751,6 +841,12 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
         LOG("Incorrect package signature");
         SetUpdateResult(PKG_DWL_ERROR_VERIFY);
         return DWL_FAULT;
+    }
+
+    // Notify the application of the signature validation
+    if (NULL != PkgDwlPtr)
+    {
+        PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, PkgDwlPtr);
     }
 
     return DWL_OK;
@@ -1444,6 +1540,65 @@ static void PkgDwlDownload
     // Be ready to parse downloaded data
     PkgDwlObj.state = PKG_DWL_PARSE;
 
+    // Read the stored package downloader workspace and check if download should be resumed
+    if (   (DWL_OK == ReadPkgDwlWorkspace(&PkgDwlWorkspace))
+        && (PkgDwlWorkspace.offset)
+       )
+    {
+        // Check if the update process was ongoing
+        if (pkgDwlPtr->data.updateOffset)
+        {
+            // The update process might be late comparing to the package downloader:
+            // compute the update process gap to download again the unprocessed data
+            PkgDwlObj.updateGap = PkgDwlWorkspace.binarySize
+                                  - PkgDwlWorkspace.remainingBinaryData
+                                  - pkgDwlPtr->data.updateOffset;
+
+            LOG_ARG("Binary size = %llu", PkgDwlWorkspace.binarySize);
+            LOG_ARG("Remaining binary data = %llu", PkgDwlWorkspace.remainingBinaryData);
+            LOG_ARG("Update offset = %llu", pkgDwlPtr->data.updateOffset);
+            LOG_ARG("Update gap = %llu", PkgDwlObj.updateGap);
+            LOG_ARG("Stored offset = %llu", PkgDwlWorkspace.offset);
+
+            // Set start offset
+            PkgDwlWorkspace.offset -= PkgDwlObj.updateGap;
+            PkgDwlWorkspace.remainingBinaryData += PkgDwlObj.updateGap;
+            PkgDwlObj.offset = PkgDwlWorkspace.offset;
+
+            // Set DWL section
+            // It has to be binary data if the update is resumed, as it is the only
+            // section where the package downloader workspace is stored.
+            DwlParserObj.section = DWL_TYPE_BINA;
+            DwlParserObj.subsection = DWL_SUB_BINARY;
+        }
+        else
+        {
+            // Set start offset
+            PkgDwlObj.offset = PkgDwlWorkspace.offset;
+
+            // Set DWL parser
+            DwlParserObj.section = PkgDwlWorkspace.section;
+            DwlParserObj.subsection = PkgDwlWorkspace.subsection;
+        }
+
+        DwlParserObj.packageCRC = PkgDwlWorkspace.packageCRC;
+        DwlParserObj.computedCRC = PkgDwlWorkspace.computedCRC;
+        DwlParserObj.commentSize = PkgDwlWorkspace.commentSize;
+        DwlParserObj.binarySize = PkgDwlWorkspace.binarySize;
+        DwlParserObj.paddingSize = PkgDwlWorkspace.paddingSize;
+        DwlParserObj.remainingBinaryData = PkgDwlWorkspace.remainingBinaryData;
+        DwlParserObj.signatureSize = PkgDwlWorkspace.signatureSize;
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha1(PkgDwlWorkspace.sha1Ctx,
+                                                                SHA1_CTX_MAX_SIZE,
+                                                                &DwlParserObj.sha1CtxPtr))
+        {
+            LOG("Unable to restore SHA1 context");
+            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return;
+        }
+    }
+
     // Start downloading
     LOG_ARG("Download starting at offset %llu", PkgDwlObj.offset);
     PkgDwlObj.result = pkgDwlPtr->download(PkgDwlObj.offset, pkgDwlPtr->ctxPtr);
@@ -1489,7 +1644,6 @@ static void PkgDwlStore
     // Store downloaded data
     PkgDwlObj.result = pkgDwlPtr->storeRange(DwlParserObj.dataToParsePtr,
                                              PkgDwlObj.processedLen,
-                                             PkgDwlObj.storageOffset,
                                              pkgDwlPtr->ctxPtr);
     if (DWL_OK != PkgDwlObj.result)
     {
@@ -1498,9 +1652,6 @@ static void PkgDwlStore
         PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
-
-    // Update storage offset
-    PkgDwlObj.storageOffset += PkgDwlObj.processedLen;
 
     // Parse next downloaded data
     PkgDwlObj.state = PKG_DWL_PARSE;
@@ -1580,7 +1731,6 @@ static void PkgDwlEnd
     if (PKG_DWL_NO_ERROR != GetPackageDownloaderError())
     {
         // Error during download or parsing, set update result accordingly.
-        // No need to change the update state, it should remain set to 'Downloading'.
         switch (pkgDwlPtr->data.updateType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
@@ -1599,12 +1749,31 @@ static void PkgDwlEnd
         {
             LOG("Unable to set update result");
         }
+
+        // According to OMA-TS-LightweightM2M-V1_0-20170208-A, update state should be set to IDLE
+        switch (pkgDwlPtr->data.updateType)
+        {
+            case LWM2MCORE_FW_UPDATE_TYPE:
+                PkgDwlObj.result =
+                        pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
+                break;
+
+            case LWM2MCORE_SW_UPDATE_TYPE:
+                PkgDwlObj.result =
+                        pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_INITIAL);
+                break;
+
+            default:
+                LOG("unknown download type");
+                return;
+        }
+        if (DWL_OK != PkgDwlObj.result)
+        {
+            LOG("Unable to set update state");
+        }
     }
     else
     {
-        // Notify the application of the signature validation
-        PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, pkgDwlPtr);
-
         // Successful download: set update state to 'Downloaded'.
         // No need to change the update result, it was already set to 'Normal' at the beginning.
         switch (pkgDwlPtr->data.updateType)
@@ -1636,6 +1805,9 @@ static void PkgDwlEnd
     {
         LOG("Error while ending the download");
     }
+
+    // Delete the package downloader workspace file
+    DeletePkgDwlWorkspace();
 
     // End of processing
     PkgDwlObj.endOfProcessing = true;
@@ -1885,8 +2057,34 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
                 PkgDwlObj.dwlDataPtr += PkgDwlObj.processedLen;
                 PkgDwlObj.downloadedLen -= PkgDwlObj.processedLen;
             }
+
+            // Update and store package downloader workspace during the DWL parsing
+            // in order to be able to resume the download
+            if (PKG_DWL_PARSE == PkgDwlObj.state)
+            {
+                UpdateAndStorePkgDwlWorkspace();
+            }
         }
     }
 
     return PkgDwlObj.result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Initialize the package downloader.
+ *
+ * This function is called to initialize the package downloader: the associated workspace is
+ * deleted if necessary to be able to start a new download.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderInit
+(
+    void
+)
+{
+    if (DWL_OK != DeletePkgDwlWorkspace())
+    {
+        LOG("No package downloader workspace to delete");
+    }
 }

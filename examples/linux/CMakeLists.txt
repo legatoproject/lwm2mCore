@@ -99,6 +99,7 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/objectManager/utils.c
     ${LWM2MCORE_DIR}/objectManager/lwm2mcoreCoapHandlers.c
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
+    ${LWM2MCORE_DIR}/packageDownloader/workspace.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
     connectivity.c
