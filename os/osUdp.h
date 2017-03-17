@@ -12,9 +12,9 @@
 #ifndef __OSUDP_H__
 #define __OSUDP_H__
 
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include "osInet.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
