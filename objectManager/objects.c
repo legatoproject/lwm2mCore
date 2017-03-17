@@ -39,7 +39,7 @@ uint16_t RegisteredObjNb = 0;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Object array to be registered in Wakamaa including the genereic handlers to access to these
+ * Object array to be registered in Wakamaa including the generic handlers to access to these
  * objects
  */
 //--------------------------------------------------------------------------------------------------
@@ -71,6 +71,7 @@ char SwObjectInstanceListPtr[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
  *                      PRIVATE FUNCTIONS
  */
 //--------------------------------------------------------------------------------------------------
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to translate a resource handler status to a CoAP error
@@ -328,6 +329,145 @@ inline int64_t BytesToInt
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Encode read data as a LWM2M data
+ *
+ * @return
+ *      - COAP_205_CONTENT if the data is correctly encoded
+ *      - COAP_500_INTERNAL_SERVER_ERROR in case of error
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t EncodeData
+(
+    lwm2m_ResourceType_t type,  ///< [IN] LWM2M resource type
+    uint8_t* bufPtr,            ///< [IN] Data to encode
+    size_t bufSize,             ///< [IN] Length of data to encode
+    lwm2m_data_t* dataPtr       ///< [INOUT] Encoded LWM2M data
+)
+{
+    uint8_t result = COAP_205_CONTENT;
+
+    switch (type)
+    {
+        case LWM2MCORE_RESOURCE_TYPE_INT:
+        case LWM2MCORE_RESOURCE_TYPE_TIME:
+        {
+            int64_t value = 0;
+            value = BytesToInt(bufPtr, bufSize);
+            lwm2m_data_encode_int(value, dataPtr);
+        }
+        break;
+
+        case LWM2MCORE_RESOURCE_TYPE_BOOL:
+            lwm2m_data_encode_bool(bufPtr[0], dataPtr);
+            break;
+
+        case LWM2MCORE_RESOURCE_TYPE_STRING:
+            lwm2m_data_encode_nstring(bufPtr, bufSize, dataPtr);
+            break;
+
+        case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
+        case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
+            lwm2m_data_encode_opaque(bufPtr, bufSize, dataPtr);
+            break;
+
+        case LWM2MCORE_RESOURCE_TYPE_FLOAT:
+        default:
+            result = COAP_500_INTERNAL_SERVER_ERROR;
+            break;
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Read resources with multiple instances in an object
+ *
+ * @return
+ *      - COAP_205_CONTENT if the request is well treated
+ *      - COAP_404_NOT_FOUND if no instance is present
+ *      - COAP_500_INTERNAL_SERVER_ERROR in case of error
+ *      - COAP_501_NOT_IMPLEMENTED if the read callback is not implemented
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t ReadResourceInstances
+(
+    lwm2mcore_Uri_t* uriPtr,                    ///< [IN] Requested operation and object/resource
+    lwm2mcore_internalResource_t* resourcePtr,  ///< [IN] LWM2M resource
+    lwm2m_data_t* dataPtr                       ///< [INOUT] Encoded LWM2M data
+)
+{
+    int sid = 0;
+    int i = 0;
+    uint8_t result = COAP_404_NOT_FOUND;
+    char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
+    size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+    lwm2m_data_t* instancesPtr = lwm2m_data_new(resourcePtr->maxInstCount);
+
+    if (!instancesPtr)
+    {
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    do
+    {
+        async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+        memset(async_buf, 0, async_buf_len);
+        uriPtr->riid = i;
+
+        /* Read the instance of the resource */
+        LOG_ARG("Instance %d", uriPtr->riid);
+        sid  = resourcePtr->read(uriPtr, async_buf, &async_buf_len, NULL);
+
+        /* Define the CoAP result */
+        result = SetCoapError(sid, LWM2MCORE_OP_READ);
+
+        if (COAP_205_CONTENT == result)
+        {
+            /* Check if some data was returned */
+            if (async_buf_len)
+            {
+                /* Set resource id and encode as LWM2M data */
+                (instancesPtr + i)->id = uriPtr->riid;
+                result = EncodeData(resourcePtr->type,
+                                    async_buf,
+                                    async_buf_len,
+                                    instancesPtr + i);
+            }
+            else
+            {
+                if (0 == uriPtr->riid)
+                {
+                    /* No instance, return an error */
+                    result = COAP_404_NOT_FOUND;
+                }
+                else
+                {
+                    /* No more instance, stop processing without throwing an error */
+                    i = resourcePtr->maxInstCount;
+                }
+            }
+        }
+        i++;
+    }
+    while ((i < resourcePtr->maxInstCount) && (COAP_205_CONTENT == result));
+
+    if (COAP_205_CONTENT == result)
+    {
+        /* No error, encode the resources in a single LWM2M data */
+        lwm2m_data_encode_instances(instancesPtr, uriPtr->riid, dataPtr);
+    }
+    else
+    {
+        /* Error, free allocated memory */
+        lwm2m_free(instancesPtr);
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Generic function when a READ command is treated for a specific object (Wakaama)
  *
  * @return
@@ -345,7 +485,14 @@ static uint8_t ReadCb
 )
 {
     uint8_t result;
-    int i;
+    int i = 0;
+    int sid = 0;
+    lwm2mcore_Uri_t uri = { 0 };
+    lwm2mcore_internalObject_t* objPtr;
+    lwm2mcore_internalResource_t* resourcePtr = NULL;
+    char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
+    size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+
     if ((NULL == objectPtr) || (NULL == dataArrayPtr))
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -354,261 +501,160 @@ static uint8_t ReadCb
     LOG_ARG("ReadCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
-    if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
+    if (!LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_Uri_t uri = { 0 };
-        lwm2mcore_internalObject_t* objPtr;
-        LOG("object instance Id was registered");
+        LOG_ARG("Object %d not found", objectPtr->objID);
+        return COAP_404_NOT_FOUND;
+    }
 
-        uri.op = LWM2MCORE_OP_READ;
-        uri.oid = objectPtr->objID;
-        uri.oiid = instanceId;
+    LOG("object instance Id was registered");
 
-        objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
-        if (NULL == objPtr)
+    uri.op = LWM2MCORE_OP_READ;
+    uri.oid = objectPtr->objID;
+    uri.oiid = instanceId;
+
+    objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
+    if (NULL == objPtr)
+    {
+        LOG_ARG("Object %d is NOT registered", objectPtr->objID);
+        return COAP_404_NOT_FOUND;
+    }
+
+    LOG_ARG("numDataP %d", *numDataPtr);
+
+    /* *numDataPtr set to 0 means that the server is asking for the full object.
+     * Otherwise *numDataPtr is set to 1 to read only one resource,
+     * dataArrayPtr is already allocated by Wakaama
+     * and its id is set to the resource to read. */
+    if (0 == *numDataPtr)
+    {
+        uint16_t resList[50];
+        int nbRes = 0;
+
+        /* Search the supported resources for the required object */
+        i = 0;
+        for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
+             resourcePtr;
+             resourcePtr = DLIST_NEXT(resourcePtr, list))
         {
-            LOG_ARG("Object %d is NOT registered", objectPtr->objID);
-            result = COAP_404_NOT_FOUND;
-        }
-        else
-        {
-            int sid = 0;
-            lwm2mcore_internalResource_t* resourcePtr = NULL;
-            char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
-            size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
-
-            LOG_ARG("numDataP %d", *numDataPtr);
-            // is the server asking for the full object ?
-            if (0 == *numDataPtr)
+            if (NULL != resourcePtr->read)
             {
-                uint16_t resList[50];
-                int nbRes = 0;
+                resList[ i ] = resourcePtr->id;
+                LOG_ARG("resList[ %d ] %d", i, resList[ i ]);
+                i++;
+            }
+        }
 
-                /* Search the supported resources for the required object */
-                i = 0;
-                for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
-                     resourcePtr;
-                     resourcePtr = DLIST_NEXT(resourcePtr, list))
+        nbRes = i;
+        LOG_ARG("nbRes %d", nbRes);
+
+        *dataArrayPtr = lwm2m_data_new(nbRes);
+        if (NULL == *dataArrayPtr)
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        *numDataPtr = nbRes;
+        for (i = 0 ; i < nbRes ; i++)
+        {
+            (*dataArrayPtr)[i].id = resList[i];
+        }
+    }
+
+    i = 0;
+    do
+    {
+        uri.rid = (*dataArrayPtr)[i].id;
+
+        /* Search the resource handler */
+        resourcePtr = FindResource(objPtr, uri.rid);
+        if (NULL != resourcePtr)
+        {
+            if (NULL != resourcePtr->read)
+            {
+                LOG_ARG("READ /%d/%d/%d", uri.oid, uri.oiid, uri.rid);
+
+                if (1 < resourcePtr->maxInstCount)
                 {
-                    if (NULL != resourcePtr->read)
+                    result = ReadResourceInstances(&uri, resourcePtr, (*dataArrayPtr) + i);
+                }
+                else
+                {
+                    async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+                    memset(async_buf, 0, async_buf_len);
+
+                    sid  = resourcePtr->read(&uri, async_buf, &async_buf_len, NULL);
+
+                    /* Define the CoAP result */
+                    result = SetCoapError(sid, LWM2MCORE_OP_READ);
+
+                    if (COAP_205_CONTENT == result)
                     {
-                        resList[ i ] = resourcePtr->id;
-                        LOG_ARG("resList[ %d ] %d", i, resList[ i ]);
-                        i++;
+                        result = EncodeData(resourcePtr->type,
+                                            async_buf,
+                                            async_buf_len,
+                                            (*dataArrayPtr) + i);
                     }
                 }
 
-                nbRes = i;
-                LOG_ARG("nbRes %d", nbRes);
-
-                *dataArrayPtr = lwm2m_data_new(nbRes);
-                if (NULL == *dataArrayPtr)
+                if (COAP_501_NOT_IMPLEMENTED == result)
                 {
-                    return COAP_500_INTERNAL_SERVER_ERROR;
-                }
-                *numDataPtr = nbRes;
-                for (i = 0 ; i < nbRes ; i++)
-                {
-                    (*dataArrayPtr)[i].id = resList[i];
-                }
-            }
-
-            i = 0;
-            do
-            {
-                uri.rid = (*dataArrayPtr)[i].id;
-
-                /* Search the resource handler */
-                resourcePtr = FindResource(objPtr, uri.rid);
-                if (NULL != resourcePtr)
-                {
-                    if (NULL != resourcePtr->read)
+                    /* Read resource is not implemented, check the number of resources */
+                    if (1 == *numDataPtr)
                     {
-                        async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
-                        memset(async_buf, 0, async_buf_len);
-                        LOG_ARG("READ / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                        sid  = resourcePtr->read(&uri, async_buf, &async_buf_len, NULL);
-
-                        /* Define the CoAP result */
-                        result = SetCoapError(sid, LWM2MCORE_OP_READ);
-
-                        if (COAP_205_CONTENT == result)
-                        {
-                            switch (resourcePtr->type)
-                            {
-                                case LWM2MCORE_RESOURCE_TYPE_INT:
-                                {
-                                    int64_t value = 0;
-                                    value = BytesToInt((uint8_t*)async_buf, async_buf_len);
-                                    lwm2m_data_encode_int(value, (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d value %d", sid, value);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_BOOL:
-                                {
-                                    lwm2m_data_encode_bool(async_buf[0], (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d value %d", sid, async_buf[0]);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_STRING:
-                                {
-                                    lwm2m_data_encode_nstring(async_buf,
-                                                              async_buf_len,
-                                                              (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
-                                {
-                                    lwm2m_data_encode_opaque(async_buf,
-                                                             async_buf_len,
-                                                             (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_FLOAT:
-                                {
-                                    result = COAP_500_INTERNAL_SERVER_ERROR;
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_TIME:
-                                {
-                                    int64_t value = 0;
-                                    value = BytesToInt((uint8_t*)async_buf, async_buf_len);
-                                    lwm2m_data_encode_int(value, (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d value %d", sid, value);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
-                                {
-                                    lwm2m_data_encode_opaque(async_buf,
-                                                             async_buf_len,
-                                                             (*dataArrayPtr) + i);
-                                    if (LWM2MCORE_SECURITY_OID != uri.oid)
-                                    {
-                                        LOG_ARG("ReadCb sID %d async_buf %s", sid, async_buf);
-                                    }
-                                    else
-                                    {
-                                        LOG_ARG("ReadCb sID %d", sid);
-                                    }
-                                }
-                                break;
-
-                                default:
-                                {
-                                    result = COAP_500_INTERNAL_SERVER_ERROR;
-                                }
-                                break;
-                            }
-                            i++;
-                        }
-                        else if (COAP_501_NOT_IMPLEMENTED == result)
-                        {
-                            /* Read resource is not implemented, check the number of resources */
-                            if (1 == *numDataPtr)
-                            {
-                                /* This was the only resource to read, free the allocated
-                                 * memory and return an error */
-                                lwm2m_free(*dataArrayPtr);
-                                result = COAP_404_NOT_FOUND;
-                                i++;
-                            }
-                            else
-                            {
-                                /* Remove the corresponding data */
-                                lwm2m_data_t* newDataArrayPtr;
-
-                                /* Allocate a new buffer */
-                                newDataArrayPtr = lwm2m_data_new((*numDataPtr)-1);
-                                if (NULL == newDataArrayPtr)
-                                {
-                                    return COAP_500_INTERNAL_SERVER_ERROR;
-                                }
-                                /* Copy the previous data, except for the "not implemented" one */
-                                memcpy(newDataArrayPtr, *dataArrayPtr, i * sizeof(lwm2m_data_t));
-                                memcpy(newDataArrayPtr + i,
-                                       (*dataArrayPtr) + (i+1),
-                                       ((*numDataPtr)-(i+1)) * sizeof(lwm2m_data_t));
-                                /* Free the previous buffer */
-                                lwm2m_free(*dataArrayPtr);
-                                /* Update the output data */
-                                *dataArrayPtr = newDataArrayPtr;
-                                (*numDataPtr)--;
-                                result = COAP_205_CONTENT;
-                            }
-                        }
-                        else
-                        {
-                            i++;
-                        }
+                        /* This was the only resource to read, return an error.
+                         * No need to free the memory as it will be done by
+                         * the calling function. */
+                        result = COAP_404_NOT_FOUND;
+                        i++;
                     }
                     else
                     {
-                        LOG("READ callback NULL");
-                        result = COAP_404_NOT_FOUND;
-                        i++;
+                        /* Remove the corresponding data */
+                        lwm2m_data_t* newDataArrayPtr;
+
+                        /* Allocate a new buffer */
+                        newDataArrayPtr = lwm2m_data_new((*numDataPtr)-1);
+                        if (NULL == newDataArrayPtr)
+                        {
+                            return COAP_500_INTERNAL_SERVER_ERROR;
+                        }
+                        /* Copy the previous data, except for the "not implemented" one */
+                        memcpy(newDataArrayPtr, *dataArrayPtr, i * sizeof(lwm2m_data_t));
+                        memcpy(newDataArrayPtr + i,
+                               (*dataArrayPtr) + (i+1),
+                               ((*numDataPtr)-(i+1)) * sizeof(lwm2m_data_t));
+                        /* Free the previous buffer */
+                        lwm2m_free(*dataArrayPtr);
+                        /* Update the output data */
+                        *dataArrayPtr = newDataArrayPtr;
+                        (*numDataPtr)--;
+                        result = COAP_205_CONTENT;
                     }
                 }
                 else
                 {
-                    LOG("resource NULL");
-                    result = COAP_404_NOT_FOUND;
                     i++;
                 }
-            } while (   (i < *numDataPtr)
-                     && (   (COAP_205_CONTENT == result)
-                         || (COAP_NO_ERROR == result)
-                        )
-                    );
+            }
+            else
+            {
+                LOG("READ callback NULL");
+                result = COAP_404_NOT_FOUND;
+                i++;
+            }
         }
-    }
-    else
-    {
-        LOG_ARG("Object %d not found", objectPtr->objID);
-        result = COAP_404_NOT_FOUND;
-    }
+        else
+        {
+            LOG("resource NULL");
+            result = COAP_404_NOT_FOUND;
+            i++;
+        }
+    } while (   (i < *numDataPtr)
+             && (   (COAP_205_CONTENT == result)
+                 || (COAP_NO_ERROR == result)
+                )
+            );
+
     LOG_ARG("ReadCb result %d", result);
     return result;
 }
@@ -1207,7 +1253,7 @@ static lwm2mcore_internalObject_t* InitObject
         resourcePtr->id = (client_resourcePtr + j)->id;
         resourcePtr->iid = 0;
         resourcePtr->type = (client_resourcePtr + j)->type;
-        resourcePtr->multiple = (client_resourcePtr + j)->maxResInstCnt > 1;
+        resourcePtr->maxInstCount = (client_resourcePtr + j)->maxResInstCnt;
         memset(&resourcePtr->attr, 0, sizeof(lwm2m_attribute_t));
         resourcePtr->read = (client_resourcePtr + j)->read;
         resourcePtr->write = (client_resourcePtr + j)->write;
@@ -1236,7 +1282,7 @@ static void InitObjectsList
 
     if ((NULL == objects_list) || (NULL == clientHandlerPtr))
     {
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        return;
     }
 
     LOG_ARG("objCnt %d", clientHandlerPtr->objCnt);

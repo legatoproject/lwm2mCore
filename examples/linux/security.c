@@ -44,9 +44,9 @@
  * This implies that a each connection to the LWM2M server, a connection to the bootstrap server
  * will be firstly initiated, followed by a connection to the Device Management server.
  */
-uint8_t DmPskId[LWM2MCORE_PSKID_LEN+1] = {'\0'};
-uint8_t DmPskSecret[LWM2MCORE_PSK_LEN + 1] = {'\0'};
-uint8_t DmServerAddr[LWM2MCORE_SERVERADDR_LEN] = {'\0'};
+static uint8_t DmPskId[LWM2MCORE_PSKID_LEN+1] = {'\0'};
+static uint8_t DmPskSecret[LWM2MCORE_PSK_LEN + 1] = {'\0'};
+static uint8_t DmServerAddr[LWM2MCORE_SERVERADDR_LEN] = {'\0'};
 
 
 //--------------------------------------------------------------------------------------------------

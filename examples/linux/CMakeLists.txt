@@ -40,18 +40,17 @@ endif()
 
 add_custom_command(OUTPUT ${TINYDTLS_SOURCES_GENERATED} COMMAND ""  DEPENDS external_tinydtls)
 
-include_directories (${LWM2MCORE_DIR}/include)
-include_directories (${LWM2MCORE_DIR}/include/platform-specific/linux)
-include_directories (${LWM2MCORE_DIR}/os)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${LWM2MCORE_DIR}/include)
+include_directories(${LWM2MCORE_DIR}/include/platform-specific/linux)
 
-include_directories (${LWM2MCORE_DIR}/wakaama/core)
-include_directories (${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
-include_directories (${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
+include_directories(${LWM2MCORE_DIR}/wakaama/core)
+include_directories(${LWM2MCORE_DIR}/wakaama/core/er-coap-13)
 
-include_directories (${LWM2MCORE_DIR}/objectManager)
-include_directories (${LWM2MCORE_DIR}/packageDownloader)
-include_directories (${LWM2MCORE_DIR}/sessionManager)
-include_directories (${LWM2MCORE_DIR}/tinydtls)
+include_directories(${LWM2MCORE_DIR}/objectManager)
+include_directories(${LWM2MCORE_DIR}/packageDownloader)
+include_directories(${LWM2MCORE_DIR}/sessionManager)
+include_directories(${LWM2MCORE_DIR}/tinydtls)
 
 add_definitions(-DLWM2M_CLIENT_MODE
                 -DLWM2M_BOOTSTRAP
@@ -101,15 +100,16 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
+    connectivity.c
     debug.c
-    platform.c
     device.c
+    main.c
+    platform.c
     security.c
-    update.c
     time.c
     timer.c
     udp.c
-    main.c
+    update.c
 )
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)

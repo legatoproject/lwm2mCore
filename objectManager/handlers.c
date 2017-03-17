@@ -11,8 +11,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <lwm2mcore/lwm2mcore.h>
-#include <lwm2mcore/update.h>
+#include <lwm2mcore/connectivity.h>
+#include <lwm2mcore/device.h>
 #include <lwm2mcore/security.h>
+#include <lwm2mcore/update.h>
 #include "handlers.h"
 #include "objects.h"
 #include "internals.h"
@@ -47,16 +49,16 @@ typedef enum
  * Credential temporary RAM storage for BS and DM credentials: storage at the end of the bootstrap
  */
 //--------------------------------------------------------------------------------------------------
-uint8_t BsPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
-uint16_t BsPskIdLen = 0;
-uint8_t BsPsk[DTLS_PSK_MAX_KEY_LEN];
-uint16_t BsPskLen = 0;
-uint8_t BsAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
-uint8_t DmPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
-uint16_t DmPskIdLen = 0;
-uint8_t DmPsk[DTLS_PSK_MAX_KEY_LEN];
-uint16_t DmPskLen = 0;
-uint8_t DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
+static uint8_t  BsPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
+static uint16_t BsPskIdLen = 0;
+static uint8_t  BsPsk[DTLS_PSK_MAX_KEY_LEN];
+static uint16_t BsPskLen = 0;
+static uint8_t  BsAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
+static uint8_t  DmPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
+static uint16_t DmPskIdLen = 0;
+static uint8_t  DmPsk[DTLS_PSK_MAX_KEY_LEN];
+static uint16_t DmPskLen = 0;
+static uint8_t  DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -273,10 +275,9 @@ static size_t FormatValueToBytes
     return lReturn;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 0: SECURITY
+ *                                  OBJECT 0: SECURITY
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -880,7 +881,7 @@ int SmsDummy
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 1: SERVER
+ *                                  OBJECT 1: SERVER
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -1107,7 +1108,6 @@ int ReadServerObj
     return sID;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  *                                  OBJECT 3: DEVICE
@@ -1231,37 +1231,37 @@ int ReadDeviceObj
     {
         /* Resource 0: Manufacturer */
         case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-            sID = lwm2mcore_DeviceManufacturer((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceManufacturer(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
             break;
 
         /* Resource 1: Device number */
         case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-            sID = lwm2mcore_DeviceModelNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceModelNumber(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
             break;
 
         /* Resource 2: Serial number */
         case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-            sID = lwm2mcore_DeviceSerialNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceSerialNumber(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
             break;
 
         /* Resource 3: Firmware */
         case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-            sID = lwm2mcore_DeviceFirmwareVersion((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceFirmwareVersion(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
             break;
 
@@ -1311,10 +1311,352 @@ int ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 5: FIRMWARE UPDATE
+ *                              OBJECT 4: CONNECTIVITY MONITORING
  */
 //--------------------------------------------------------------------------------------------------
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 4
+ * Object: 4 - Connectivity monitoring
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadConnectivityMonitoringObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Network bearer */
+        case LWM2MCORE_CONN_MONITOR_NETWORK_BEARER_RID:
+        {
+            lwm2mcore_networkBearer_enum_t networkBearer;
+            sID = lwm2mcore_ConnectivityNetworkBearer(&networkBearer);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &networkBearer,
+                                             sizeof(networkBearer),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 1: Available network bearer */
+        case LWM2MCORE_CONN_MONITOR_AVAIL_NETWORK_BEARER_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_AVAIL_NETWORK_BEARER_MAX_NB)
+            {
+                static lwm2mcore_networkBearer_enum_t
+                       bearersList[CONN_MONITOR_AVAIL_NETWORK_BEARER_MAX_NB];
+                static uint16_t bearersNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the available network bearers list */
+                    memset(bearersList, 0, sizeof(bearersList));
+                    bearersNb = 0;
+
+                    /* Retrieve the list */
+                    sID = lwm2mcore_ConnectivityAvailableNetworkBearers(&bearersList, &bearersNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < bearersNb)
+                    {
+                        *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                                     &bearersList[uriPtr->riid],
+                                                     sizeof(bearersList[uriPtr->riid]),
+                                                     false);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            break;
+
+        /* Resource 2: Radio signal strength */
+        case LWM2MCORE_CONN_MONITOR_RADIO_SIGNAL_STRENGTH_RID:
+        {
+            int32_t signalStrength;
+            sID = lwm2mcore_ConnectivitySignalStrength(&signalStrength);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &signalStrength,
+                                             sizeof(signalStrength),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 3: Link quality */
+        case LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID:
+        {
+            uint16_t linkQuality;
+            sID = lwm2mcore_ConnectivityLinkQuality(&linkQuality);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &linkQuality,
+                                             sizeof(linkQuality),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 4: IP addresses */
+        case LWM2MCORE_CONN_MONITOR_IP_ADDRESSES_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_IP_ADDRESSES_MAX_NB)
+            {
+                static char ipAddrList[CONN_MONITOR_IP_ADDRESSES_MAX_NB]
+                                      [CONN_MONITOR_IP_ADDR_MAX_BYTES];
+                static uint16_t ipAddrNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the IP addresses list */
+                    memset(ipAddrList, 0, sizeof(ipAddrList));
+                    ipAddrNb = 0;
+
+                    /* Retrieve the list */
+                    sID = lwm2mcore_ConnectivityIpAddresses(ipAddrList, &ipAddrNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < ipAddrNb)
+                    {
+                        *lenPtr = snprintf(bufferPtr,
+                                           CONN_MONITOR_IP_ADDR_MAX_BYTES,
+                                           "%s",
+                                           ipAddrList[uriPtr->riid]);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            break;
+
+        /* Resource 5: Router IP addresses */
+        case LWM2MCORE_CONN_MONITOR_ROUTER_IP_ADDRESSES_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_ROUTER_IP_ADDRESSES_MAX_NB)
+            {
+                static char ipAddrList[CONN_MONITOR_ROUTER_IP_ADDRESSES_MAX_NB]
+                                      [CONN_MONITOR_IP_ADDR_MAX_BYTES];
+                static uint16_t ipAddrNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the router IP addresses list */
+                    memset(ipAddrList, 0, sizeof(ipAddrList));
+                    ipAddrNb = 0;
+
+                    /* Retrieve the list */
+                    sID = lwm2mcore_ConnectivityRouterIpAddresses(ipAddrList, &ipAddrNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < ipAddrNb)
+                    {
+                        *lenPtr = snprintf(bufferPtr,
+                                           CONN_MONITOR_IP_ADDR_MAX_BYTES,
+                                           "%s",
+                                           ipAddrList[uriPtr->riid]);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            break;
+
+        /* Resource 6: Link utilization */
+        case LWM2MCORE_CONN_MONITOR_LINK_UTILIZATION_RID:
+        {
+            uint8_t linkUtilization;
+            sID = lwm2mcore_ConnectivityLinkUtilization(&linkUtilization);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &linkUtilization,
+                                             sizeof(linkUtilization),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 7: Access Point Name */
+        case LWM2MCORE_CONN_MONITOR_APN_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_APN_MAX_NB)
+            {
+                static char apnList[CONN_MONITOR_APN_MAX_NB][CONN_MONITOR_APN_MAX_BYTES];
+                static uint16_t apnNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the APN list */
+                    memset(apnList, 0, sizeof(apnList));
+                    apnNb = 0;
+
+                    /* Retrieve the list */
+                    sID = lwm2mcore_ConnectivityApn(apnList, &apnNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < apnNb)
+                    {
+                        *lenPtr = snprintf(bufferPtr,
+                                           CONN_MONITOR_APN_MAX_BYTES,
+                                           "%s",
+                                           apnList[uriPtr->riid]);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            break;
+
+        /* Resource 8: Cell ID */
+        case LWM2MCORE_CONN_MONITOR_CELL_ID_RID:
+        {
+            uint32_t cellId;
+            sID = lwm2mcore_ConnectivityCellId(&cellId);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &cellId,
+                                             sizeof(cellId),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 9: Serving Mobile Network Code */
+        case LWM2MCORE_CONN_MONITOR_SMNC_RID:
+        {
+            uint16_t mnc;
+            sID = lwm2mcore_ConnectivityMncMcc(&mnc, NULL);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &mnc,
+                                             sizeof(mnc),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 10: Serving Mobile Country Code */
+        case LWM2MCORE_CONN_MONITOR_SMCC_RID:
+        {
+            uint16_t mcc;
+            sID = lwm2mcore_ConnectivityMncMcc(NULL, &mcc);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &mcc,
+                                             sizeof(mcc),
+                                             false);
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                                  OBJECT 5: FIRMWARE UPDATE
+ */
+//--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1566,10 +1908,9 @@ int ExecFwUpdate
     return sID;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 9: SOFTWARE UPDATE
+ *                                  OBJECT 9: SOFTWARE UPDATE
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -1705,7 +2046,7 @@ int ReadSwUpdateObj
                                                  (uint32_t)*lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
         }
         break;
@@ -1719,7 +2060,7 @@ int ReadSwUpdateObj
                                                     (uint32_t)*lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen((char*)bufferPtr);
+                *lenPtr = strlen(bufferPtr);
             }
         }
         break;
@@ -1888,10 +2229,9 @@ int ExecSwUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 10243: SSL certificates
+ *                              OBJECT 10243: SSL certificates
  */
 //--------------------------------------------------------------------------------------------------
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1960,8 +2300,6 @@ int OnSslCertif
     return sID;
 }
 
-
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Function for not registered objects
@@ -1990,5 +2328,4 @@ int OnUnlistedObject
 {
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
-
 

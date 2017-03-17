@@ -14,6 +14,7 @@
 #include <lwm2mcore/lwm2mcore.h>
 #include "objects.h"
 #include "handlers.h"
+#include "clientConfig.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -261,6 +262,104 @@ static lwm2mcore_Resource_t DeviceResources[] =
     }
 };
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Supported resources defined for LWM2M Connectivity Monitoring object.
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t ConnectivityMonitoringResources[] =
+{
+    {
+        LWM2MCORE_CONN_MONITOR_NETWORK_BEARER_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_AVAIL_NETWORK_BEARER_RID,    //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        CONN_MONITOR_AVAIL_NETWORK_BEARER_MAX_NB,           //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_RADIO_SIGNAL_STRENGTH_RID,   //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_IP_ADDRESSES_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                     //.type
+        CONN_MONITOR_IP_ADDRESSES_MAX_NB,                   //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_ROUTER_IP_ADDRESSES_RID,     //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                     //.type
+        CONN_MONITOR_ROUTER_IP_ADDRESSES_MAX_NB,            //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_LINK_UTILIZATION_RID,        //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_APN_RID,                     //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                     //.type
+        CONN_MONITOR_APN_MAX_NB,                            //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_CELL_ID_RID,                 //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_SMNC_RID,                    //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CONN_MONITOR_SMCC_RID,                    //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        ReadConnectivityMonitoringObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    }
+};
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -447,7 +546,7 @@ lwm2mcore_Object_t ObjArray[] =
     /* object 0, LWM2M security */
     {
         LWM2MCORE_SECURITY_OID,                                                 //.id
-        LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT,    //..maxObjInstCnt
+        LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT,    //.maxObjInstCnt
         ARRAYSIZE(SecurityResources),                                           //.resCnt
         SecurityResources                                                       //.resources
     },
@@ -465,6 +564,13 @@ lwm2mcore_Object_t ObjArray[] =
         ARRAYSIZE(DeviceResources),                                             //.resCnt
         DeviceResources                                                         //.resources
     },
+    /* object 4, connectivity monitoring */
+    {
+        LWM2MCORE_CONN_MONITOR_OID,                                             //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(ConnectivityMonitoringResources),                             //.resCnt
+        ConnectivityMonitoringResources                                         //.resources
+    },
     /* object 5, firmware update */
     {
         LWM2MCORE_FIRMWARE_UPDATE_OID,                                          //.id
@@ -481,7 +587,7 @@ lwm2mcore_Object_t ObjArray[] =
     },
     /* object 10243, SSL certificate */
     {
-        LWM2M_SWI_SSL_CERTIFS_OID,                                              //.id
+        LWM2MCORE_SSL_CERTIFS_OID,                                              //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(SslCertificateResources),                                     //.resCnt
         SslCertificateResources                                                 //.resources

@@ -154,12 +154,12 @@ typedef enum
     LWM2MCORE_LOCATION_OID          = 6,        ///< Location
     LWM2MCORE_CONN_STATS_OID        = 7,        ///< Connectivity statistics
     LWM2MCORE_SOFTWARE_UPDATE_OID   = 9,        ///< Application update
-    LWM2M_SWI_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object ID:
+    LWM2MCORE_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object ID:
                                                 ///< Subscription
-    LWM2M_SWI_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object ID: Extended
-                                                ///< connectivity statistics
-    LWM2M_SWI_SSL_CERTIFS_OID       = 10243     ///< Sierra Wireless proprietary object ID: SSL
-                                                ///< certificate
+    LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object ID:
+                                                ///< Extended connectivity statistics
+    LWM2MCORE_SSL_CERTIFS_OID       = 10243     ///< Sierra Wireless proprietary object ID:
+                                                ///< SSL certificate
 } lwm2mcore_objectEnum_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -199,7 +199,7 @@ typedef enum
     LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID,  ///< Notification storing when disabled
                                                     ///< or offline
     LWM2MCORE_SERVER_BINDING_MODE_RID,              ///< Binding
-    LWM2MCORE_SERVER_REG_UPDATE_TRIGGER_RID,        ///< Registration update trigger
+    LWM2MCORE_SERVER_REG_UPDATE_TRIGGER_RID         ///< Registration update trigger
 }lwm2mcore_serverResource_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -225,8 +225,56 @@ typedef enum
     LWM2MCORE_DEVICE_CURRENT_TIME_RID,              ///< Current time
     LWM2MCORE_DEVICE_UTC_OFFSET_RID,                ///< UTC offset
     LWM2MCORE_DEVICE_TIMEZONE_RID,                  ///< Timezone
-    LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID,    ///< Supported binding and modes
+    LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID     ///< Supported binding and modes
 }lwm2mcore_deviceResource_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* Enumeration for LWM2M object 4 (connectivity monitoring) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_CONN_MONITOR_NETWORK_BEARER_RID = 0,      ///< Network bearer
+    LWM2MCORE_CONN_MONITOR_AVAIL_NETWORK_BEARER_RID,    ///< Available network bearer
+    LWM2MCORE_CONN_MONITOR_RADIO_SIGNAL_STRENGTH_RID,   ///< Radio signal strength
+    LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID,            ///< Link quality
+    LWM2MCORE_CONN_MONITOR_IP_ADDRESSES_RID,            ///< IP addresses
+    LWM2MCORE_CONN_MONITOR_ROUTER_IP_ADDRESSES_RID,     ///< Router IP addresses
+    LWM2MCORE_CONN_MONITOR_LINK_UTILIZATION_RID,        ///< Link utilization
+    LWM2MCORE_CONN_MONITOR_APN_RID,                     ///< Access Point Name
+    LWM2MCORE_CONN_MONITOR_CELL_ID_RID,                 ///< Cell ID
+    LWM2MCORE_CONN_MONITOR_SMNC_RID,                    ///< Serving Mobile Network Code
+    LWM2MCORE_CONN_MONITOR_SMCC_RID                     ///< Serving Mobile Country Code
+}lwm2mcore_connectivityMonitoringResource_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* Enumeration for resource 0 (network bearer) of LWM2M object 4 (connectivity monitoring)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    ///< 0-20 are cellular bearers
+    LWM2MCORE_NETWORK_BEARER_GSM            = 0,    ///< GSM cellular network
+    LWM2MCORE_NETWORK_BEARER_TD_SCDMA       = 1,    ///< TD-SCDMA cellular network
+    LWM2MCORE_NETWORK_BEARER_WCDMA          = 2,    ///< WCDMA cellular network
+    LWM2MCORE_NETWORK_BEARER_CDMA2000       = 3,    ///< CDMA2000 cellular network
+    LWM2MCORE_NETWORK_BEARER_WIMAX          = 4,    ///< WiMAX cellular network
+    LWM2MCORE_NETWORK_BEARER_LTE_TDD        = 5,    ///< LTE-TDD cellular network
+    LWM2MCORE_NETWORK_BEARER_LTE_FDD        = 6,    ///< LTE-FDD cellular network
+    ///< 7-20 are reserved for other type cellular network
+    ///< 21-40 are Wireless Bearers
+    LWM2MCORE_NETWORK_BEARER_WLAN           = 21,   ///< WLAN network
+    LWM2MCORE_NETWORK_BEARER_BLUETOOTH      = 22,   ///< Bluetooth network
+    LWM2MCORE_NETWORK_BEARER_IEEE_802_15_4  = 23,   ///< IEEE 802.15.4 network
+    ///< 24-40 are reserved for other type local wireless network
+    ///< 41-50 are Wireline Bearers
+    LWM2MCORE_NETWORK_BEARER_ETHERNET       = 41,   ///< Ethernet
+    LWM2MCORE_NETWORK_BEARER_DSL            = 42,   ///< DSL
+    LWM2MCORE_NETWORK_BEARER_PLC            = 43    ///< PLC
+    ///< 44-50 are reserved for others type wireline networks.
+}lwm2mcore_networkBearer_enum_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -244,7 +292,7 @@ typedef enum
     LWM2MCORE_FW_UPDATE_PACKAGE_NAME_RID,       ///< Package name
     LWM2MCORE_FW_UPDATE_PACKAGE_VERSION_RID,    ///< Package version
     LWM2MCORE_FW_UPDATE_PROTO_SUPPORT_RID,      ///< Fw update protocol support
-    LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID,    ///< Fw update delivery method
+    LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID     ///< Fw update delivery method
 }lwm2mcore_fwUpdateResource_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -272,7 +320,7 @@ typedef enum
     LWM2MCORE_SW_UPDATE_PASSWORD_RID,               ///< Password for pull mode
     LWM2MCORE_SW_STATUS_REASON_RID,                 ///< Status
     LWM2MCORE_SW_COMPONENT_LINK_RID,                ///< Reference to software components
-    LWM2MCORE_SW_COMPONENT_TREE_LENGTH_RID,         ///< Software component tree length
+    LWM2MCORE_SW_COMPONENT_TREE_LENGTH_RID          ///< Software component tree length
 }lwm2mcore_swUpdateResource_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -282,7 +330,7 @@ typedef enum
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_SSL_CERTIFICATE_CERTIF         = 0    ///< SSL certificates
+    LWM2MCORE_SSL_CERTIFICATE_CERTIF = 0            ///< SSL certificates
 } lwm2mcore_sslCertificateResource_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -303,7 +351,7 @@ typedef struct
 
 //--------------------------------------------------------------------------------------------------
 /*! \struct _lwm2m_resource
- *  \brief data structure reprents a lwm2m resource.
+ *  \brief data structure represents a lwm2m resource.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct _lwm2mcore_internalResource
@@ -312,7 +360,7 @@ typedef struct _lwm2mcore_internalResource
     uint16_t id;                        ///< resource id
     uint16_t iid;                       ///< resource instance id
     lwm2m_ResourceType_t type;          ///< resource data type
-    bool multiple;                      ///< flag indicate if this is single or multiple instances
+    uint16_t maxInstCount;              ///< maximal number of instances for this resource
     lwm2m_attribute_t attr;             ///< resource attributes
 
     /* operation handler */
@@ -332,7 +380,7 @@ DLIST_HEAD(_lwm2m_resource_list, _lwm2mcore_internalResource);
 
 //--------------------------------------------------------------------------------------------------
 /*! \struct _lwm2m_object
- *  \brief data structure reprents a lwm2m object.
+ *  \brief data structure represents a lwm2m object.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct _lwm2mcore_internalObject

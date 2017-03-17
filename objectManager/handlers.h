@@ -43,16 +43,16 @@
  * Define possible values for binding mode (supported mode is UQ)
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_BINDING_UDP "U"
-#define LWM2MCORE_BINDING_UDP_QUEUE "UQ"
-#define LWM2MCORE_BINDING_SMS "S"
-#define LWM2MCORE_BINDING_SMS_QUEUE "SQ"
-#define LWM2MCORE_BINDING_UDP_SMS "US"
+#define LWM2MCORE_BINDING_UDP           "U"
+#define LWM2MCORE_BINDING_UDP_QUEUE     "UQ"
+#define LWM2MCORE_BINDING_SMS           "S"
+#define LWM2MCORE_BINDING_SMS_QUEUE     "SQ"
+#define LWM2MCORE_BINDING_UDP_SMS       "US"
 #define LWM2MCORE_BINDING_UDP_QUEUE_SMS "UQS"
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 0: SECURITY
+ *                                  OBJECT 0: SECURITY
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -88,7 +88,7 @@ int WriteSecurityObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -115,7 +115,7 @@ int ReadSecurityObj
  * Resources: 6, 7, 8, 9
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -134,10 +134,9 @@ int SmsDummy
     valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 1: SERVER
+ *                                  OBJECT 1: SERVER
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -148,7 +147,7 @@ int SmsDummy
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -173,7 +172,7 @@ int WriteServerObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -193,10 +192,9 @@ int ReadServerObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 3: DEVICE
+ *                                  OBJECT 3: DEVICE
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -207,7 +205,7 @@ int ReadServerObj
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -232,7 +230,7 @@ int WriteDeviceObj
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -254,66 +252,41 @@ int ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to store credentials in non volatile memory
- *
- * @return
- *      - true in case of success
- *      - false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool StoreCredentials
-(
-    void
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- *                  OBJECT 10243: SSL certificates
+ *                              OBJECT 4: CONNECTIVITY MONITORING
  */
 //--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the SSL certificates
- * Object: 10243 - SSL certificates
- * Resource: 0
+ * Function to read a resource of object 4
+ * Object: 4 - Connectivity monitoring
+ * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
  *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnSslCertif
+int ReadConnectivityMonitoringObj
 (
-    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
-
-
-int OnUnlistedObject
-(
-    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
-                                        ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
-                                        ///< returned data
-    valueChangedCallback_t changedCb    ///< [IN] callback function pointer for OBSERVE operation
-);
-
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 5: FIRMWARE UPDATE
+ *                                  OBJECT 5: FIRMWARE UPDATE
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -324,7 +297,7 @@ int OnUnlistedObject
  * Resource: all with write operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -349,7 +322,7 @@ int WriteFwUpdateObj
  * Resource: all with read operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -376,7 +349,7 @@ int ReadFwUpdateObj
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treament succeeds
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
@@ -394,10 +367,9 @@ int ExecFwUpdate
     size_t len                          ///< [INOUT] length of input buffer
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 9: SOFTWARE UPDATE
+ *                                  OBJECT 9: SOFTWARE UPDATE
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -478,4 +450,75 @@ int ExecSwUpdate
     size_t len                          ///< [IN] length of input buffer
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ *                              OBJECT 10243: SSL certificates
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read/write the SSL certificates
+ * Object: 10243 - SSL certificates
+ * Resource: 0
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int OnSslCertif
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for not registered objects
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int OnUnlistedObject
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to store credentials in non volatile memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool StoreCredentials
+(
+    void
+);
 #endif /* __HANDLERS_H__ */
