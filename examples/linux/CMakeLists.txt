@@ -64,22 +64,6 @@ add_definitions(-DLWM2M_CLIENT_MODE
                 -DWITH_SHA256)
 
 SET(SOURCES
-    ${LWM2MCORE_DIR}/os/linux/osDebug.c
-    ${LWM2MCORE_DIR}/os/linux/osPlatform.c
-    ${LWM2MCORE_DIR}/os/linux/osTime.c
-    ${LWM2MCORE_DIR}/os/linux/osTimer.c
-    ${LWM2MCORE_DIR}/os/linux/osUdp.c
-    ${LWM2MCORE_DIR}/os/linux/main.c
-    ${LWM2MCORE_DIR}/os/linux/osPortDevice.c
-    ${LWM2MCORE_DIR}/os/linux/osPortSecurity.c
-    ${LWM2MCORE_DIR}/os/linux/osPortUpdate.c
-    ${LWM2MCORE_DIR}/objectManager/handlers.c
-    ${LWM2MCORE_DIR}/objectManager/objects.c
-    ${LWM2MCORE_DIR}/objectManager/objectsTable.c
-    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreCoapHandlers.c
-    ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
-    ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
-    ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
     ${LWM2MCORE_DIR}/tinydtls/dtls.c
     ${LWM2MCORE_DIR}/tinydtls/crypto.c
     ${LWM2MCORE_DIR}/tinydtls/ccm.c
@@ -109,6 +93,22 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/wakaama/core/transaction.c
     ${LWM2MCORE_DIR}/wakaama/core/uri.c
     ${LWM2MCORE_DIR}/wakaama/core/utils.c
+    ${LWM2MCORE_DIR}/objectManager/handlers.c
+    ${LWM2MCORE_DIR}/objectManager/objects.c
+    ${LWM2MCORE_DIR}/objectManager/objectsTable.c
+    ${LWM2MCORE_DIR}/objectManager/lwm2mcoreCoapHandlers.c
+    ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
+    ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
+    ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
+    osDebug.c
+    osPlatform.c
+    osPortDevice.c
+    osPortSecurity.c
+    osPortUpdate.c
+    osTime.c
+    osTimer.c
+    osUdp.c
+    main.c
 )
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
