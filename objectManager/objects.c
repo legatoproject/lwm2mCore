@@ -543,22 +543,66 @@ static uint8_t ReadCb
                                 }
                                 break;
                             }
+                            i++;
+                        }
+                        else if (COAP_501_NOT_IMPLEMENTED == result)
+                        {
+                            /* Read resource is not implemented, check the number of resources */
+                            if (1 == *numDataPtr)
+                            {
+                                /* This was the only resource to read, free the allocated
+                                 * memory and return an error */
+                                lwm2m_free(*dataArrayPtr);
+                                result = COAP_404_NOT_FOUND;
+                                i++;
+                            }
+                            else
+                            {
+                                /* Remove the corresponding data */
+                                lwm2m_data_t* newDataArrayPtr;
+
+                                /* Allocate a new buffer */
+                                newDataArrayPtr = lwm2m_data_new((*numDataPtr)-1);
+                                if (NULL == newDataArrayPtr)
+                                {
+                                    return COAP_500_INTERNAL_SERVER_ERROR;
+                                }
+                                /* Copy the previous data, except for the "not implemented" one */
+                                memcpy(newDataArrayPtr, *dataArrayPtr, i * sizeof(lwm2m_data_t));
+                                memcpy(newDataArrayPtr + i,
+                                       (*dataArrayPtr) + (i+1),
+                                       ((*numDataPtr)-(i+1)) * sizeof(lwm2m_data_t));
+                                /* Free the previous buffer */
+                                lwm2m_free(*dataArrayPtr);
+                                /* Update the output data */
+                                *dataArrayPtr = newDataArrayPtr;
+                                (*numDataPtr)--;
+                                result = COAP_205_CONTENT;
+                            }
+                        }
+                        else
+                        {
+                            i++;
                         }
                     }
                     else
                     {
                         LOG("READ callback NULL");
                         result = COAP_404_NOT_FOUND;
+                        i++;
                     }
                 }
                 else
                 {
                     LOG("resource NULL");
                     result = COAP_404_NOT_FOUND;
+                    i++;
                 }
-                i++;
-            } while ((i < *numDataPtr) && ((COAP_205_CONTENT == result)
-                  || (COAP_NO_ERROR == result)));
+            } while (   (i < *numDataPtr)
+                     && (   (COAP_205_CONTENT == result)
+                         || (COAP_NO_ERROR == result)
+                        )
+                    );
         }
     }
     else

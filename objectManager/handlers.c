@@ -132,7 +132,6 @@ static size_t FormatUint64ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-// TODO: check if the Wakaama utils_encodeInt function does not make the same treatment
 static size_t FormatValueToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] bytes buffer in which u value will be written
@@ -1111,7 +1110,7 @@ int ReadServerObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- *                  OBJECT 3: DEVICE
+ *                                  OBJECT 3: DEVICE
  */
 //--------------------------------------------------------------------------------------------------
 
@@ -1119,7 +1118,7 @@ int ReadServerObj
 /**
  * Function to write a resource of object 3
  * Object: 3 - Device
- * Resource: all
+ * Resource: All with write operation
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
@@ -1129,6 +1128,7 @@ int ReadServerObj
  *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -1141,17 +1141,19 @@ int WriteDeviceObj
 )
 {
     int sID;
-    if ((NULL == uriPtr) || (NULL == bufferPtr))
+
+    if ((!uriPtr) || (!bufferPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
     {
         return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
 
+    /* Check that the operation is coherent */
     if (0 ==(uriPtr->op & LWM2MCORE_OP_WRITE))
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -1161,25 +1163,20 @@ int WriteDeviceObj
     {
         /* Resource 13: Current time */
         case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
-        {
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-        break;
+            break;
 
 
         /* Resource 16: Supported binding mode */
         case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
-        {
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-        break;
+            break;
 
         default:
-        {
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-        }
-        break;
+            break;
     }
+
     return sID;
 }
 
@@ -1187,7 +1184,7 @@ int WriteDeviceObj
 /**
  * Function to read a resource of object 3
  * Object: 3 - Device
- * Resource: All
+ * Resource: All with read operation
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
@@ -1197,6 +1194,7 @@ int WriteDeviceObj
  *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -1211,17 +1209,19 @@ int ReadDeviceObj
 )
 {
     int sID;
-    if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
     {
         return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
 
+    /* Check that the operation is coherent */
     if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -1231,44 +1231,51 @@ int ReadDeviceObj
     {
         /* Resource 0: Manufacturer */
         case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-        {
-            sID = os_portDeviceManufacturer((char*)bufferPtr, (uint32_t*) lenPtr);
-            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            sID = os_portDeviceManufacturer((char*)bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
             }
-        }
-        break;
+            break;
 
         /* Resource 1: Device number */
         case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-        {
-            sID = os_portDeviceModelNumber((char*)bufferPtr, (uint32_t*) lenPtr);
-            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            sID = os_portDeviceModelNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
             }
-        }
-        break;
+            break;
 
         /* Resource 2: Serial number */
         case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-        {
-            sID = os_portDeviceSerialNumber((char*)bufferPtr, (uint32_t*) lenPtr);
-            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            sID = os_portDeviceSerialNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
             }
-        }
-        break;
+            break;
 
         /* Resource 3: Firmware */
         case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-        {
-            sID = os_portDeviceFirmwareVersion((char*)bufferPtr, (uint32_t*) lenPtr);
-            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            sID = os_portDeviceFirmwareVersion((char*)bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
+            }
+            break;
+
+        /* Resource 9: Battery level */
+        case LWM2MCORE_DEVICE_BATTERY_LEVEL_RID:
+        {
+            uint8_t batteryLevel = 0;
+            sID = os_portDeviceBatteryLevel(&batteryLevel);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &batteryLevel,
+                                             sizeof(batteryLevel),
+                                             false);
             }
         }
         break;
@@ -1276,29 +1283,29 @@ int ReadDeviceObj
         /* Resource 13: Current time */
         case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
         {
-            uint64_t time;
-            sID = os_portDeviceCurrentTime(&time);
-            if (sID == LWM2MCORE_ERR_COMPLETED_OK)
+            uint64_t currentTime = 0;
+            sID = os_portDeviceCurrentTime(&currentTime);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr, &time, sizeof(time), false);
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &currentTime,
+                                             sizeof(currentTime),
+                                             false);
             }
         }
         break;
 
         /* Resource 16: Supported binding mode */
         case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
-        {
             *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
-        }
-        break;
+            break;
 
         default:
-        {
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-        }
-        break;
+            break;
     }
+
     return sID;
 }
 
@@ -1311,7 +1318,7 @@ int ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a ressource of object 5
+ * Function to write a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with write operation
  *
@@ -1381,7 +1388,7 @@ int WriteFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a ressource of object 5
+ * Function to read a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with read operation
  *
@@ -1494,7 +1501,7 @@ int ReadFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a ressource of object 5
+ * Function to execute a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with execute operation
  *
@@ -1568,7 +1575,7 @@ int ExecFwUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a ressource of object 9
+ * Function to write a resource of object 9
  * Object: 9 - software update
  * Resource: all with write operation
  *
@@ -1650,7 +1657,7 @@ int WriteSwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a ressource of object 9
+ * Function to read a resource of object 9
  * Object: 9 - Software update
  * Resource: all with read operation
  *
@@ -1794,7 +1801,7 @@ int ReadSwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a ressource of object 9
+ * Function to execute a resource of object 9
  * Object: 9 - Software update
  * Resource: all with execute operation
  *

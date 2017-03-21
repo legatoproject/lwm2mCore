@@ -236,6 +236,14 @@ static lwm2mcore_resource_t DeviceResources[] =
         NULL,                                       //.exec
     },
     {
+        LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,         //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.max_res_inst_cnt
+        ReadDeviceObj,                              //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
         LWM2MCORE_DEVICE_CURRENT_TIME_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_TIME,               //.type
         1,                                          //.max_res_inst_cnt
