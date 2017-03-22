@@ -23,7 +23,7 @@
 #include <sys/stat.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "osInet.h"
+#include <platform/inet.h>
 #include "tinydtls.h"
 #include "dtls.h"
 #include "liblwm2m.h"

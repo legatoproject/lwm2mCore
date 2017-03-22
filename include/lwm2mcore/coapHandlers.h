@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcoreCoapHandlers.h
+ * @file coapHandlers.h
  *
  * Coap request handlers
  *
@@ -55,7 +55,7 @@ typedef struct
     uint8_t* payload;                   ///< [IN] payload
     size_t payloadLength;               ///< [IN] payload length
 }
-lwm2mcore_coapResponse_t;
+lwm2mcore_CoapResponse_t;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ typedef struct
     uint8_t *buffer;                ///< [IN] payload of coap request
     size_t bufferLength;            ///< [IN] length of input buffer
 }
-lwm2mcore_coapRequest_t;
+lwm2mcore_CoapRequest_t;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ lwm2mcore_coapRequest_t;
  * Reference to CoAP Request
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct lwm2mcore_coapRequest_t* lwm2mcore_coapRequestRef_t;
+typedef struct lwm2mcore_CoapRequest_t* lwm2mcore_CoapRequestRef_t;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ typedef struct lwm2mcore_coapRequest_t* lwm2mcore_coapRequestRef_t;
 //--------------------------------------------------------------------------------------------------
 typedef void (*coap_request_handler_t)
 (
-    lwm2mcore_coapRequest_t* requestRef
+    lwm2mcore_CoapRequest_t* requestRef
 );
 
 
@@ -115,7 +115,7 @@ void lwm2mcore_SetCoapEventHandler
 //--------------------------------------------------------------------------------------------------
 const char* lwm2mcore_GetRequestUri
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 
@@ -126,7 +126,7 @@ const char* lwm2mcore_GetRequestUri
 //--------------------------------------------------------------------------------------------------
 coap_method_t lwm2mcore_GetRequestMethod
 (
-    lwm2mcore_coapRequest_t* requestRef        ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef        ///< [IN] Coap request reference
 );
 
 
@@ -137,7 +137,7 @@ coap_method_t lwm2mcore_GetRequestMethod
 //--------------------------------------------------------------------------------------------------
 const uint8_t* lwm2mcore_GetRequestPayload
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 
@@ -148,7 +148,7 @@ const uint8_t* lwm2mcore_GetRequestPayload
 //--------------------------------------------------------------------------------------------------
 size_t lwm2mcore_GetRequestPayloadLength
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 
@@ -157,9 +157,9 @@ size_t lwm2mcore_GetRequestPayloadLength
  * Function to get token from request
  */
 //--------------------------------------------------------------------------------------------------
-const uint8_t* lwm2mcore_GetToken
+const uint8_t* lwm2mcore_getToken
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 
@@ -168,9 +168,9 @@ const uint8_t* lwm2mcore_GetToken
  * Function to get token length from request
  */
 //--------------------------------------------------------------------------------------------------
-size_t lwm2mcore_GetTokenLength
+size_t lwm2mcore_getTokenLength
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 
@@ -179,9 +179,9 @@ size_t lwm2mcore_GetTokenLength
  * Function to get content type from request
  */
 //--------------------------------------------------------------------------------------------------
-const unsigned int lwm2mcore_GetContentType
+const unsigned int lwm2mcore_getContentType
 (
-    lwm2mcore_coapRequest_t* requestRef    ///< [IN] Coap request reference
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -193,11 +193,11 @@ const unsigned int lwm2mcore_GetContentType
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_SendAsyncResponse
+bool lwm2mcore_sendAsyncResponse
 (
     int context,                            ///< [IN] context
-    lwm2mcore_coapRequest_t* requestPtr,    ///< [IN] coap request reference
-    lwm2mcore_coapResponse_t* responsePtr   ///< [IN] coap response
+    lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference
+    lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response
 );
 
 

@@ -1,32 +1,16 @@
 /**
- * @file osDebug.c
+ * @file debug.c
  *
  * Adaptation layer for debug
- *
- * <hr>
  *
  * Copyright (C) Sierra Wireless Inc.
  *
  */
 
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function for assert
- */
-//--------------------------------------------------------------------------------------------------
-void os_assert
-(
-    bool condition,         /// [IN] Condition to be checked
-    char* functionPtr,      /// [IN] Function name which calls the assert function
-    uint32_t line           /// [IN] Function line which calls the assert function
-)
-{
-}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -39,9 +23,33 @@ void lwm2m_printf(const char * format, ...)
 
     va_start(ap, format);
 
-    vfprintf(stderr, format, ap);
+    vprintf(format, ap);
 
     va_end(ap);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for assert
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_Assert
+(
+    bool condition,         /// [IN] Condition to be checked
+    char* functionPtr,      /// [IN] Function name which calls the assert function
+    uint32_t line           /// [IN] Function line which calls the assert function
+)
+{
+    char func[32] = "none";
+
+    if (functionPtr) {
+        memset(func, 0, 32);
+        snprintf(func, 31, "%s", functionPtr);
+    }
+
+    if (!condition) {
+        fprintf(stderr, "%s - %zu: Assertion failed\n", func, line);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -49,7 +57,7 @@ void lwm2m_printf(const char * format, ...)
  * Adaptation function for log: dump data
  */
 //--------------------------------------------------------------------------------------------------
-void os_debug_data_dump
+void lwm2mcore_DataDump
 (
     char *descPtr,                  ///< [IN] data description
     void *addrPtr,                  ///< [IN] Data address to be dumped
@@ -62,7 +70,7 @@ void os_debug_data_dump
 
     // Output description if given.
     if (descPtr != NULL)
-        printf ("%s:\n", descPtr);
+        printf("%s:\n", descPtr);
 
     if (len == 0) {
         printf("  ZERO LENGTH\n");
@@ -80,14 +88,14 @@ void os_debug_data_dump
         if ((i % 16) == 0) {
             // Just don't print ASCII for the zeroth line.
             if (i != 0)
-                printf ("  %s\n", buff);
+                printf("  %s\n", buff);
 
             // Output the offset.
-            printf ("  %04x ", i);
+            printf("  %04x ", i);
         }
 
         // Now the hex code for the specific character.
-        printf (" %02x", pc[i]);
+        printf(" %02x", pc[i]);
 
         // And store a printable ASCII character for later.
         if ((pc[i] < 0x20) || (pc[i] > 0x7e))
@@ -99,11 +107,10 @@ void os_debug_data_dump
 
     // Pad out last line if not exactly 16 characters.
     while ((i % 16) != 0) {
-        printf ("   ");
+        printf("   ");
         i++;
     }
 
     // And print the final ASCII bit.
-    printf ("  %s\n", buff);
+    printf("  %s\n", buff);
 }
-

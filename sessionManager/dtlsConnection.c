@@ -20,10 +20,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
 #include "objects.h"
 #include "dtlsConnection.h"
-#include "osDebug.h"
 #include "sessionManager.h"
 #include "internals.h"
 #include "liblwm2m.h"
@@ -250,18 +249,18 @@ static int SendData
 #endif
     if (NULL == connPtr->dtlsSessionPtr)
     {
-        os_debug_data_dump("Sent bytes in no sec", bufferPtr, length);
+        lwm2mcore_DataDump("Sent bytes in no sec", bufferPtr, length);
     }
 
     offset = 0;
     while (offset != length)
     {
-        nbSent = os_udpSend(connPtr->sock,
-                            bufferPtr + offset,
-                            length - offset,
-                            0,
-                            (struct sockaddr *)&(connPtr->addr),
-                            connPtr->addrLen);
+        nbSent = lwm2mcore_UdpSend(connPtr->sock,
+                                   bufferPtr + offset,
+                                   length - offset,
+                                   0,
+                                   (struct sockaddr *)&(connPtr->addr),
+                                   connPtr->addrLen);
         if (-1 == nbSent)
         {
             return -1;
@@ -882,7 +881,7 @@ static int ConnectionSend
             }
         }
         LOG_ARG("ConnectionSend SEC length %d", length);
-        os_debug_data_dump("Data to send", bufferPtr, length);
+        lwm2mcore_DataDump("Data to send", bufferPtr, length);
         if (-1 == dtls_write(connPtr->dtlsContextPtr,
                              connPtr->dtlsSessionPtr,
                              bufferPtr,
@@ -929,7 +928,7 @@ int connection_handlePacket
     else
     {
         // no security, just give the plaintext buffer to liblwm2m
-        os_debug_data_dump("received bytes in no sec", bufferPtr, numBytes);
+        lwm2mcore_DataDump("received bytes in no sec", bufferPtr, numBytes);
         lwm2m_handle_packet(connPtr->lwm2mHPtr, bufferPtr, numBytes, (void*)connPtr);
         return 0;
     }

@@ -1,5 +1,5 @@
 /**
- * @file osPortSecurity.h
+ * @file security.h
  *
  * Porting layer for credential management and package security (CRC, signature)
  *
@@ -7,45 +7,45 @@
  *
  */
 
-#ifndef __OS_PORTSECURITY_H__
-#define __OS_PORTSECURITY_H__
+#ifndef __LWM2MCORE_SECURITY_H__
+#define __LWM2MCORE_SECURITY_H__
 
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define for server address maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define OS_PORT_SERVERADDR_LEN 256
+#define LWM2MCORE_SERVERADDR_LEN 256
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for PSK ID maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define OS_PORT_PSKID_LEN 32
+#define LWM2MCORE_PSKID_LEN 32
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for PSK secret maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define OS_PORT_PSK_LEN 16
+#define LWM2MCORE_PSK_LEN 16
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for public key maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define OS_PORT_PUBLICKEY_LEN   1024
+#define LWM2MCORE_PUBLICKEY_LEN   1024
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Maximal length of the security error string
  */
 //--------------------------------------------------------------------------------------------------
-#define OS_PORT_ERROR_STR_MAX_LEN   128
+#define LWM2MCORE_ERROR_STR_MAX_LEN   128
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -68,9 +68,9 @@
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecurityGetCredential
+lwm2mcore_Sid_t lwm2mcore_GetCredential
 (
-    lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be retrieved
+    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be retrieved
     char *bufferPtr,                        ///< [INOUT] data buffer
     size_t *lenPtr                          ///< [INOUT] length of input buffer and length of the
                                             ///< returned data
@@ -91,9 +91,9 @@ lwm2mcore_sid_t os_portSecurityGetCredential
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySetCredential
+lwm2mcore_Sid_t lwm2mcore_SetCredential
 (
-    lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be set
+    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be set
     char *bufferPtr,                        ///< [INOUT] data buffer
     size_t len                              ///< [IN] length of input buffer and length of the
                                             ///< returned data
@@ -113,7 +113,7 @@ lwm2mcore_sid_t os_portSecuritySetCredential
  * @return Updated CRC32
  */
 //--------------------------------------------------------------------------------------------------
-uint32_t os_portSecurityCrc32
+uint32_t lwm2mcore_Crc32
 (
     uint32_t crc,       ///< [IN] Current CRC32 value
     uint8_t* bufPtr,    ///< [IN] Data buffer to hash
@@ -129,7 +129,7 @@ uint32_t os_portSecurityCrc32
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Start
+lwm2mcore_Sid_t lwm2mcore_Sha1Start
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 );
@@ -143,7 +143,7 @@ lwm2mcore_sid_t os_portSecuritySha1Start
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Process
+lwm2mcore_Sid_t lwm2mcore_Sha1Process
 (
     void*    sha1CtxPtr,    ///< [IN] SHA1 context pointer
     uint8_t* bufPtr,        ///< [IN] Data buffer to hash
@@ -159,7 +159,7 @@ lwm2mcore_sid_t os_portSecuritySha1Process
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1End
+lwm2mcore_Sid_t lwm2mcore_Sha1End
 (
     void* sha1CtxPtr,                   ///< [IN] SHA1 context pointer
     lwm2mcore_PkgDwlType_t packageType, ///< [IN] Package type (FW or SW)
@@ -176,7 +176,7 @@ lwm2mcore_sid_t os_portSecuritySha1End
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Cancel
+lwm2mcore_Sid_t lwm2mcore_Sha1Cancel
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 );
@@ -191,7 +191,7 @@ lwm2mcore_sid_t os_portSecuritySha1Cancel
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecurityConvertDERToPEM
+lwm2mcore_Sid_t lwm2mcore_ConvertDERToPEM
 (
     unsigned char*  derKeyPtr,      ///< [IN]       DER key
     int             derKeyLen,      ///< [IN]       DER key length
@@ -199,4 +199,4 @@ lwm2mcore_sid_t os_portSecurityConvertDERToPEM
     int*            pemKeyLenPtr    ///< [IN/OUT]   PEM key length
 );
 
-#endif /* __OS_PORTSECURITY_H__ */
+#endif /* __LWM2MCORE_SECURITY_H__ */

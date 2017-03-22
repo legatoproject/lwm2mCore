@@ -1,17 +1,16 @@
 /**
- * @file osTimer.h
+ * @file timer.h
  *
  * Header file for adaptation layer for timer management
- *
- * <hr>
  *
  * Copyright (C) Sierra Wireless Inc.
  *
  */
 
-#ifndef __OSTIMER_H__
-#define __OSTIMER_H__
+#ifndef __LWM2MCORE_TIMER_H__
+#define __LWM2MCORE_TIMER_H__
 
+#include <stdint.h>
 #include <stdbool.h>
 
 //--------------------------------------------------------------------------------------------------
@@ -19,18 +18,18 @@
  * Timer definitions
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _os_timerType
+typedef enum
 {
-    OS_TIMER_STEP,      ///< Timer step
-    OS_TIMER_MAX        ///< Maximum timer value (internal use)
-}os_timerType_t;
+    LWM2MCORE_TIMER_STEP,      ///< Timer step
+    LWM2MCORE_TIMER_MAX        ///< Maximum timer value (internal use)
+}lwm2mcore_TimerType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Adaptation API for timer launch
  */
 //--------------------------------------------------------------------------------------------------
-typedef void* (*os_timerCallback_t)
+typedef void* (*lwm2mcore_TimerCallback_t)
 (
     void* data
 );
@@ -44,11 +43,11 @@ typedef void* (*os_timerCallback_t)
  *      - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerSet
+bool lwm2mcore_TimerSet
 (
-    os_timerType_t timer,   ///< [IN] Timer Id
-    uint32_t time,          ///< [IN] Timer value in seconds
-    os_timerCallback_t cb   ///< [IN] Timer callback
+    lwm2mcore_TimerType_t timer,    ///< [IN] Timer Id
+    uint32_t time,                  ///< [IN] Timer value in seconds
+    lwm2mcore_TimerCallback_t cb    ///< [IN] Timer callback
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -60,9 +59,9 @@ bool os_timerSet
  *      - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerStop
+bool lwm2mcore_TimerStop
 (
-    os_timerType_t timer    ///< [IN] Timer Id
+    lwm2mcore_TimerType_t timer    ///< [IN] Timer Id
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -74,10 +73,9 @@ bool os_timerStop
  *      - false if the timer is stopped
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerIsRunning
+bool lwm2mcore_TimerIsRunning
 (
-    os_timerType_t timer    ///< [IN] Timer Id
+    lwm2mcore_TimerType_t timer    ///< [IN] Timer Id
 );
 
-#endif //__OSTIMER_H__
-
+#endif /* __LWM2MCORE_TIMER_H__ */

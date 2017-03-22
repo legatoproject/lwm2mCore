@@ -1,9 +1,7 @@
 /**
- * @file osTimer.c
+ * @file timer.c
  *
  * Adaptation layer for timer management
- *
- * <hr>
  *
  * Copyright (C) Sierra Wireless Inc.
  *
@@ -12,7 +10,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "osTimer.h"
+#include <lwm2mcore/timer.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -23,11 +21,11 @@
  *      - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerSet
+bool lwm2mcore_TimerSet
 (
-    os_timerType_t timer,   ///< [IN] Timer Id
-    uint32_t time,          ///< [IN] Timer value in seconds
-    os_timerCallback_t cb   ///< [IN] Timer callback
+    lwm2mcore_TimerType_t timer,    ///< [IN] Timer Id
+    uint32_t time,                  ///< [IN] Timer value in seconds
+    lwm2mcore_TimerCallback_t cb    ///< [IN] Timer callback
 )
 {
     bool result = false;
@@ -43,9 +41,9 @@ bool os_timerSet
  *      - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerStop
+bool lwm2mcore_TimerStop
 (
-    os_timerType_t timer    ///< [IN] Timer Id
+    lwm2mcore_TimerType_t timer    ///< [IN] Timer Id
 )
 {
     bool result = false;
@@ -61,9 +59,9 @@ bool os_timerStop
  *      - false if the timer is stopped
  */
 //--------------------------------------------------------------------------------------------------
-bool os_timerIsRunning
+bool lwm2mcore_TimerIsRunning
 (
-    os_timerType_t timer    ///< [IN] Timer Id
+    lwm2mcore_TimerType_t timer    ///< [IN] Timer Id
 )
 {
     bool isRunning = false;

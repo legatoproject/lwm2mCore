@@ -11,7 +11,7 @@
 #ifndef __SESSION_H__
 #define __SESSION_H__
 
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
 #include "objects.h"
 #include "dtlsConnection.h"
 
@@ -82,7 +82,7 @@ typedef enum
 //--------------------------------------------------------------------------------------------------
 void SendStatusEvent
 (
-    lwm2mcore_status_t status       ///< [IN] LWM2M status event
+    lwm2mcore_Status_t status       ///< [IN] LWM2M status event
 );
 
 //--------------------------------------------------------------------------------------------------

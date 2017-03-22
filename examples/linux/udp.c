@@ -1,19 +1,16 @@
 /**
- * @file osUdp.c
+ * @file udp.c
  *
  * Adaptation layer for os socket
- *
- * <hr>
  *
  * Copyright (C) Sierra Wireless Inc.
  *
  */
 
 #include <stdbool.h>
-#include "osInet.h"
-#include "osUdp.h"
-#include "osDebug.h"
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/udp.h>
+#include <platform/inet.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -27,11 +24,11 @@
  *
  */
 //--------------------------------------------------------------------------------------------------
-bool os_udpOpen
+bool lwm2mcore_UdpOpen
 (
-    int context,                    ///< [IN] LWM2M context
-    os_udpCb_t callback,            ///< [IN] callback for data receipt
-    os_socketConfig_t* configPtr    ///< [INOUT] socket configuration
+    int context,                            ///< [IN] LWM2M context
+    lwm2mcore_UdpCb_t callback,             ///< [IN] callback for data receipt
+    lwm2mcore_SocketConfig_t* configPtr     ///< [INOUT] socket configuration
 )
 {
     bool result = false;
@@ -52,9 +49,9 @@ bool os_udpOpen
  *
  */
 //--------------------------------------------------------------------------------------------------
-bool os_udpClose
+bool lwm2mcore_UdpClose
 (
-    os_socketConfig_t config        ///< [INOUT] socket configuration
+    lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
 )
 {
     bool result = false;
@@ -74,7 +71,7 @@ bool os_udpClose
  *
  */
 //--------------------------------------------------------------------------------------------------
-ssize_t os_udpSend
+ssize_t lwm2mcore_UdpSend
 (
     int sockfd,
     const void *bufferPtr,

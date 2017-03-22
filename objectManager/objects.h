@@ -11,7 +11,7 @@
 #ifndef __OBJECTS_H__
 #define __OBJECTS_H__
 
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
 #include "liblwm2m.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -311,14 +311,14 @@ typedef struct _lwm2mcore_internalResource
     DLIST_ENTRY(_lwm2mcore_internalResource) list;  ///< list entry for resource linked list
     uint16_t id;                        ///< resource id
     uint16_t iid;                       ///< resource instance id
-    lwm2m_resourceType_t type;          ///< resource data type
+    lwm2m_ResourceType_t type;          ///< resource data type
     bool multiple;                      ///< flag indicate if this is single or multiple instances
     lwm2m_attribute_t attr;             ///< resource attributes
 
     /* operation handler */
-    lwm2mcore_read_callback_t read;     ///< READ handler
-    lwm2mcore_write_callback_t write;   ///< WRITE handler
-    lwm2mcore_execute_callback_t exec;  ///< EXECUTE handler
+    lwm2mcore_ReadCallback_t read;     ///< READ handler
+    lwm2mcore_WriteCallback_t write;   ///< WRITE handler
+    lwm2mcore_ExecuteCallback_t exec;  ///< EXECUTE handler
 
     /* used by async notification*/
     char *cache;                        ///< cache value for OBSERVE

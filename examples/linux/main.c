@@ -3,22 +3,15 @@
  *
  * Linux lwm2mclient
  *
- * <hr>
- *
  * Copyright (C) Sierra Wireless Inc.
  *
  */
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <sys/types.h>
 
-#include "lwm2mcore.h"
-#include "osDebug.h"
-#include "osUdp.h"
-
+#include <liblwm2m.h>
+#include <lwm2mcore/lwm2mcore.h>
 
 int main(int argc, char *argv[])
 {
     lwm2m_printf("To be implemented.\r\n");
+    return 0;
 }

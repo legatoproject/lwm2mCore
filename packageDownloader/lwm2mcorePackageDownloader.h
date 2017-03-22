@@ -3,8 +3,6 @@
  *
  * LWM2M Package Downloader and DWL parser definitions
  *
- * <HR>
- *
  * Copyright (C) Sierra Wireless Inc.
  *
  */
@@ -14,7 +12,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "osPortUpdate.h"
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/update.h>
 
 //--------------------------------------------------------------------------------------------------
 // Symbol and Enum definitions
@@ -41,7 +40,7 @@ typedef struct
 {
     char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_LEN]; ///< URI of package to download
     uint64_t packageSize;                               ///< Package size given by server
-    lwm2mcore_updateType_t updateType;                  ///< FW or SW update
+    lwm2mcore_UpdateType_t updateType;                  ///< FW or SW update
 }
 lwm2mcore_PackageDownloaderData_t;
 
@@ -100,7 +99,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_GetPackageInfo_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
 (
-    lwm2mcore_fwUpdateState_t updateState     ///< New update state
+    lwm2mcore_FwUpdateState_t updateState     ///< New update state
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -118,7 +117,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
 (
-    lwm2mcore_fwUpdateResult_t updateResult    ///< New update result
+    lwm2mcore_FwUpdateResult_t updateResult    ///< New update result
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -136,7 +135,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
 (
-    lwm2mcore_swUpdateState_t updateState      ///< New update state
+    lwm2mcore_SwUpdateState_t updateState      ///< New update state
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -154,7 +153,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
 //--------------------------------------------------------------------------------------------------
 typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateResult_t)
 (
-    lwm2mcore_swUpdateResult_t updateResult    ///< New update result
+    lwm2mcore_SwUpdateResult_t updateResult    ///< New update result
 );
 
 //--------------------------------------------------------------------------------------------------

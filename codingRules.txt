@@ -7,13 +7,11 @@ TAB character is prohibited: use 4 spaces.
 /*          FUNCTIONS               */
 /************************************/
 Public functions start with "lwm2mcore_" prefix.
-For porting functions, the prefix is "os_".
-The 1st letter after this prefix is in lowercase. Then no _ are needed but camel case is used.
+The 1st letter after the prefix is in uppercase. Then no _ are needed but camel case is used.
 Examples:
-lwm2mcore_connect
-lwm2mcore_connectAgain
+lwm2mcore_Connect
+lwm2mcore_ConnectAgain
 lwm2m_YyyyFuncName
-os_XxxxFuncName
 
 Internal functions does not need to include the "lwm2mcore_" prefix.
 1st letter in uppercase
@@ -32,13 +30,12 @@ Files names are in camel case.
 Internal files don't have "lwm2mcore_"prefix
 
 Exposed files:
-    - osXxxx.h for prototypes of functions defined in service
     - lwm2mcoreYyyy.c/.h for lwm2mcode external functions
 
 /************************************/
 /*          VARIABLES               */
 /************************************/
-Variables starts with lowercase.
+Variables start with lowercase.
 Local variables start with lowercase, in camel case.
 Global variables start with uppercase, in camel case.
 

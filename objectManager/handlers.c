@@ -10,11 +10,11 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "lwm2mcore.h"
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/update.h>
+#include <lwm2mcore/security.h>
 #include "handlers.h"
 #include "objects.h"
-#include "osPortSecurity.h"
-#include "osPortUpdate.h"
 #include "internals.h"
 #include "crypto.h"
 
@@ -299,7 +299,7 @@ static size_t FormatValueToBytes
 //--------------------------------------------------------------------------------------------------
 int WriteSecurityObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -391,7 +391,7 @@ int WriteSecurityObj
             else
             {
 #ifdef CREDENTIALS_DEBUG
-                os_debug_data_dump("PSK ID write", bufferPtr, len);
+                lwm2mcore_DataDump("PSK ID write", bufferPtr, len);
 #endif
                 if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                 {
@@ -428,7 +428,7 @@ int WriteSecurityObj
             else
             {
 #ifdef CREDENTIALS_DEBUG
-                os_debug_data_dump("PSK secret write", bufferPtr, len);
+                lwm2mcore_DataDump("PSK secret write", bufferPtr, len);
 #endif
                 if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
                 {
@@ -536,12 +536,12 @@ int WriteSecurityObj
 //--------------------------------------------------------------------------------------------------
 int ReadSecurityObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
@@ -575,16 +575,16 @@ int ReadSecurityObj
             if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
             {
                 /* Bootstrap server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                              bufferPtr,
+                                              lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                              bufferPtr,
+                                              lenPtr);
             }
         }
         break;
@@ -622,19 +622,19 @@ int ReadSecurityObj
             if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
             {
                 /* Bootstrap server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                              bufferPtr,
+                                              lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                              bufferPtr,
+                                              lenPtr);
             }
 #ifdef CREDENTIALS_DEBUG
-            os_debug_data_dump("PSK ID read", bufferPtr, *lenPtr);
+            lwm2mcore_DataDump("PSK ID read", bufferPtr, *lenPtr);
 #endif
         }
         break;
@@ -652,19 +652,19 @@ int ReadSecurityObj
             if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
             {
                 /* Bootstrap server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                              bufferPtr,
+                                              lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = os_portSecurityGetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                                   bufferPtr,
-                                                   lenPtr);
+                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                              bufferPtr,
+                                              lenPtr);
             }
 #ifdef CREDENTIALS_DEBUG
-            os_debug_data_dump("PSK secret read", bufferPtr, *lenPtr);
+            lwm2mcore_DataDump("PSK secret read", bufferPtr, *lenPtr);
 #endif
         }
         break;
@@ -767,37 +767,37 @@ bool StoreCredentials
     LOG_ARG("DmPskIdLen %d DmPskLen %d strlen(DmAddr) %d", DmPskIdLen, DmPskLen, strlen(DmAddr));
     if (BsPskIdLen && BsPskLen && (strlen(BsAddr)))
     {
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                    (char*)BsPskId,
-                                                    BsPskIdLen);
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                                (char*)BsPskId,
+                                                BsPskIdLen);
         LOG_ARG("Store BsPskId result %d", storageResult);
 
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                    (char*)BsPsk,
-                                                    BsPskLen);
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                                (char*)BsPsk,
+                                                BsPskLen);
         LOG_ARG("Store BsPsk result %d", storageResult);
 
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                    (char*)BsAddr,
-                                                    strlen(BsAddr));
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                                (char*)BsAddr,
+                                                strlen(BsAddr));
         LOG_ARG("Store BsAddr result %d", storageResult);
     }
 
     if (DmPskIdLen && DmPskLen && (strlen(DmAddr)) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
     {
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                                    (char*)DmPskId,
-                                                    DmPskIdLen);
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                                (char*)DmPskId,
+                                                DmPskIdLen);
         LOG_ARG("Store DmPskId result %d", storageResult);
 
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                                    (char*)DmPsk,
-                                                    DmPskLen);
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                                (char*)DmPsk,
+                                                DmPskLen);
         LOG_ARG("Store DmPsk result %d", storageResult);
 
-        storageResult = os_portSecuritySetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                                    (char*)DmAddr,
-                                                    strlen(DmAddr));
+        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                                (char*)DmAddr,
+                                                strlen(DmAddr));
         LOG_ARG("Store DmAddr result %d", storageResult);
     }
 
@@ -841,11 +841,11 @@ bool StoreCredentials
 //--------------------------------------------------------------------------------------------------
 int SmsDummy
 (
-    lwm2mcore_uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
     char* bufferPtr,                        ///< [INOUT] data buffer for information
     size_t len,                             ///< [IN] length of input buffer
-    value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb        ///< [IN] not used for READ operation but for WRITE one
 )
 {
     int sID;
@@ -903,7 +903,7 @@ int SmsDummy
 //--------------------------------------------------------------------------------------------------
 int WriteServerObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1010,12 +1010,12 @@ int WriteServerObj
 //--------------------------------------------------------------------------------------------------
 int ReadServerObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
     int sID;
@@ -1134,7 +1134,7 @@ int ReadServerObj
 //--------------------------------------------------------------------------------------------------
 int WriteDeviceObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1200,12 +1200,12 @@ int WriteDeviceObj
 //--------------------------------------------------------------------------------------------------
 int ReadDeviceObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
     int sID;
@@ -1231,7 +1231,7 @@ int ReadDeviceObj
     {
         /* Resource 0: Manufacturer */
         case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-            sID = os_portDeviceManufacturer((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceManufacturer((char*)bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1240,7 +1240,7 @@ int ReadDeviceObj
 
         /* Resource 1: Device number */
         case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-            sID = os_portDeviceModelNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceModelNumber((char*)bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1249,7 +1249,7 @@ int ReadDeviceObj
 
         /* Resource 2: Serial number */
         case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-            sID = os_portDeviceSerialNumber((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceSerialNumber((char*)bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1258,7 +1258,7 @@ int ReadDeviceObj
 
         /* Resource 3: Firmware */
         case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-            sID = os_portDeviceFirmwareVersion((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_DeviceFirmwareVersion((char*)bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1269,7 +1269,7 @@ int ReadDeviceObj
         case LWM2MCORE_DEVICE_BATTERY_LEVEL_RID:
         {
             uint8_t batteryLevel = 0;
-            sID = os_portDeviceBatteryLevel(&batteryLevel);
+            sID = lwm2mcore_DeviceBatteryLevel(&batteryLevel);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1284,7 +1284,7 @@ int ReadDeviceObj
         case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
         {
             uint64_t currentTime = 0;
-            sID = os_portDeviceCurrentTime(&currentTime);
+            sID = lwm2mcore_DeviceCurrentTime(&currentTime);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1335,7 +1335,7 @@ int ReadDeviceObj
 //--------------------------------------------------------------------------------------------------
 int WriteFwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1369,10 +1369,10 @@ int WriteFwUpdateObj
             }
             else
             {
-                sID = os_portUpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                 uriPtr->oid,
-                                                 bufferPtr,
-                                                 len);
+                sID = lwm2mcore_UpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                                    uriPtr->oid,
+                                                    bufferPtr,
+                                                    len);
             }
         }
         break;
@@ -1405,12 +1405,12 @@ int WriteFwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ReadFwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 )
 {
     int sID;
@@ -1435,10 +1435,10 @@ int ReadFwUpdateObj
         /* Resource 1: Package URI */
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
         {
-            sID = os_portUpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                             uriPtr->oid,
-                                             bufferPtr,
-                                             lenPtr);
+            sID = lwm2mcore_UpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                                uriPtr->oid,
+                                                bufferPtr,
+                                                lenPtr);
         }
         break;
 
@@ -1446,9 +1446,9 @@ int ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
         {
             uint8_t updateState;
-            sID = os_portUpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
-                                              uriPtr->oiid,
-                                              &updateState);
+            sID = lwm2mcore_UpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
+                                                 uriPtr->oiid,
+                                                 &updateState);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1463,9 +1463,9 @@ int ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
         {
             uint8_t updateResult;
-            sID = os_portUpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
-                                               uriPtr->oiid,
-                                               &updateResult);
+            sID = lwm2mcore_UpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
+                                                  uriPtr->oiid,
+                                                  &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1518,7 +1518,7 @@ int ReadFwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ExecFwUpdate
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1549,10 +1549,10 @@ int ExecFwUpdate
         /* Resource 2: Update */
         case LWM2MCORE_FW_UPDATE_UPDATE_RID:
         {
-            sID = os_portUpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
-                                            uriPtr->oiid,
-                                            bufferPtr,
-                                            len);
+            sID = lwm2mcore_UpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
+                                               uriPtr->oiid,
+                                               bufferPtr,
+                                               len);
         }
         break;
 
@@ -1592,7 +1592,7 @@ int ExecFwUpdate
 //--------------------------------------------------------------------------------------------------
 int WriteSwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1623,10 +1623,10 @@ int WriteSwUpdateObj
             }
             else
             {
-                sID = os_portUpdateSetPackageUri(LWM2MCORE_SW_UPDATE_TYPE,
-                                                 uriPtr->oid,
-                                                 bufferPtr,
-                                                 len);
+                sID = lwm2mcore_UpdateSetPackageUri(LWM2MCORE_SW_UPDATE_TYPE,
+                                                    uriPtr->oid,
+                                                    bufferPtr,
+                                                    len);
             }
         }
         break;
@@ -1640,8 +1640,8 @@ int WriteSwUpdateObj
             }
             else
             {
-                sID = os_portUpdateSetSwSupportedObjects(uriPtr->oiid,
-                                                         (bool)BytesToInt(bufferPtr, len));
+                sID = lwm2mcore_UpdateSetSwSupportedObjects(uriPtr->oiid,
+                                                            (bool)BytesToInt(bufferPtr, len));
             }
         }
         break;
@@ -1674,12 +1674,12 @@ int WriteSwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ReadSwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 )
 {
     int sID;
@@ -1699,10 +1699,10 @@ int ReadSwUpdateObj
         /* Resource 0: package name */
         case LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID:
         {
-            sID = os_portUpdateGetPackageName(LWM2MCORE_SW_UPDATE_TYPE,
-                                              uriPtr->oiid,
-                                              bufferPtr,
-                                              (uint32_t)*lenPtr);
+            sID = lwm2mcore_UpdateGetPackageName(LWM2MCORE_SW_UPDATE_TYPE,
+                                                 uriPtr->oiid,
+                                                 bufferPtr,
+                                                 (uint32_t)*lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1713,10 +1713,10 @@ int ReadSwUpdateObj
         /* Resource 1: package version */
         case LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID:
         {
-            sID = os_portUpdateGetPackageVersion(LWM2MCORE_SW_UPDATE_TYPE,
-                                                 uriPtr->oiid,
-                                                 bufferPtr,
-                                                 (uint32_t)*lenPtr);
+            sID = lwm2mcore_UpdateGetPackageVersion(LWM2MCORE_SW_UPDATE_TYPE,
+                                                    uriPtr->oiid,
+                                                    bufferPtr,
+                                                    (uint32_t)*lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
@@ -1728,9 +1728,9 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID:
         {
             uint8_t updateResult;
-            sID = os_portUpdateGetUpdateState(LWM2MCORE_SW_UPDATE_TYPE,
-                                              uriPtr->oiid,
-                                              &updateResult);
+            sID = lwm2mcore_UpdateGetUpdateState(LWM2MCORE_SW_UPDATE_TYPE,
+                                                 uriPtr->oiid,
+                                                 &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1745,8 +1745,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID:
         {
             bool value;
-            sID = os_portUpdateGetSwSupportedObjects(uriPtr->oiid,
-                                                     &value);
+            sID = lwm2mcore_UpdateGetSwSupportedObjects(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1761,9 +1760,9 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID:
         {
             uint8_t updateResult;
-            sID = os_portUpdateGetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE,
-                                               uriPtr->oiid,
-                                               &updateResult);
+            sID = lwm2mcore_UpdateGetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE,
+                                                  uriPtr->oiid,
+                                                  &updateResult);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1778,8 +1777,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID:
         {
             bool value;
-            sID = os_portUpdateGetSwActivationState(uriPtr->oiid,
-                                                    &value);
+            sID = lwm2mcore_UpdateGetSwActivationState(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1818,7 +1816,7 @@ int ReadSwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ExecSwUpdate
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -1842,39 +1840,39 @@ int ExecSwUpdate
         /* Resource 4: Install */
         case LWM2MCORE_SW_UPDATE_INSTALL_RID:
         {
-            sID = os_portUpdateLaunchUpdate(LWM2MCORE_SW_UPDATE_TYPE,
-                                            uriPtr->oiid,
-                                            bufferPtr,
-                                            len);
+            sID = lwm2mcore_UpdateLaunchUpdate(LWM2MCORE_SW_UPDATE_TYPE,
+                                               uriPtr->oiid,
+                                               bufferPtr,
+                                               len);
         }
         break;
 
         /* Resource 6: Uninstall */
         case LWM2MCORE_SW_UPDATE_UNINSTALL_RID:
         {
-            sID = os_portUpdateLaunchSwUninstall(uriPtr->oiid,
-                                                 bufferPtr,
-                                                 len);
+            sID = lwm2mcore_UpdateLaunchSwUninstall(uriPtr->oiid,
+                                                    bufferPtr,
+                                                    len);
         }
         break;
 
         /* Resource 10: Activate */
         case LWM2MCORE_SW_UPDATE_ACTIVATE_RID:
         {
-            sID = os_portUpdateActivateSoftware(true,
-                                                uriPtr->oiid,
-                                                bufferPtr,
-                                                len);
+            sID = lwm2mcore_UpdateActivateSoftware(true,
+                                                   uriPtr->oiid,
+                                                   bufferPtr,
+                                                   len);
         }
         break;
 
         /* Resource 11: Deactivate */
         case LWM2MCORE_SW_UPDATE_DEACTIVATE_RID:
         {
-            sID = os_portUpdateActivateSoftware(false,
-                                                uriPtr->oiid,
-                                                bufferPtr,
-                                                len);
+            sID = lwm2mcore_UpdateActivateSoftware(false,
+                                                   uriPtr->oiid,
+                                                   bufferPtr,
+                                                   len);
         }
         break;
 
@@ -1914,12 +1912,12 @@ int ExecSwUpdate
 //--------------------------------------------------------------------------------------------------
 int OnSslCertif
 (
-    lwm2mcore_uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
     char* bufferPtr,                        ///< [INOUT] data buffer for information
     size_t* lenPtr,                         ///< [INOUT] length of input buffer and length of the
                                             ///< returned data
-    value_changed_callback_t changed_cb     ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb        ///< [IN] not used for READ operation but for WRITE one
 )
 {
     int sID;
@@ -1981,12 +1979,12 @@ int OnSslCertif
 //--------------------------------------------------------------------------------------------------
 int OnUnlistedObject
 (
-    lwm2mcore_uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
     char* bufferPtr,                        ///< [INOUT] data buffer for information
     size_t* lenPtr,                         ///< [INOUT] length of input buffer and length of the
                                             ///< returned data
-    value_changed_callback_t changed_cb     ///< [IN] callback function pointer for OBSERVE
+    valueChangedCallback_t changedCb        ///< [IN] callback function pointer for OBSERVE
                                             ///< operation
 )
 {

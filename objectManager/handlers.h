@@ -75,7 +75,7 @@
 //--------------------------------------------------------------------------------------------------
 int WriteSecurityObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -100,12 +100,12 @@ int WriteSecurityObj
 //--------------------------------------------------------------------------------------------------
 int ReadSecurityObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -127,11 +127,11 @@ int ReadSecurityObj
 //--------------------------------------------------------------------------------------------------
 int SmsDummy
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len,                         ///< [IN] length of input buffer
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 );
 
 
@@ -160,7 +160,7 @@ int SmsDummy
 //--------------------------------------------------------------------------------------------------
 int WriteServerObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -185,12 +185,12 @@ int WriteServerObj
 //--------------------------------------------------------------------------------------------------
 int ReadServerObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
 
 
@@ -219,7 +219,7 @@ int ReadServerObj
 //--------------------------------------------------------------------------------------------------
 int WriteDeviceObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -244,12 +244,12 @@ int WriteDeviceObj
 //--------------------------------------------------------------------------------------------------
 int ReadDeviceObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback for notification
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -291,23 +291,23 @@ bool StoreCredentials
 //--------------------------------------------------------------------------------------------------
 int OnSslCertif
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *buffer,                       ///< [INOUT] data buffer for information
     size_t *len,                        ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 );
 
 
 int OnUnlistedObject
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *buffer,                       ///< [INOUT] data buffer for information
     size_t *len,                        ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback function pointer for OBSERVE operation
+    valueChangedCallback_t changedCb    ///< [IN] callback function pointer for OBSERVE operation
 );
 
 
@@ -336,7 +336,7 @@ int OnUnlistedObject
 //--------------------------------------------------------------------------------------------------
 int WriteFwUpdateObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -361,12 +361,12 @@ int WriteFwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ReadFwUpdateObj
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -388,7 +388,7 @@ int ReadFwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ExecFwUpdate
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [INOUT] length of input buffer
@@ -420,7 +420,7 @@ int ExecFwUpdate
 //--------------------------------------------------------------------------------------------------
 int WriteSwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -445,12 +445,12 @@ int WriteSwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ReadSwUpdateObj
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation but for WRITE one
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -472,7 +472,7 @@ int ReadSwUpdateObj
 //--------------------------------------------------------------------------------------------------
 int ExecSwUpdate
 (
-    lwm2mcore_uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
     char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer

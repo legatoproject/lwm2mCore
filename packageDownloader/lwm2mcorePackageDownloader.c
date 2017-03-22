@@ -47,11 +47,11 @@
 #include <stdio.h>
 #include <liblwm2m.h>
 #include <string.h>
-#include <lwm2mcore.h>
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/security.h>
 #include <internals.h>
 #include "lwm2mcorePackageDownloader.h"
 #include "sessionManager.h"
-#include "osPortSecurity.h"
 
 //--------------------------------------------------------------------------------------------------
 // Symbol and Enum definitions
@@ -205,8 +205,8 @@ PackageDownloaderError_t;
 //--------------------------------------------------------------------------------------------------
 typedef union
 {
-    lwm2mcore_fwUpdateResult_t  fw;     ///< Firmware update result
-    lwm2mcore_swUpdateResult_t  sw;     ///< Software update result
+    lwm2mcore_FwUpdateResult_t  fw;     ///< Firmware update result
+    lwm2mcore_SwUpdateResult_t  sw;     ///< Software update result
 }
 UpdateResult_t;
 
@@ -487,7 +487,7 @@ static void PkgDwlEvent
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    lwm2mcore_status_t status;
+    lwm2mcore_Status_t status;
 
     // Create the status event
     switch (eventId)
@@ -642,7 +642,7 @@ static lwm2mcore_DwlResult_t HashData
     // Initialize SHA1 context and CRC if not already done
     if (!DwlParserObj.sha1CtxPtr)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Start(&DwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1Start(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to initialize SHA1 context");
             SetUpdateResult(PKG_DWL_ERROR_VERIFY);
@@ -650,7 +650,7 @@ static lwm2mcore_DwlResult_t HashData
         }
 
         // Initialize computed CRC
-        DwlParserObj.computedCRC = os_portSecurityCrc32(0L, NULL, 0);
+        DwlParserObj.computedCRC = lwm2mcore_Crc32(0L, NULL, 0);
     }
 
     // Some parts of the DWL data are excluded from the CRC computation and/or the SHA1 digest
@@ -663,22 +663,22 @@ static lwm2mcore_DwlResult_t HashData
                 // ignore DWLF magic, file size, CRC
                 DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)DwlParserObj.dataToParsePtr;
                 size_t prologSizeForCrc = sizeof(DwlProlog_t) - (3 * sizeof(uint32_t));
-                DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
-                                                                (uint8_t*)&dwlPrologPtr->fileSize,
-                                                                prologSizeForCrc);
+                DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
+                                                           (uint8_t*)&dwlPrologPtr->fileSize,
+                                                           prologSizeForCrc);
             }
             else
             {
                 // All other UPCK subsections are used for CRC computation
-                DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
-                                                                DwlParserObj.dataToParsePtr,
-                                                                PkgDwlObj.processedLen);
+                DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
+                                                           DwlParserObj.dataToParsePtr,
+                                                           PkgDwlObj.processedLen);
             }
 
             // SHA1 digest is updated with all UPCK data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
-                                                                       DwlParserObj.dataToParsePtr,
-                                                                       PkgDwlObj.processedLen))
+            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_Sha1Process(DwlParserObj.sha1CtxPtr,
+                                                                  DwlParserObj.dataToParsePtr,
+                                                                  PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
                 SetUpdateResult(PKG_DWL_ERROR_VERIFY);
@@ -689,14 +689,14 @@ static lwm2mcore_DwlResult_t HashData
 
         case DWL_TYPE_BINA:
             // All BINA subsections are used for CRC computation
-            DwlParserObj.computedCRC = os_portSecurityCrc32(DwlParserObj.computedCRC,
-                                                            DwlParserObj.dataToParsePtr,
-                                                            PkgDwlObj.processedLen);
+            DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
+                                                       DwlParserObj.dataToParsePtr,
+                                                       PkgDwlObj.processedLen);
 
             // SHA1 digest is updated with all BINA data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=os_portSecuritySha1Process(DwlParserObj.sha1CtxPtr,
-                                                                       DwlParserObj.dataToParsePtr,
-                                                                       PkgDwlObj.processedLen))
+            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_Sha1Process(DwlParserObj.sha1CtxPtr,
+                                                                  DwlParserObj.dataToParsePtr,
+                                                                  PkgDwlObj.processedLen))
             {
                 LOG("Unable to update SHA1 digest");
                 SetUpdateResult(PKG_DWL_ERROR_VERIFY);
@@ -743,10 +743,10 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
     }
 
     // Verify package signature
-    if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1End(DwlParserObj.sha1CtxPtr,
-                                                             PkgDwlObj.packageType,
-                                                             DwlParserObj.dataToParsePtr,
-                                                             PkgDwlObj.processedLen))
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1End(DwlParserObj.sha1CtxPtr,
+                                                        PkgDwlObj.packageType,
+                                                        DwlParserObj.dataToParsePtr,
+                                                        PkgDwlObj.processedLen))
     {
         LOG("Incorrect package signature");
         SetUpdateResult(PKG_DWL_ERROR_VERIFY);
@@ -1199,7 +1199,7 @@ static lwm2mcore_DwlResult_t DwlParser
     if ((DWL_OK != result) || (PKG_DWL_END == PkgDwlObj.state))
     {
         // Cancel the SHA1 computation and reset SHA1 context
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecuritySha1Cancel(&DwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1Cancel(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to reset SHA1 context");
         }

@@ -9,17 +9,16 @@
  */
 
 /* include files */
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/security.h>
+#include <lwm2mcore/coapHandlers.h>
+#include <lwm2mcore/timer.h>
+#include <lwm2mcore/udp.h>
 #include "liblwm2m.h"
-#include "lwm2mcore.h"
 #include "internals.h"
 #include "objects.h"
-#include "osDebug.h"
-#include "osTimer.h"
-#include "osUdp.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
-#include "osPortSecurity.h"
-#include "lwm2mcoreCoapHandlers.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -33,7 +32,7 @@ lwm2mcore_context_t* Lwm2mcoreCtxPtr = NULL;
  * Socket configuration variable
  */
 //--------------------------------------------------------------------------------------------------
-static  os_socketConfig_t SocketConfig;
+static  lwm2mcore_SocketConfig_t SocketConfig;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -47,7 +46,7 @@ static ClientData_t* DataCtxPtr;
  *  Callback for events
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_statusCb_t StatusCb = NULL;
+static lwm2mcore_StatusCb_t StatusCb = NULL;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -85,7 +84,7 @@ static lwm2mcore_context_t* InitContext
 )
 {
     dataPtr->lwm2mcoreCtxPtr = (lwm2mcore_context_t*)lwm2m_malloc(sizeof(lwm2mcore_context_t));
-    OS_ASSERT(dataPtr->lwm2mcoreCtxPtr);
+    LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
     memset(dataPtr->lwm2mcoreCtxPtr, 0, sizeof(lwm2mcore_context_t));
     return dataPtr->lwm2mcoreCtxPtr;
 }
@@ -263,7 +262,7 @@ static void Lwm2mClientStepHandler
     }
 
     /* Maunch timer step */
-    if (false == os_timerSet(OS_TIMER_STEP, tv.tv_sec, NULL))
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, tv.tv_sec, NULL))
     {
         LOG("ERROR to launch the step timer");
     }
@@ -337,7 +336,7 @@ static uint32_t ConvertToCoapCode
 //--------------------------------------------------------------------------------------------------
 void SendStatusEvent
 (
-    lwm2mcore_status_t status
+    lwm2mcore_Status_t status
 )
 {
     // Check if a status callback is available
@@ -362,7 +361,7 @@ void SendSessionEvent
     SessionEventStatus_t eventstatus    ///< [IN] Event status
 )
 {
-    lwm2mcore_status_t status;
+    lwm2mcore_Status_t status;
 
     switch (eventId)
     {
@@ -429,10 +428,10 @@ void SendSessionEvent
 
                     /* Delete DM credentials in order to force a connection to the BS server */
                     LOG("DELETE DM CREDENTIALS");
-                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
-                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY);
-                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
-                    os_portSecurityDeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
+                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
+                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY);
+                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
+                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
                 }
                 break;
 
@@ -616,13 +615,13 @@ void SendSessionEvent
  * Callback called when the socked is opened
  */
 //--------------------------------------------------------------------------------------------------
-void os_udpReceiveCb
+void lwm2mcore_UdpReceiveCb
 (
     uint8_t* bufferPtr,                 ///< [IN] Received data
     uint32_t len,                       ///< [IN] Received data length
     struct sockaddr_storage *addrPtr,   ///< [INOUT] source address
     socklen_t addrLen,                  ///< @TODO
-    os_socketConfig_t config            ///< [IN] Socket config
+    lwm2mcore_SocketConfig_t config     ///< [IN] Socket config
 )
 {
     ClientData_t* dataPtr = (ClientData_t*)config.context;
@@ -665,9 +664,9 @@ void os_udpReceiveCb
  *  - -1 in case of error
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_init
+int lwm2mcore_Init
 (
-    lwm2mcore_statusCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 )
 {
     int result = -1;
@@ -677,22 +676,22 @@ int lwm2mcore_init
         StatusCb = eventCb;
 
         dataPtr = (ClientData_t*)lwm2m_malloc(sizeof (ClientData_t));
-        OS_ASSERT(dataPtr);
+        LWM2MCORE_ASSERT(dataPtr);
         memset(dataPtr, 0, sizeof (ClientData_t));
 
          /* Initialize LWM2M agent */
         dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
-        OS_ASSERT(dataPtr->lwm2mHPtr);
+        LWM2MCORE_ASSERT(dataPtr->lwm2mHPtr);
 
         dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr, ENDPOINT_CLIENT);
         Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
-        OS_ASSERT(dataPtr->lwm2mcoreCtxPtr);
+        LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
 
         result = (int)dataPtr;
         DataCtxPtr = dataPtr;
 
         // Check if the update state/result should be changed after a FW install
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateFirmwareInstallResult())
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateFirmwareInstallResult())
         {
             LOG("Error while checking update state");
         }
@@ -707,7 +706,7 @@ int lwm2mcore_init
  *
  */
 //--------------------------------------------------------------------------------------------------
-void lwm2mcore_free
+void lwm2mcore_Free
 (
     int context     ///< [IN] context
 )
@@ -745,7 +744,7 @@ void lwm2mcore_free
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_connect
+bool lwm2mcore_Connect
 (
     int context                             ///< [IN] LWM2MCore context
 )
@@ -758,8 +757,8 @@ bool lwm2mcore_connect
     if (dataPtr != NULL)
     {
         /* Create the socket */
-        memset(&SocketConfig, 0, sizeof (os_socketConfig_t));
-        result = os_udpOpen(context, os_udpReceiveCb, &SocketConfig);
+        memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
+        result = lwm2mcore_UdpOpen(context, lwm2mcore_UdpReceiveCb, &SocketConfig);
 
         LOG_ARG ("lwm2mcore_connect -> socket %d opened ", SocketConfig.sock);
         dataPtr->sock = SocketConfig.sock;
@@ -769,7 +768,7 @@ bool lwm2mcore_connect
         {
             /* Initialize the lwm2m client step timer */
             DataCtxPtr = dataPtr;
-            if (false == os_timerSet(OS_TIMER_STEP, 1, Lwm2mClientStepHandler))
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
             {
                 LOG("ERROR to launch the 1st step timer");
             }
@@ -798,7 +797,7 @@ bool lwm2mcore_connect
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_update
+bool lwm2mcore_Update
 (
     int context     ///< [IN] context
 )
@@ -810,7 +809,7 @@ bool lwm2mcore_update
     {
         /* Check that the device is registered to DM server */
         bool registered = false;
-        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
         {
             /* Retrieve the serverID from list */
             lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
@@ -828,13 +827,16 @@ bool lwm2mcore_update
                 if (!iresult)
                 {
                     /* Stop the timer and launch it */
-                    if (false == os_timerStop(OS_TIMER_STEP) )
+                    if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
                     {
                         LOG("Error to stop the step timer");
                     }
 
-                    /* Launch the OS_TIMER_STEP timer with 1 second to treat the update request */
-                    if (false == os_timerSet(OS_TIMER_STEP, 1, Lwm2mClientStepHandler))
+                    /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
+                       to treat the update request */
+                    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                                    1,
+                                                    Lwm2mClientStepHandler))
                     {
                         LOG("ERROR to launch the step timer for registration update");
                     }
@@ -862,7 +864,7 @@ bool lwm2mcore_update
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_disconnect
+bool lwm2mcore_Disconnect
 (
     int context     ///< [IN] context
 )
@@ -873,7 +875,7 @@ bool lwm2mcore_disconnect
     if (dataPtr != NULL)
     {
         /* Stop the current timers */
-        if (false == os_timerStop (OS_TIMER_STEP))
+        if (false == lwm2mcore_TimerStop (LWM2MCORE_TIMER_STEP))
         {
             LOG("Error to stop the step timer");
         }
@@ -885,14 +887,14 @@ bool lwm2mcore_disconnect
         dataPtr->connListPtr = NULL;
 
         /* Close the socket */
-        result = os_udpClose(SocketConfig);
+        result = lwm2mcore_UdpClose(SocketConfig);
         if (false == result)
         {
             LOG("ERROR in socket closure");
         }
         else
         {
-            memset(&SocketConfig, 0, sizeof (os_socketConfig_t));
+            memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
             /* Notify that the connection is stopped */
             SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
         }
@@ -909,7 +911,7 @@ bool lwm2mcore_disconnect
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_connectionGetType
+bool lwm2mcore_ConnectionGetType
 (
     int context,                ///< [IN] context
     bool* isDeviceManagement    ///< [INOUT] Session type (false: bootstrap,
@@ -946,7 +948,7 @@ bool lwm2mcore_connectionGetType
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_push
+bool lwm2mcore_Push
 (
     int context,                ///< [IN] context
     uint8_t* payloadPtr,        ///< [IN] payload
@@ -962,7 +964,7 @@ bool lwm2mcore_push
     {
         /* Check that the device is registered to DM server */
         bool registered = false;
-        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
         {
             /* Retrieve the serverID from list */
             lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
@@ -1002,8 +1004,8 @@ bool lwm2mcore_push
 bool lwm2mcore_SendAsyncResponse
 (
     int context,                                ///< [IN] context
-    lwm2mcore_coapRequest_t* requestPtr,        ///< [IN] coap request refernce
-    lwm2mcore_coapResponse_t* responsePtr       ///< [IN] coap response
+    lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] coap request refernce
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] coap response
 )
 {
     bool result = false;
@@ -1013,7 +1015,7 @@ bool lwm2mcore_SendAsyncResponse
     {
         /* Check that the device is registered to DM server */
         bool registered = false;
-        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
         {
             /* Retrieve the serverID from list */
             lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
@@ -1037,4 +1039,3 @@ bool lwm2mcore_SendAsyncResponse
         }
     }
 }
-

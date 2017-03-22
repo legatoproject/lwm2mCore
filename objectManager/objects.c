@@ -8,14 +8,13 @@
  */
 
 /* include files */
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/update.h>
+#include <lwm2mcore/security.h>
 #include "liblwm2m.h"
-#include "lwm2mcore.h"
 #include "objects.h"
-#include "osDebug.h"
 #include "sessionManager.h"
-#include "osPortSecurity.h"
 #include "internals.h"
-#include "osPortUpdate.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -51,7 +50,7 @@ static lwm2m_object_t * ObjectArray[OBJ_COUNT];
  * Client defined handlers
  */
 //--------------------------------------------------------------------------------------------------
-extern lwm2mcore_handler_t Lwm2mcoreHandlers;
+extern lwm2mcore_Handler_t Lwm2mcoreHandlers;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -84,7 +83,7 @@ char SwObjectInstanceListPtr[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
 static uint8_t SetCoapError
 (
     int sid,                            ///< [IN] resource handler status
-    lwm2mcore_opType_t operation        ///< [IN] operation
+    lwm2mcore_OpType_t operation        ///< [IN] operation
 )
 {
     uint8_t result = COAP_503_SERVICE_UNAVAILABLE;
@@ -207,7 +206,7 @@ static lwm2mcore_internalResource_t* FindResource
 {
     lwm2mcore_internalResource_t* resourcePtr = NULL;
 
-    OS_ASSERT(objPtr);
+    LWM2MCORE_ASSERT(objPtr);
 
     for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
          resourcePtr;
@@ -357,7 +356,7 @@ static uint8_t ReadCb
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_uri_t uri = { 0 };
+        lwm2mcore_Uri_t uri = { 0 };
         lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
@@ -645,11 +644,11 @@ static uint8_t WriteCb
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_uri_t uri;
+        lwm2mcore_Uri_t uri;
         lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
-        memset( &uri, 0, sizeof (lwm2mcore_uri_t));
+        memset( &uri, 0, sizeof (lwm2mcore_Uri_t));
 
         uri.op = LWM2MCORE_OP_WRITE;
         uri.oid = objectPtr->objID;
@@ -881,7 +880,7 @@ static uint8_t CreateCb
 
     if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateSoftwareInstance(true, instanceId))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateSoftwareInstance(true, instanceId))
         {
             LOG("Error from client to create object instance");
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -959,7 +958,7 @@ static uint8_t DeleteCb
      * If the device is connected to the bootstrap server, only accept DELETE command on
      * Security object (object 0)
      */
-    if (true == lwm2mcore_connectionGetType(objectPtr->userData,
+    if (true == lwm2mcore_ConnectionGetType(objectPtr->userData,
                                             &isDeviceManagement))
     {
         if ((false == isDeviceManagement)
@@ -977,7 +976,7 @@ static uint8_t DeleteCb
 
     if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != os_portUpdateSoftwareInstance(false, instanceId))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateSoftwareInstance(false, instanceId))
         {
             LOG("Error from client to delete object instance");
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -1057,11 +1056,11 @@ static uint8_t ExecuteCb
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_uri_t uri;
+        lwm2mcore_Uri_t uri;
         lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
 
-        memset(&uri, 0, sizeof (lwm2mcore_uri_t));
+        memset(&uri, 0, sizeof (lwm2mcore_Uri_t));
 
         uri.op = LWM2MCORE_OP_EXECUTE;
         uri.oid = objectPtr->objID;
@@ -1150,7 +1149,7 @@ static struct _lwm2mcore_objectsList* GetObjectsList
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_internalObject_t* InitObject
 (
-    lwm2mcore_object_t* client_objPtr,  ///< [IN] pointer to object passed from client
+    lwm2mcore_Object_t* client_objPtr,  ///< [IN] pointer to object passed from client
     uint16_t iid,                       ///< [IN] object instance ID
     bool multiple                       ///< [IN] if this is single or multiple instance object
 )
@@ -1158,7 +1157,7 @@ static lwm2mcore_internalObject_t* InitObject
     int j;
     lwm2mcore_internalObject_t* objPtr = NULL;
     lwm2mcore_internalResource_t* resourcePtr = NULL;
-    lwm2mcore_resource_t *client_resourcePtr = NULL;
+    lwm2mcore_Resource_t *client_resourcePtr = NULL;
 
     if (NULL == client_objPtr)
     {
@@ -1169,7 +1168,7 @@ static lwm2mcore_internalObject_t* InitObject
 
     objPtr = (lwm2mcore_internalObject_t*)lwm2m_malloc(sizeof (lwm2mcore_internalObject_t));
 
-    OS_ASSERT(objPtr);
+    LWM2MCORE_ASSERT(objPtr);
 
     memset(objPtr, 0, sizeof (lwm2mcore_internalObject_t));
 
@@ -1183,7 +1182,7 @@ static lwm2mcore_internalObject_t* InitObject
      * or avcm_delete_lwm2m_object accordingly */
     client_resourcePtr = client_objPtr->resources;
 
-    LOG_ARG("InitObject client_obj->res_cnt %d", client_objPtr->res_cnt);
+    LOG_ARG("InitObject client_obj->resCnt %d", client_objPtr->resCnt);
 
     DLIST_INIT(&(objPtr->resource_list));
 
@@ -1197,18 +1196,18 @@ static lwm2mcore_internalObject_t* InitObject
 
     }
 
-    for (j = 0; j < client_objPtr->res_cnt; j++)
+    for (j = 0; j < client_objPtr->resCnt; j++)
     {
         resourcePtr =
                 (lwm2mcore_internalResource_t*)lwm2m_malloc(sizeof(lwm2mcore_internalResource_t));
 
-        OS_ASSERT(resourcePtr);
+        LWM2MCORE_ASSERT(resourcePtr);
         memset(resourcePtr, 0, sizeof(lwm2mcore_internalResource_t));
 
         resourcePtr->id = (client_resourcePtr + j)->id;
         resourcePtr->iid = 0;
         resourcePtr->type = (client_resourcePtr + j)->type;
-        resourcePtr->multiple = (client_resourcePtr + j)->max_res_inst_cnt > 1;
+        resourcePtr->multiple = (client_resourcePtr + j)->maxResInstCnt > 1;
         memset(&resourcePtr->attr, 0, sizeof(lwm2m_attribute_t));
         resourcePtr->read = (client_resourcePtr + j)->read;
         resourcePtr->write = (client_resourcePtr + j)->write;
@@ -1228,7 +1227,7 @@ static lwm2mcore_internalObject_t* InitObject
 static void InitObjectsList
 (
     struct _lwm2mcore_objectsList* objects_list ,   ///< [IN] Object list
-    lwm2mcore_handler_t* clientHandlerPtr           ///< [IN] Object and resource table which are
+    lwm2mcore_Handler_t* clientHandlerPtr           ///< [IN] Object and resource table which are
                                                     ///<      supported by the client
 )
 {
@@ -1240,19 +1239,19 @@ static void InitObjectsList
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
-    LOG_ARG("obj_cnt %d", clientHandlerPtr->obj_cnt);
+    LOG_ARG("objCnt %d", clientHandlerPtr->objCnt);
 
-    for (i = 0; i < clientHandlerPtr->obj_cnt; i++)
+    for (i = 0; i < clientHandlerPtr->objCnt; i++)
     {
-        if (LWM2MCORE_ID_NONE == (clientHandlerPtr->objects + i)->max_obj_inst_cnt)
+        if (LWM2MCORE_ID_NONE == (clientHandlerPtr->objects + i)->maxObjInstCnt)
         {
             /*Unknown object instance count is always assumed to be multiple */
             objPtr = InitObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
-        else if ((clientHandlerPtr->objects + i)->max_obj_inst_cnt > 1)
+        else if ((clientHandlerPtr->objects + i)->maxObjInstCnt > 1)
         {
-            for (j = 0; j < (clientHandlerPtr->objects + i)->max_obj_inst_cnt; j++)
+            for (j = 0; j < (clientHandlerPtr->objects + i)->maxObjInstCnt; j++)
             {
                 objPtr = InitObject(clientHandlerPtr->objects + i, j, true);
                 DLIST_INSERT_TAIL(objects_list, objPtr, list);
@@ -1260,7 +1259,7 @@ static void InitObjectsList
         }
         else if (LWM2M_SERVER_OBJECT_ID == (clientHandlerPtr->objects + i)->id)
         {
-            /* the max_obj_inst_cnt is 1 for this object, but this is actually multiple instance */
+            /* the maxObjInstCnt is 1 for this object, but this is actually multiple instance */
             objPtr = InitObject(clientHandlerPtr->objects + i, 0, true);
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
@@ -1325,7 +1324,7 @@ void ObjectsFree
 static bool RegisterObjTable
 (
     int context,                            ///< [IN] Context
-    lwm2mcore_handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
+    lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     uint16_t* registeredObjNbPtr,           ///< [INOUT] Registered bject number
     bool clientTable                        ///< [IN] Indicate if the table is provided by the
                                             ///< client
@@ -1345,16 +1344,16 @@ static bool RegisterObjTable
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false)
-     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
-     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
-     && os_portSecurityCheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
+     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
+     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
+     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
     {
         dmServerPresence = true;
     }
     LOG_ARG("dmServerPresence %d", dmServerPresence);
 
     /* Initialize all objects for Wakaama: handlerPtr */
-    for (i = 0; i < handlerPtr->obj_cnt; i++)
+    for (i = 0; i < handlerPtr->objCnt; i++)
     {
         /* Memory allocation for one object */
         ObjectArray[ObjNb]  = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
@@ -1364,7 +1363,7 @@ static bool RegisterObjTable
 
             /* Assign the object ID */
             ObjectArray[ObjNb]->objID = (handlerPtr->objects + i)->id;
-            objInstanceNb = (handlerPtr->objects + i)->max_obj_inst_cnt;
+            objInstanceNb = (handlerPtr->objects + i)->maxObjInstCnt;
 
             if ((LWM2M_SECURITY_OBJECT_ID == ObjectArray[ObjNb]->objID)
                 && (false == dmServerPresence))
@@ -1465,7 +1464,7 @@ static bool RegisterObjTable
     }
 
     /* Allocate object and resource linked to object/resource table provided by the client
-     * This is used to make a link between the lwm2mcore_handler_t provided by the client
+     * This is used to make a link between the lwm2mcore_Handler_t provided by the client
      * and the lwm2m_object_t for Wakaama
      */
     objectsListPtr = GetObjectsList();
@@ -1598,9 +1597,9 @@ static bool UpdateSwListWakaama
     //if (newObjectInstance)
     {
         bool registered = false;
-        if ((true == lwm2mcore_connectionGetType(context, &registered) && registered))
+        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
         {
-            lwm2mcore_update(context);
+            lwm2mcore_Update(context);
         }
     }
     return true;
@@ -1626,7 +1625,7 @@ uint16_t lwm2mcore_objectRegister
 (
     int context,                            ///< [IN] Context
     char* endpointPtr,                      ///< [IN] Device endpoint
-    lwm2mcore_handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
+    lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     void * const servicePtr                 ///< [IN] Client service API table
 )
 {
@@ -1710,7 +1709,7 @@ uint16_t lwm2mcore_objectRegister
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_updateSwList
+bool lwm2mcore_UpdateSwList
 (
     int context,                    ///< [IN] Context (Set to 0 if this API is used if
                                     ///< lwm2mcore_init API was no called)

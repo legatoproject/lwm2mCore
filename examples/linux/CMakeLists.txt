@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
 
-project (lwm2mclient C CXX)
+project (lwm2mcoreclient C CXX)
 
 add_definitions(-DLWM2M_CLIENT_MODE -DLWM2M_BOOTSTRAP -DLWM2M_WITH_LOGS -DSIERRA)
 
@@ -40,7 +40,8 @@ endif()
 
 add_custom_command(OUTPUT ${TINYDTLS_SOURCES_GENERATED} COMMAND ""  DEPENDS external_tinydtls)
 
-include_directories (${LWM2MCORE_DIR}/inc)
+include_directories (${LWM2MCORE_DIR}/include)
+include_directories (${LWM2MCORE_DIR}/include/platform-specific/linux)
 include_directories (${LWM2MCORE_DIR}/os)
 
 include_directories (${LWM2MCORE_DIR}/wakaama/core)
@@ -100,14 +101,14 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_DIR}/sessionManager/lwm2mcoreSession.c
-    osDebug.c
-    osPlatform.c
-    osPortDevice.c
-    osPortSecurity.c
-    osPortUpdate.c
-    osTime.c
-    osTimer.c
-    osUdp.c
+    debug.c
+    platform.c
+    device.c
+    security.c
+    update.c
+    time.c
+    timer.c
+    udp.c
     main.c
 )
 

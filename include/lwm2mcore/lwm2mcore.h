@@ -7,15 +7,12 @@
  *
  */
 
-
 #ifndef  __LWM2MCORE_H__
 #define  __LWM2MCORE_H__
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "lwm2mcoreCoapHandlers.h"
-
-#include "osPortTypes.h"
+#include <stddef.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -85,7 +82,7 @@ typedef enum
     LWM2MCORE_ERR_INVALID_ARG           = -5,   ///< Invalid parameter in resource handler
     LWM2MCORE_ERR_INVALID_STATE         = -6,   ///< Invalid state to treat the resource handler
     LWM2MCORE_ERR_OVERFLOW              = -7    ///< Buffer overflow
-}lwm2mcore_sid_t;
+}lwm2mcore_Sid_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -135,7 +132,7 @@ typedef enum
                                                             ///< Management one
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
     LWM2MCORE_EVENT_LAST                           = 24     ///< Internal usage
-}lwm2mcore_statusType_t;
+}lwm2mcore_StatusType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -153,7 +150,7 @@ typedef enum
     LWM2MCORE_OP_DELETE       = 0x40,             ///< standard DM: delete
     LWM2MCORE_OP_OBSERVE      = 0x80,             ///< observe
     LWM2MCORE_OP_QUERY_INSTANCE_COUNT = 0x100     ///< custom: query resource instance count
-}lwm2mcore_opType_t;
+}lwm2mcore_OpType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -169,14 +166,14 @@ typedef enum
     LWM2MCORE_RESOURCE_TYPE_FLOAT,          ///< resource type: float
     LWM2MCORE_RESOURCE_TYPE_TIME,           ///< resource type: time
     LWM2MCORE_RESOURCE_TYPE_UNKNOWN         ///< resource type: unknown
-}lwm2m_resourceType_t;
+}lwm2m_ResourceType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Enumeration of supported LWM2M credentials
  */
 //--------------------------------------------------------------------------------------------------
-typedef enum _lwm2mcore_credentials
+typedef enum
 {
     LWM2MCORE_CREDENTIAL_FW_KEY = 0,            ///< FW public key
     LWM2MCORE_CREDENTIAL_SW_KEY,                ///< SW public key
@@ -198,7 +195,7 @@ typedef enum _lwm2mcore_credentials
     LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,         ///< secret key or private key of the security mode
     LWM2MCORE_CREDENTIAL_DM_ADDRESS,            ///< DM server address
     LWM2MCORE_CREDENTIAL_MAX                    ///< Internal usage
-}lwm2mcore_credentials_t;
+}lwm2mcore_Credentials_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -213,7 +210,7 @@ typedef enum
     IMEI_URN,       ///< IMEI
     ESN_URN,        ///< ESN
     MEID_URN        ///< MEID
-}lwm2mcore_epnType_t;
+}lwm2mcore_EpnType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -224,7 +221,7 @@ typedef enum
 {
     LWM2MCORE_SESSION_BOOTSTRAP,            ///< Bootstrap session
     LWM2MCORE_SESSION_DEVICE_MANAGEMENT     ///< Device management session
-}lwm2mcore_sessionType_t;
+}lwm2mcore_SessionType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -246,26 +243,26 @@ typedef enum
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_opType_t op;              ///< operation type
-    int content_type;                   ///< payload content type, a value of -1 indicates content
-                                        ///< type is not specified
-    int accept_content_type;            ///< server accept content type, a value of -1 indicates its
-                                        ///< not specified from server
-    bool observe;                       ///< if the request come with OBSERVE option
-    int observe_value;                  ///< OBSERVE option value
-    uint16_t oid;                       ///< object Id
-    uint16_t oiid;                      ///< object instance Id
-    uint16_t rid;                       ///< resource Id
-    uint16_t riid;                      ///< resource instance Id
-    uint32_t block_num;                 ///< block number for CoAP block xfer
-    uint16_t block_size;                ///< size of block for CoAP block xfer
-    bool last_block;                    ///< if this is last block in CoAP block xfer
-    int path_len;                       ///< Length of alternative path (CoRE Link Format RFC6690),
-                                        ///< 0 for default LWM2M standard object
-    bool standard_path;                 ///< flag indicate if the path name is lwm2m standard path
-                                        ///< "lwm2m"
-    uint8_t  path_name[LWM2MCORE_NAME_LEN]; ///< alternative path name
-}lwm2mcore_uri_t;
+    lwm2mcore_OpType_t op;                 ///< operation type
+    int contentType;                       ///< payload content type, a value of -1 indicates
+                                           ///< content type is not specified
+    int acceptContentType;                 ///< server accept content type, a value of -1 indicates
+                                           ///< its not specified from server
+    bool observe;                          ///< if the request come with OBSERVE option
+    int observeValue;                      ///< OBSERVE option value
+    uint16_t oid;                          ///< object Id
+    uint16_t oiid;                         ///< object instance Id
+    uint16_t rid;                          ///< resource Id
+    uint16_t riid;                         ///< resource instance Id
+    uint32_t blockNum;                     ///< block number for CoAP block xfer
+    uint16_t blockSize;                    ///< size of block for CoAP block xfer
+    bool lastBlock;                        ///< if this is last block in CoAP block xfer
+    int pathLen;                           ///< Len of alternative path (CoRE Link Format RFC6690),
+                                           ///< 0 for default LWM2M standard object
+    bool standardPath;                     ///< flag indicate if the path name is lwm2m std path
+                                           ///< "lwm2m"
+    uint8_t  pathName[LWM2MCORE_NAME_LEN]; ///< alternative path name
+}lwm2mcore_Uri_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -274,7 +271,7 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_PkgDwlType_t pkgType;    ///< Package type
+    lwm2mcore_PkgDwlType_t pkgType;     ///< Package type
     uint32_t numBytes;                  ///< For package download, downloaded bytes
     uint32_t progress;                  ///< For package download, package download progress in %
     uint32_t errorCode;                 ///< For package download, error code
@@ -287,9 +284,9 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_sessionType_t type;           ///< Session type for
+    lwm2mcore_SessionType_t type;           ///< Session type for
                                             ///< LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START event
-}lwm2mcore_sessionStatus_t;
+}lwm2mcore_SessionStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -298,13 +295,13 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_statusType_t event;               ///< Event
+    lwm2mcore_StatusType_t event;               ///< Event
     union
     {
-        lwm2mcore_sessionStatus_t session;      ///< Session information
+        lwm2mcore_SessionStatus_t session;      ///< Session information
         lwm2mcore_PkgDwlStatus_t pkgStatus;     ///< Package download status
     }u;                                         ///< Union
-}lwm2mcore_status_t;
+}lwm2mcore_Status_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -315,9 +312,9 @@ typedef struct
  *      - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*value_changed_callback_t)
+typedef int (*valueChangedCallback_t)
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the resource whose value is changed
+    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the resource whose value is changed
     char *buffer,                       ///< [INOUT] buffer of the notification data
     int len                             ///< [IN] llength of the notification data
 );
@@ -332,14 +329,14 @@ typedef int (*value_changed_callback_t)
  *      - > 0 values for asynchronous operations
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_read_callback_t)
+typedef int (*lwm2mcore_ReadCallback_t)
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] not used for READ operation
+    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -352,9 +349,9 @@ typedef int (*lwm2mcore_read_callback_t)
  *      - > 0 values for asynchronous operations
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_write_callback_t)
+typedef int (*lwm2mcore_WriteCallback_t)
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
@@ -370,9 +367,9 @@ typedef int (*lwm2mcore_write_callback_t)
  *      - > 0 values for asynchronous ops.
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_execute_callback_t)
+typedef int (*lwm2mcore_ExecuteCallback_t)
 (
-    lwm2mcore_uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] contain arguments
     size_t len                          ///< [IN] length of buffer
@@ -386,13 +383,13 @@ typedef int (*lwm2mcore_execute_callback_t)
 typedef struct
 {
     uint16_t id;                        ///< resource id: one of the LWM2M_xyz_RID above
-    lwm2m_resourceType_t type;          ///< resource data type
-    uint16_t max_res_inst_cnt;          ///< maximum number of resource instance
+    lwm2m_ResourceType_t type;          ///< resource data type
+    uint16_t maxResInstCnt;             ///< maximum number of resource instance
                                         ///< count. 1 means single instance
-    lwm2mcore_read_callback_t read;     ///< operation handler: READ handler
-    lwm2mcore_write_callback_t write;   ///< operation handler: WRITE handler
-    lwm2mcore_execute_callback_t exec;  ///< operation handler: EXECUTE handler
-}lwm2mcore_resource_t;
+    lwm2mcore_ReadCallback_t read;      ///< operation handler: READ handler
+    lwm2mcore_WriteCallback_t write;    ///< operation handler: WRITE handler
+    lwm2mcore_ExecuteCallback_t exec;   ///< operation handler: EXECUTE handler
+}lwm2mcore_Resource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -402,11 +399,11 @@ typedef struct
 typedef struct
 {
     uint16_t id;                            ///< one of the defined object id
-    uint16_t max_obj_inst_cnt;              ///< maximum number of object instance
+    uint16_t maxObjInstCnt;                 ///< maximum number of object instance
                                             ///< count. 1 means single instance.
-    uint16_t res_cnt;                       ///< number of resource count under this object
-    lwm2mcore_resource_t * resources;       ///< pointer to the list of resource under this object
-}lwm2mcore_object_t;
+    uint16_t resCnt;                        ///< number of resource count under this object
+    lwm2mcore_Resource_t * resources;       ///< pointer to the list of resource under this object
+}lwm2mcore_Object_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -418,14 +415,14 @@ typedef struct
  *      -  > 0 values for asynchronous ops.
 */
 //--------------------------------------------------------------------------------------------------
-typedef int (*generic_read_write_api_t)
+typedef int (*genericReadWriteApi_t)
 (
-    lwm2mcore_uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *buffer,                       ///< [INOUT] data buffer for information
     size_t *len,                        ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
-    value_changed_callback_t changed_cb ///< [IN] callback function pointer for OBSERVE operation
+    valueChangedCallback_t changedCb    ///< [IN] callback function pointer for OBSERVE operation
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -435,10 +432,10 @@ typedef int (*generic_read_write_api_t)
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    uint16_t                  obj_cnt;              ///< Numbers of supported pre-defined objects
-    lwm2mcore_object_t*       objects;              ///< Actual supported pre-defined objects
-    generic_read_write_api_t  generic_UO_handler;   ///< Generic handler for unidentified object
-}lwm2mcore_handler_t;
+    uint16_t                objCnt;                 ///< Numbers of supported pre-defined objects
+    lwm2mcore_Object_t*     objects;                ///< Actual supported pre-defined objects
+    genericReadWriteApi_t   genericUOHandler;       ///< Generic handler for unidentified object
+}lwm2mcore_Handler_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -449,9 +446,9 @@ typedef struct
  *      - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
-typedef int (*lwm2mcore_statusCb_t)
+typedef int (*lwm2mcore_StatusCb_t)
 (
-    lwm2mcore_status_t eventStatus              ///< [IN] event status
+    lwm2mcore_Status_t eventStatus              ///< [IN] event status
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -463,9 +460,9 @@ typedef int (*lwm2mcore_statusCb_t)
  *  - -1 in case of error
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_init
+int lwm2mcore_Init
 (
-    lwm2mcore_statusCb_t eventCb    ///< [IN] event callback
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -474,7 +471,7 @@ int lwm2mcore_init
  *
  */
 //--------------------------------------------------------------------------------------------------
-void lwm2mcore_free
+void lwm2mcore_Free
 (
     int context     ///< [IN] context
 );
@@ -489,13 +486,13 @@ void lwm2mcore_free
  *      - number of registered objects
  */
 //--------------------------------------------------------------------------------------------------
-uint16_t lwm2mcore_objectRegister
+uint16_t lwm2mcore_ObjectRegister
 (
     int context,                            ///< [IN] Context
     char* endpoint,                         ///< [IN] Device endpoint
-    lwm2mcore_handler_t *const handlerPtr,  ///< [IN] List of supported object/resource by client
+    lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
                                             ///< This parameter can be set to NULL
-    void * const service_ptr                ///< [IN] Client service API table
+    void* const servicePtr                  ///< [IN] Client service API table
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -507,7 +504,7 @@ uint16_t lwm2mcore_objectRegister
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_connect
+bool lwm2mcore_Connect
 (
     int context     ///< [IN] context
 );
@@ -521,7 +518,7 @@ bool lwm2mcore_connect
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_disconnect
+bool lwm2mcore_Disconnect
 (
     int context     ///< [IN] context
 );
@@ -537,7 +534,7 @@ bool lwm2mcore_disconnect
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_update
+bool lwm2mcore_Update
 (
     int context     ///< [IN] context
 );
@@ -551,7 +548,7 @@ bool lwm2mcore_update
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_connectionGetType
+bool lwm2mcore_ConnectionGetType
 (
     int context,                ///< [IN] context
     bool* isDeviceManagement    ///< [INOUT] Session type (false: bootstrap,
@@ -568,7 +565,7 @@ bool lwm2mcore_connectionGetType
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_push
+bool lwm2mcore_Push
 (
     int context,                ///< [IN] context
     uint8_t* payloadPtr,        ///< [IN] payload
@@ -585,7 +582,7 @@ bool lwm2mcore_push
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_updateSwList
+bool lwm2mcore_UpdateSwList
 (
     int context,                    ///< [IN] Context (Set to 0 if this API is used if
                                     ///< lwm2mcore_init API was no called)
@@ -593,5 +590,35 @@ bool lwm2mcore_updateSwList
     size_t listLen                  ///< [IN] Size of the update list
 );
 
-#endif /*  __LWM2MCORE_H__ */
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for assert
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_Assert
+(
+    bool condition,         /// [IN] Condition to be checked
+    const char* function,   /// [IN] Function name which calls the assert function
+    uint32_t line           /// [IN] Function line which calls the assert function
+);
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Macro for assertion
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_ASSERT(X) lwm2mcore_Assert(X, __func__, __LINE__)
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Adaptation function for log: dump data
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_DataDump
+(
+    char* descPtr,              ///< [IN] data description
+    void* addrPtr,              ///< [IN] Data address to be dumped
+    int len                     ///< [IN] Data length
+);
+
+#endif /*  __LWM2MCORE_H__ */

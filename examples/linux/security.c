@@ -1,5 +1,5 @@
 /**
- * @file osPortSecurity.c
+ * @file security.c
  *
  * Porting layer for credential management and package security (CRC, signature)
  *
@@ -21,7 +21,8 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
-#include "osPortSecurity.h"
+#include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/security.h>
 #include "internals.h"
 
 /* Set the bootstrap credentials with correct values
@@ -43,9 +44,9 @@
  * This implies that a each connection to the LWM2M server, a connection to the bootstrap server
  * will be firstly initiated, followed by a connection to the Device Management server.
  */
-uint8_t DmPskId[OS_PORT_PSK_LEN+1] = {'\0'};
-uint8_t DmPskSecret[OS_PORT_PSK_LEN + 1] = {'\0'};
-uint8_t DmServerAddr[OS_PORT_SERVERADDR_LEN] = {'\0'};
+uint8_t DmPskId[LWM2MCORE_PSKID_LEN+1] = {'\0'};
+uint8_t DmPskSecret[LWM2MCORE_PSK_LEN + 1] = {'\0'};
+uint8_t DmServerAddr[LWM2MCORE_SERVERADDR_LEN] = {'\0'};
 
 
 //--------------------------------------------------------------------------------------------------
@@ -71,15 +72,15 @@ uint8_t DmServerAddr[OS_PORT_SERVERADDR_LEN] = {'\0'};
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecurityGetCredential
+lwm2mcore_Sid_t lwm2mcore_GetCredential
 (
-    lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be retrieved
+    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be retrieved
     char* bufferPtr,                        ///< [INOUT] data buffer
     size_t* lenPtr                          ///< [INOUT] length of input buffer and length of the
                                             ///< returned data
 )
 {
-    lwm2mcore_sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    lwm2mcore_Sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 
     if ((bufferPtr == NULL) || (lenPtr == NULL) || (credId >= LWM2MCORE_CREDENTIAL_MAX))
     {
@@ -156,8 +157,8 @@ lwm2mcore_sid_t os_portSecurityGetCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            memcpy(bufferPtr, DmPskSecret, OS_PORT_PSK_LEN);
-            *lenPtr = OS_PORT_PSK_LEN;
+            memcpy(bufferPtr, DmPskSecret, LWM2MCORE_PSK_LEN);
+            *lenPtr = LWM2MCORE_PSK_LEN;
             result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -276,15 +277,15 @@ lwm2mcore_sid_t os_portSecurityGetCredential
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySetCredential
+lwm2mcore_Sid_t lwm2mcore_SetCredential
 (
-    lwm2mcore_credentials_t credId,         ///< [IN] credential Id of credential to be set
+    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be set
     char* bufferPtr,                        ///< [INOUT] data buffer
     size_t len                              ///< [IN] length of input buffer and length of the
                                             ///< returned data
 )
 {
-    lwm2mcore_sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    lwm2mcore_Sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 
     if ((NULL == bufferPtr) || (!len) || (LWM2MCORE_CREDENTIAL_MAX <= credId))
     {
@@ -365,9 +366,9 @@ lwm2mcore_sid_t os_portSecuritySetCredential
  *
  */
 //--------------------------------------------------------------------------------------------------
-bool os_portSecurityCheckCredential
+bool lwm2mcore_CheckCredential
 (
-    lwm2mcore_credentials_t credId      ///< [IN] Credential identifier
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
 )
 {
     bool result = false;
@@ -412,9 +413,9 @@ bool os_portSecurityCheckCredential
  *      - false else
  */
 //--------------------------------------------------------------------------------------------------
-bool os_portSecurityDeleteCredential
+bool lwm2mcore_DeleteCredential
 (
-    lwm2mcore_credentials_t credId      ///< [IN] Credential identifier
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
 )
 {
     bool result = true;
@@ -422,15 +423,15 @@ bool os_portSecurityDeleteCredential
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            memset(DmPskId, 0, OS_PORT_PSK_LEN + 1);
+            memset(DmPskId, 0, LWM2MCORE_PSK_LEN + 1);
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            memset(DmPskSecret, 0, OS_PORT_PSK_LEN + 1);
+            memset(DmPskSecret, 0, LWM2MCORE_PSK_LEN + 1);
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            memset(DmServerAddr, 0, OS_PORT_SERVERADDR_LEN);
+            memset(DmServerAddr, 0, LWM2MCORE_SERVERADDR_LEN);
             break;
 
         default:
@@ -455,7 +456,7 @@ bool os_portSecurityDeleteCredential
  * @return Updated CRC32
  */
 //--------------------------------------------------------------------------------------------------
-uint32_t os_portSecurityCrc32
+uint32_t lwm2mcore_Crc32
 (
     uint32_t crc,       ///< [IN] Current CRC32 value
     uint8_t* bufPtr,    ///< [IN] Data buffer to hash
@@ -475,7 +476,7 @@ static void PrintOpenSSLErrors
     void
 )
 {
-    char errorString[OS_PORT_ERROR_STR_MAX_LEN];
+    char errorString[LWM2MCORE_ERROR_STR_MAX_LEN];
     unsigned long error;
 
     // Retrieve the first error and remove it from the queue
@@ -501,7 +502,7 @@ static void PrintOpenSSLErrors
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Start
+lwm2mcore_Sid_t lwm2mcore_Sha1Start
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 )
@@ -543,7 +544,7 @@ lwm2mcore_sid_t os_portSecuritySha1Start
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Process
+lwm2mcore_Sid_t lwm2mcore_Sha1Process
 (
     void*    sha1CtxPtr,    ///< [IN] SHA1 context pointer
     uint8_t* bufPtr,        ///< [IN] Data buffer to hash
@@ -581,7 +582,7 @@ lwm2mcore_sid_t os_portSecuritySha1Process
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1End
+lwm2mcore_Sid_t lwm2mcore_Sha1End
 (
     void* sha1CtxPtr,                   ///< [IN] SHA1 context pointer
     lwm2mcore_PkgDwlType_t packageType, ///< [IN] Package type (FW or SW)
@@ -590,9 +591,9 @@ lwm2mcore_sid_t os_portSecuritySha1End
 )
 {
     unsigned char sha1Digest[SHA_DIGEST_LENGTH];
-    lwm2mcore_credentials_t credId;
-    char publicKey[OS_PORT_PUBLICKEY_LEN];
-    size_t publicKeyLen = OS_PORT_PUBLICKEY_LEN;
+    lwm2mcore_Credentials_t credId;
+    char publicKey[LWM2MCORE_PUBLICKEY_LEN];
+    size_t publicKeyLen = LWM2MCORE_PUBLICKEY_LEN;
     BIO* bufioPtr = NULL;
     RSA* rsaKeyPtr = NULL;
     EVP_PKEY* evpPkeyPtr = NULL;
@@ -632,9 +633,9 @@ lwm2mcore_sid_t os_portSecuritySha1End
     }
 
     // Retrieve the public key corresponding to the package type
-    if (LWM2MCORE_ERR_COMPLETED_OK != os_portSecurityGetCredential(credId,
-                                                                   publicKey,
-                                                                   &publicKeyLen))
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetCredential(credId,
+                                                              publicKey,
+                                                              &publicKeyLen))
     {
         LOG_ARG("Error while retrieving credentials %d", credId);
         return LWM2MCORE_ERR_GENERAL_ERROR;
@@ -743,7 +744,7 @@ lwm2mcore_sid_t os_portSecuritySha1End
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecuritySha1Cancel
+lwm2mcore_Sid_t lwm2mcore_Sha1Cancel
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 )
@@ -771,7 +772,7 @@ lwm2mcore_sid_t os_portSecuritySha1Cancel
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_sid_t os_portSecurityConvertDERToPEM
+lwm2mcore_Sid_t lwm2mcore_ConvertDERToPEM
 (
     unsigned char*  derKeyPtr,      ///< [IN]       DER key
     int             derKeyLen,      ///< [IN]       DER key length
