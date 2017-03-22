@@ -10,9 +10,7 @@
  */
 
 #include <stdbool.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-
+#include "osInet.h"
 #include "osUdp.h"
 #include "osDebug.h"
 #include "lwm2mcore.h"

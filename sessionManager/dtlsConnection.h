@@ -20,14 +20,10 @@
 #define DTLS_CONNECTION_H_
 
 #include <unistd.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "osInet.h"
 #include "tinydtls.h"
 #include "dtls.h"
 #include "liblwm2m.h"
