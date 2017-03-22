@@ -414,6 +414,57 @@ static lwm2mcore_Resource_t FirmwareUpdateResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Supported resources defined for LWM2M Location object.
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t LocationResources[] =
+{
+    {
+        LWM2MCORE_LOCATION_LATITUDE_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadLocationObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_LOCATION_LONGITUDE_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadLocationObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_LOCATION_ALTITUDE_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadLocationObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_LOCATION_VELOCITY_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
+        1,                                          //.maxResInstCnt
+        ReadLocationObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_LOCATION_TIMESTAMP_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_TIME,               //.type
+        1,                                          //.maxResInstCnt
+        ReadLocationObj,                            //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * SoftwareResources: supported resources defined for LWM2M software update object (9)
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -577,6 +628,13 @@ lwm2mcore_Object_t ObjArray[] =
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(FirmwareUpdateResources),                                     //.resCnt
         FirmwareUpdateResources                                                 //.resources
+    },
+    /* object 6, location */
+    {
+        LWM2MCORE_LOCATION_OID,                                                 //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(LocationResources),                                           //.resCnt
+        LocationResources                                                       //.resources
     },
     /* object 9, software update */
     {

@@ -290,6 +290,22 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+* Enumeration for LWM2M object 6 (location) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_LOCATION_LATITUDE_RID = 0,        ///< Latitude
+    LWM2MCORE_LOCATION_LONGITUDE_RID,           ///< Longitude
+    LWM2MCORE_LOCATION_ALTITUDE_RID,            ///< Altitude
+    LWM2MCORE_LOCATION_RADIUS_RID,              ///< Radius
+    LWM2MCORE_LOCATION_VELOCITY_RID,            ///< Velocity
+    LWM2MCORE_LOCATION_TIMESTAMP_RID,           ///< Timestamp of location measurement
+    LWM2MCORE_LOCATION_SPEED_RID                ///< Speed (scalar component of velocity)
+}lwm2mcore_locationResource_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
 * Enumeration for LWM2M object 9 (software update) resources
  */
 //--------------------------------------------------------------------------------------------------

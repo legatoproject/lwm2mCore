@@ -104,6 +104,7 @@ SET(SOURCES
     connectivity.c
     debug.c
     device.c
+    location.c
     main.c
     paramStorage.c
     platform.c

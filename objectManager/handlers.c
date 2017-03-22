@@ -24,6 +24,14 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Maximum number of bytes in the Universal Geographical Area Description of velocity
+ * GAD is defined in the 3GPP 23.032 standard, section 8
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_GAD_VELOCITY_MAX_BYTES    7
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Lifetime value to indicate that the lifetime is deactivated
  * This is compliant with the LWM2M specification and a 0-value has no sense
  * 630720000 = 20 years
@@ -31,6 +39,21 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LIFETIME_VALUE_DISABLED       630720000
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Velocity type according to the Universal Geographical Area Description
+ * Velocity type is defined in the 3GPP 23.032 standard, section 8.6
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_VELOCITY_H                       = 0, ///< Horizontal Velocity
+    LWM2MCORE_VELOCITY_H_AND_V                 = 1, ///< Horizontal with Vertical Velocity
+    LWM2MCORE_VELOCITY_H_AND_UNCERTAINTY       = 2, ///< Horizontal Velocity with Uncertainty
+    LWM2MCORE_VELOCITY_H_AND_V_AND_UNCERTAINTY = 3, ///< Horizontal with Vertical Velocity and
+                                                    ///< Uncertainty
+}VelocityType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -206,6 +229,113 @@ bool SetBootstrapConfiguration
     }
     LOG_ARG("Set BS configuration %d", result);
     return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Build the velocity, formated according to 3GPP 23.032 (Universal Geographical Area
+ * Description)
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not available
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Sid_t BuildVelocity
+(
+    char*   bufferPtr,  ///< [INOUT] data buffer
+    size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
+)
+{
+    lwm2mcore_Sid_t sID, lsID, hsID, vsID;
+    uint32_t direction;
+    uint32_t hSpeed;
+    int32_t vSpeed;
+    uint8_t gadVelocity[LWM2MCORE_GAD_VELOCITY_MAX_BYTES];
+    uint8_t gadVelocityLen = 0;
+
+    /* Get the direction of movement */
+    lsID = lwm2mcore_GetDirection(&direction);
+    if (LWM2MCORE_ERR_COMPLETED_OK != lsID)
+    {
+        /* Direction is necessary to build the velocity */
+        return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+    }
+
+    /* Get the horizontal speed */
+    hsID = lwm2mcore_GetHorizontalSpeed(&hSpeed);
+    if (LWM2MCORE_ERR_COMPLETED_OK != hsID)
+    {
+        /* We need at least the horizontal speed to build the velocity */
+        return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+    }
+
+    /* Velocity initialization */
+    memset(gadVelocity, 0, sizeof(gadVelocity));
+
+    /* Get the vertical speed */
+    vsID = lwm2mcore_GetVerticalSpeed(&vSpeed);
+    if (LWM2MCORE_ERR_COMPLETED_OK == vsID)
+    {
+        uint8_t vSpeedDir;
+
+        // Bits 5 to 8 of byte 1: Velocity type
+        gadVelocity[0] = (uint8_t)(((uint8_t)(LWM2MCORE_VELOCITY_H_AND_V)) << 4);
+        gadVelocityLen++;
+        // Bit 2 of byte 1: Direction of vertical speed
+        // 0 = upward, 1 = downward
+        vSpeedDir = (vSpeed < 0) ? 1 : 0;
+        gadVelocity[0] |= (uint8_t)(vSpeedDir << 1);
+        // Last bit of byte 1 and byte 2: Bearing in degrees
+        gadVelocity[0] |= (uint8_t)(((uint16_t)(direction & 0x0100)) >> 8);
+        gadVelocity[1] |= (uint8_t)(direction & 0xFF);
+        gadVelocityLen++;
+        // Bytes 3 and 4: Horizontal speed in km/h
+        hSpeed = hSpeed * 3.6;
+        gadVelocity[2] = (uint8_t)(((uint16_t)(hSpeed & 0xFF00)) >> 8);
+        gadVelocityLen++;
+        gadVelocity[3] = (uint8_t)(hSpeed & 0xFF);
+        gadVelocityLen++;
+        // Byte 5: Vertical speed in km/h
+        vSpeed = abs(vSpeed) * 3.6;
+        gadVelocity[4] = (uint8_t)vSpeed;
+        gadVelocityLen++;
+
+        sID = LWM2MCORE_ERR_COMPLETED_OK;
+    }
+    else
+    {
+        // Bits 5 to 8 of byte 1: Velocity type
+        gadVelocity[0] = (uint8_t)(((uint8_t)(LWM2MCORE_VELOCITY_H)) << 4);
+        gadVelocityLen++;
+        // Last bit of byte 1 and byte 2: Bearing in degrees
+        gadVelocity[0] |= (uint8_t)(((uint16_t)(direction & 0x0100)) >> 8);
+        gadVelocity[1] |= (uint8_t)(direction & 0xFF);
+        gadVelocityLen++;
+        // Bytes 3 and 4: Horizontal speed in km/h
+        hSpeed = hSpeed * 3.6;
+        gadVelocity[2] = (uint8_t)(((uint16_t)(hSpeed & 0xFF00)) >> 8);
+        gadVelocityLen++;
+        gadVelocity[3] = (uint8_t)(hSpeed & 0xFF);
+        gadVelocityLen++;
+
+        sID = LWM2MCORE_ERR_COMPLETED_OK;
+    }
+
+    /* Copy the velocity to the output buffer */
+    if (*lenPtr < gadVelocityLen)
+    {
+        sID = LWM2MCORE_ERR_OVERFLOW;
+    }
+    else
+    {
+        memcpy(bufferPtr, gadVelocity, gadVelocityLen);
+        *lenPtr = gadVelocityLen;
+    }
+
+    return sID;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1716,6 +1846,122 @@ int ExecFwUpdate
                                                bufferPtr,
                                                len);
             break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            break;
+    }
+
+    return sID;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                                  OBJECT 6: LOCATION
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 6
+ * Object: 6 - Location
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadLocationObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Latitude */
+        case LWM2MCORE_LOCATION_LATITUDE_RID:
+            sID = lwm2mcore_GetLatitude(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 1: Longitude */
+        case LWM2MCORE_LOCATION_LONGITUDE_RID:
+            sID = lwm2mcore_GetLongitude(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 2: Altitude */
+        case LWM2MCORE_LOCATION_ALTITUDE_RID:
+            sID = lwm2mcore_GetAltitude(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 4: Velocity */
+        case LWM2MCORE_LOCATION_VELOCITY_RID:
+            /* Build the velocity with direction, horizontal and vertical speeds */
+            sID = BuildVelocity(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 5: Timestamp */
+        case LWM2MCORE_LOCATION_TIMESTAMP_RID:
+        {
+            uint64_t timestamp = 0;
+            sID = lwm2mcore_GetLocationTimestamp(&timestamp);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &timestamp,
+                                             sizeof(timestamp),
+                                             false);
+            }
+        }
+        break;
 
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
