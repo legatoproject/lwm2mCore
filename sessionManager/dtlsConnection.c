@@ -71,7 +71,9 @@ static char* SecurityGetUri
         if(bufferSize > dataPtr->value.asBuffer.length)
         {
             memset(uriBufferPtr, 0, (dataPtr->value.asBuffer.length + 1 ));
-            strncpy(uriBufferPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
+            strncpy(uriBufferPtr,
+                    (const char*) dataPtr->value.asBuffer.buffer,
+                    dataPtr->value.asBuffer.length);
             lwm2m_data_free(size, dataPtr);
             return uriBufferPtr;
         }
@@ -146,7 +148,7 @@ static char* SecurityGetPublicId
         char* buffPtr;
 
         buffPtr = (char*)lwm2m_malloc(dataPtr->value.asBuffer.length);
-        if (NULL != buffPtr)
+        if (0 != buffPtr)
         {
             memcpy(buffPtr, dataPtr->value.asBuffer.buffer, dataPtr->value.asBuffer.length);
             *lengthPtr = dataPtr->value.asBuffer.length;
@@ -293,9 +295,11 @@ static int GetPskInfo
     size_t resultLength                 ///< [IN] Maximum credential length
 )
 {
+    dtls_connection_t* cnxPtr;
+
     LOG_ARG("GetPskInfo type %d", type);
     // find connection
-    dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
+    cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
                                                 &(sessionPtr->addr.st),
                                                 sessionPtr->size);
     if (NULL == cnxPtr)
@@ -368,7 +372,6 @@ static int SendToPeer
 )
 {
     // find connection
-    dtls_connection_t* connPtr = (dtls_connection_t*) ctxPtr->app;
     dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
                                                 &(sessionPtr->addr.st),
                                                 sessionPtr->size);
@@ -406,7 +409,6 @@ static int ReadFromPeer
 )
 {
     // find connection
-    dtls_connection_t* connPtr = (dtls_connection_t*) ctxPtr->app;
     dtls_connection_t* cnxPtr = connection_find((dtls_connection_t*) ctxPtr->app,
                                                 &(sessionPtr->addr.st),
                                                 sessionPtr->size);
@@ -579,8 +581,10 @@ static int SockaddrCmp
         else if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)y)->sin6_addr))
         {
             struct in6_addr* addr6 = &((struct sockaddr_in6 *)y)->sin6_addr;
-            uint32_t y6to4 = addr6->s6_addr[15] << 24 | addr6->s6_addr[14] << 16 | \
-                                                    addr6->s6_addr[13] << 8 | addr6->s6_addr[12];
+            uint32_t y6to4 = addr6->s6_addr[15] << 24 | \
+                             addr6->s6_addr[14] << 16 | \
+                             addr6->s6_addr[13] << 8 | \
+                             addr6->s6_addr[12];
             return y6to4 == ((struct sockaddr_in *)x)->sin_addr.s_addr;
         }
         else
@@ -825,6 +829,10 @@ void connection_free
         dtls_connection_t* nextPtr;
 
         nextPtr = connListPtr->nextPtr;
+        if (connListPtr->dtlsSessionPtr)
+        {
+          lwm2m_free(connListPtr->dtlsSessionPtr);
+        }
         lwm2m_free(connListPtr);
 
         connListPtr = nextPtr;
@@ -943,6 +951,9 @@ int connection_rehandshake
     bool sendCloseNotify
 )
 {
+    dtls_peer_t* peer;
+    int result;
+
     LOG("Entering");
     // if not a dtls connection we do nothing
     if (NULL == connPtr->dtlsSessionPtr)
@@ -951,7 +962,7 @@ int connection_rehandshake
     }
 
     // reset current session
-    dtls_peer_t* peer = dtls_get_peer(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
+    peer = dtls_get_peer(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
     if (peer != NULL)
     {
         if (!sendCloseNotify)
@@ -962,7 +973,7 @@ int connection_rehandshake
     }
 
     // start a fresh handshake
-    int result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
+    result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
     if (0 != result)
     {
          LOG_ARG("error dtls reconnection %d",result);

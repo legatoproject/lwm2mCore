@@ -15,6 +15,8 @@
 #include <stdbool.h>
 #include "lwm2mcoreCoapHandlers.h"
 
+#include "osPortTypes.h"
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Maximum LWM2M server supported, though only one used at any time

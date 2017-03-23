@@ -747,12 +747,15 @@ bool lwm2mcore_connect
     bool result = false;
     ClientData_t* dataPtr = (ClientData_t*)context;
 
+    LOG_ARG ("lwm2mcore_connect -> context %d", context);
+
     if (dataPtr != NULL)
     {
         /* Create the socket */
         memset(&SocketConfig, 0, sizeof (os_socketConfig_t));
         result = os_udpOpen(context, os_udpReceiveCb, &SocketConfig);
 
+        LOG_ARG ("lwm2mcore_connect -> socket %d opened ", SocketConfig.sock);
         dataPtr->sock = SocketConfig.sock;
         dataPtr->addressFamily = SocketConfig.af;
 
@@ -811,9 +814,10 @@ bool lwm2mcore_update
             }
             else
             {
+                int iresult;
                 LOG_ARG("shortServerId %d", targetPtr->shortID);
 
-                int iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
+                iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
                 LOG_ARG("lwm2m_update_registration return %d", iresult);
                 if (!iresult)
                 {
