@@ -945,14 +945,35 @@ static uint8_t DeleteCb
 )
 {
     uint8_t result;
+    bool isDeviceManagement = false;
     lwm2m_list_t* instancePtr;
 
-    if (NULL == objectPtr)
+    if ((NULL == objectPtr) || (NULL == objectPtr->userData))
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     LOG_ARG("DeleteCb oid %d oiid %d", objectPtr->objID, instanceId);
+
+    /* Check the session
+     * If the device is connected to the bootstrap server, only accept DELETE command on
+     * Security object (object 0)
+     */
+    if (true == lwm2mcore_connectionGetType(objectPtr->userData,
+                                            &isDeviceManagement))
+    {
+        if ((false == isDeviceManagement)
+        && (LWM2MCORE_SECURITY_OID != objectPtr->objID))
+        {
+            LOG("DeleteCb return COAP_405_METHOD_NOT_ALLOWED");
+            return COAP_405_METHOD_NOT_ALLOWED;
+        }
+    }
+    else
+    {
+        LOG("error on Get type");
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
     {
@@ -1289,6 +1310,9 @@ void ObjectsFree
             ObjectArray[i]->instanceList = ObjectArray[i]->instanceList->next;
             lwm2m_free(listPtr);
         }
+
+        lwm2m_free(ObjectArray[i]);
+        ObjectArray[i] = NULL;
     }
 }
 
@@ -1300,6 +1324,7 @@ void ObjectsFree
 //--------------------------------------------------------------------------------------------------
 static bool RegisterObjTable
 (
+    int context,                            ///< [IN] Context
     lwm2mcore_handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     uint16_t* registeredObjNbPtr,           ///< [INOUT] Registered bject number
     bool clientTable                        ///< [IN] Indicate if the table is provided by the
@@ -1433,7 +1458,8 @@ static bool RegisterObjTable
             ObjectArray[ObjNb]->createFunc   = CreateCb;
             ObjectArray[ObjNb]->deleteFunc   = DeleteCb;
 
-            ObjectArray[ObjNb]->userData = NULL;
+            /* Store the context */
+            ObjectArray[ObjNb]->userData = context;
             ObjNb++;
         }
     }
@@ -1619,7 +1645,7 @@ uint16_t lwm2mcore_objectRegister
         LOG_ARG("lwm2mcore_objectRegister context %d RegisteredObjNb %d", context, RegisteredObjNb);
 
         /* Register static object tables managed by LWM2MCore */
-        result = RegisterObjTable(&Lwm2mcoreHandlers, &RegisteredObjNb, false);
+        result = RegisterObjTable(context, &Lwm2mcoreHandlers, &RegisteredObjNb, false);
         if (result == false)
         {
             RegisteredObjNb = 0;
@@ -1631,7 +1657,7 @@ uint16_t lwm2mcore_objectRegister
             {
                 LOG("Register client object list");
                 /* Register object tables filled by the client */
-                result = RegisterObjTable(handlerPtr, &RegisteredObjNb, true);
+                result = RegisterObjTable(context, handlerPtr, &RegisteredObjNb, true);
                 if (result == false)
                 {
                     RegisteredObjNb = 0;
