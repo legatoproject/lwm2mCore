@@ -820,7 +820,7 @@ static uint8_t CreateCb
 
     if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateSoftwareInstance(true, instanceId))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_SoftwareUpdateInstance(true, instanceId))
         {
             LOG("Error from client to create object instance");
             return COAP_500_INTERNAL_SERVER_ERROR;
@@ -916,7 +916,7 @@ static uint8_t DeleteCb
 
     if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateSoftwareInstance(false, instanceId))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_SoftwareUpdateInstance(false, instanceId))
         {
             LOG("Error from client to delete object instance");
             return COAP_500_INTERNAL_SERVER_ERROR;

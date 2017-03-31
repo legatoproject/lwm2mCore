@@ -501,7 +501,7 @@ static void PrintOpenSSLErrors
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_Sha1Start
+lwm2mcore_Sid_t lwm2mcore_StartSha1
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 )
@@ -543,7 +543,7 @@ lwm2mcore_Sid_t lwm2mcore_Sha1Start
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_Sha1Process
+lwm2mcore_Sid_t lwm2mcore_ProcessSha1
 (
     void*    sha1CtxPtr,    ///< [IN] SHA1 context pointer
     uint8_t* bufPtr,        ///< [IN] Data buffer to hash
@@ -581,7 +581,7 @@ lwm2mcore_Sid_t lwm2mcore_Sha1Process
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_Sha1End
+lwm2mcore_Sid_t lwm2mcore_EndSha1
 (
     void* sha1CtxPtr,                   ///< [IN] SHA1 context pointer
     lwm2mcore_PkgDwlType_t packageType, ///< [IN] Package type (FW or SW)
@@ -743,7 +743,7 @@ lwm2mcore_Sid_t lwm2mcore_Sha1End
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_Sha1Cancel
+lwm2mcore_Sid_t lwm2mcore_CancelSha1
 (
     void** sha1CtxPtr   ///< [INOUT] SHA1 context pointer
 )

@@ -691,7 +691,7 @@ int lwm2mcore_Init
         DataCtxPtr = dataPtr;
 
         // Check if the update state/result should be changed after a FW install
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_UpdateFirmwareInstallResult())
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetFirmwareUpdateInstallResult())
         {
             LOG("Error while checking update state");
         }

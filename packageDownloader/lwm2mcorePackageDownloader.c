@@ -642,7 +642,7 @@ static lwm2mcore_DwlResult_t HashData
     // Initialize SHA1 context and CRC if not already done
     if (!DwlParserObj.sha1CtxPtr)
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1Start(&DwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha1(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to initialize SHA1 context");
             SetUpdateResult(PKG_DWL_ERROR_VERIFY);
@@ -676,7 +676,7 @@ static lwm2mcore_DwlResult_t HashData
             }
 
             // SHA1 digest is updated with all UPCK data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_Sha1Process(DwlParserObj.sha1CtxPtr,
+            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_ProcessSha1(DwlParserObj.sha1CtxPtr,
                                                                   DwlParserObj.dataToParsePtr,
                                                                   PkgDwlObj.processedLen))
             {
@@ -694,7 +694,7 @@ static lwm2mcore_DwlResult_t HashData
                                                        PkgDwlObj.processedLen);
 
             // SHA1 digest is updated with all BINA data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_Sha1Process(DwlParserObj.sha1CtxPtr,
+            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_ProcessSha1(DwlParserObj.sha1CtxPtr,
                                                                   DwlParserObj.dataToParsePtr,
                                                                   PkgDwlObj.processedLen))
             {
@@ -743,7 +743,7 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
     }
 
     // Verify package signature
-    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1End(DwlParserObj.sha1CtxPtr,
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_EndSha1(DwlParserObj.sha1CtxPtr,
                                                         PkgDwlObj.packageType,
                                                         DwlParserObj.dataToParsePtr,
                                                         PkgDwlObj.processedLen))
@@ -1199,7 +1199,7 @@ static lwm2mcore_DwlResult_t DwlParser
     if ((DWL_OK != result) || (PKG_DWL_END == PkgDwlObj.state))
     {
         // Cancel the SHA1 computation and reset SHA1 context
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_Sha1Cancel(&DwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_CancelSha1(&DwlParserObj.sha1CtxPtr))
         {
             LOG("Unable to reset SHA1 context");
         }

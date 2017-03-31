@@ -1194,7 +1194,7 @@ int ReadDeviceObj
     {
         /* Resource 0: Manufacturer */
         case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-            sID = lwm2mcore_DeviceManufacturer(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceManufacturer(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1203,7 +1203,7 @@ int ReadDeviceObj
 
         /* Resource 1: Device number */
         case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-            sID = lwm2mcore_DeviceModelNumber(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceModelNumber(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1212,7 +1212,7 @@ int ReadDeviceObj
 
         /* Resource 2: Serial number */
         case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-            sID = lwm2mcore_DeviceSerialNumber(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceSerialNumber(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1221,7 +1221,7 @@ int ReadDeviceObj
 
         /* Resource 3: Firmware */
         case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-            sID = lwm2mcore_DeviceFirmwareVersion(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceFirmwareVersion(bufferPtr, (uint32_t*)lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1232,7 +1232,7 @@ int ReadDeviceObj
         case LWM2MCORE_DEVICE_BATTERY_LEVEL_RID:
         {
             uint8_t batteryLevel = 0;
-            sID = lwm2mcore_DeviceBatteryLevel(&batteryLevel);
+            sID = lwm2mcore_GetBatteryLevel(&batteryLevel);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1247,7 +1247,7 @@ int ReadDeviceObj
         case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
         {
             uint64_t currentTime = 0;
-            sID = lwm2mcore_DeviceCurrentTime(&currentTime);
+            sID = lwm2mcore_GetDeviceCurrentTime(&currentTime);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1331,7 +1331,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_NETWORK_BEARER_RID:
         {
             lwm2mcore_networkBearer_enum_t networkBearer;
-            sID = lwm2mcore_ConnectivityNetworkBearer(&networkBearer);
+            sID = lwm2mcore_GetNetworkBearer(&networkBearer);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1358,7 +1358,7 @@ int ReadConnectivityMonitoringObj
                     bearersNb = 0;
 
                     /* Retrieve the list */
-                    sID = lwm2mcore_ConnectivityAvailableNetworkBearers(&bearersList, &bearersNb);
+                    sID = lwm2mcore_GetAvailableNetworkBearers(&bearersList, &bearersNb);
                 }
                 else
                 {
@@ -1390,7 +1390,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_RADIO_SIGNAL_STRENGTH_RID:
         {
             int32_t signalStrength;
-            sID = lwm2mcore_ConnectivitySignalStrength(&signalStrength);
+            sID = lwm2mcore_GetSignalStrength(&signalStrength);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1405,7 +1405,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID:
         {
             uint16_t linkQuality;
-            sID = lwm2mcore_ConnectivityLinkQuality(&linkQuality);
+            sID = lwm2mcore_GetLinkQuality(&linkQuality);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1432,7 +1432,7 @@ int ReadConnectivityMonitoringObj
                     ipAddrNb = 0;
 
                     /* Retrieve the list */
-                    sID = lwm2mcore_ConnectivityIpAddresses(ipAddrList, &ipAddrNb);
+                    sID = lwm2mcore_GetIpAddresses(ipAddrList, &ipAddrNb);
                 }
                 else
                 {
@@ -1476,7 +1476,7 @@ int ReadConnectivityMonitoringObj
                     ipAddrNb = 0;
 
                     /* Retrieve the list */
-                    sID = lwm2mcore_ConnectivityRouterIpAddresses(ipAddrList, &ipAddrNb);
+                    sID = lwm2mcore_GetRouterIpAddresses(ipAddrList, &ipAddrNb);
                 }
                 else
                 {
@@ -1508,7 +1508,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_LINK_UTILIZATION_RID:
         {
             uint8_t linkUtilization;
-            sID = lwm2mcore_ConnectivityLinkUtilization(&linkUtilization);
+            sID = lwm2mcore_GetLinkUtilization(&linkUtilization);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1534,7 +1534,7 @@ int ReadConnectivityMonitoringObj
                     apnNb = 0;
 
                     /* Retrieve the list */
-                    sID = lwm2mcore_ConnectivityApn(apnList, &apnNb);
+                    sID = lwm2mcore_GetAccessPointNames(apnList, &apnNb);
                 }
                 else
                 {
@@ -1566,7 +1566,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_CELL_ID_RID:
         {
             uint32_t cellId;
-            sID = lwm2mcore_ConnectivityCellId(&cellId);
+            sID = lwm2mcore_GetCellId(&cellId);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1581,7 +1581,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_SMNC_RID:
         {
             uint16_t mnc;
-            sID = lwm2mcore_ConnectivityMncMcc(&mnc, NULL);
+            sID = lwm2mcore_GetMncMcc(&mnc, NULL);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1596,7 +1596,7 @@ int ReadConnectivityMonitoringObj
         case LWM2MCORE_CONN_MONITOR_SMCC_RID:
         {
             uint16_t mcc;
-            sID = lwm2mcore_ConnectivityMncMcc(NULL, &mcc);
+            sID = lwm2mcore_GetMncMcc(NULL, &mcc);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
@@ -1673,7 +1673,7 @@ int WriteFwUpdateObj
             }
             else
             {
-                sID = lwm2mcore_UpdateSetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                sID = lwm2mcore_SetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
                                                     uriPtr->oid,
                                                     bufferPtr,
                                                     len);
@@ -1735,7 +1735,7 @@ int ReadFwUpdateObj
     {
         /* Resource 1: Package URI */
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
-            sID = lwm2mcore_UpdateGetPackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+            sID = lwm2mcore_GetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
                                                 uriPtr->oid,
                                                 bufferPtr,
                                                 lenPtr);
@@ -1745,9 +1745,7 @@ int ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
         {
             uint8_t updateState;
-            sID = lwm2mcore_UpdateGetUpdateState(LWM2MCORE_FW_UPDATE_TYPE,
-                                                 uriPtr->oiid,
-                                                 &updateState);
+            sID = lwm2mcore_GetUpdateState(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateState);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1762,9 +1760,7 @@ int ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
         {
             uint8_t updateResult;
-            sID = lwm2mcore_UpdateGetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE,
-                                                  uriPtr->oiid,
-                                                  &updateResult);
+            sID = lwm2mcore_GetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -1841,10 +1837,7 @@ int ExecFwUpdate
     {
         /* Resource 2: Update */
         case LWM2MCORE_FW_UPDATE_UPDATE_RID:
-            sID = lwm2mcore_UpdateLaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE,
-                                               uriPtr->oiid,
-                                               bufferPtr,
-                                               len);
+            sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, bufferPtr, len);
             break;
 
         default:
@@ -2026,7 +2019,7 @@ int WriteSwUpdateObj
             }
             else
             {
-                sID = lwm2mcore_UpdateSetPackageUri(LWM2MCORE_SW_UPDATE_TYPE,
+                sID = lwm2mcore_SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
                                                     uriPtr->oid,
                                                     bufferPtr,
                                                     len);
@@ -2041,7 +2034,7 @@ int WriteSwUpdateObj
             }
             else
             {
-                sID = lwm2mcore_UpdateSetSwSupportedObjects(uriPtr->oiid,
+                sID = lwm2mcore_SetSwUpdateSupportedObjects(uriPtr->oiid,
                                                             (bool)BytesToInt(bufferPtr, len));
             }
             break;
@@ -2096,7 +2089,7 @@ int ReadSwUpdateObj
     {
         /* Resource 0: package name */
         case LWM2MCORE_SW_UPDATE_PACKAGE_NAME_RID:
-            sID = lwm2mcore_UpdateGetPackageName(LWM2MCORE_SW_UPDATE_TYPE,
+            sID = lwm2mcore_GetUpdatePackageName(LWM2MCORE_SW_UPDATE_TYPE,
                                                  uriPtr->oiid,
                                                  bufferPtr,
                                                  (uint32_t)*lenPtr);
@@ -2108,7 +2101,7 @@ int ReadSwUpdateObj
 
         /* Resource 1: package version */
         case LWM2MCORE_SW_UPDATE_PACKAGE_VERSION_RID:
-            sID = lwm2mcore_UpdateGetPackageVersion(LWM2MCORE_SW_UPDATE_TYPE,
+            sID = lwm2mcore_GetUpdatePackageVersion(LWM2MCORE_SW_UPDATE_TYPE,
                                                     uriPtr->oiid,
                                                     bufferPtr,
                                                     (uint32_t)*lenPtr);
@@ -2122,9 +2115,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID:
         {
             uint8_t updateResult;
-            sID = lwm2mcore_UpdateGetUpdateState(LWM2MCORE_SW_UPDATE_TYPE,
-                                                 uriPtr->oiid,
-                                                 &updateResult);
+            sID = lwm2mcore_GetUpdateState(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2139,7 +2130,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_SUPPORTED_OBJ_RID:
         {
             bool value;
-            sID = lwm2mcore_UpdateGetSwSupportedObjects(uriPtr->oiid, &value);
+            sID = lwm2mcore_GetSwUpdateSupportedObjects(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2154,9 +2145,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID:
         {
             uint8_t updateResult;
-            sID = lwm2mcore_UpdateGetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE,
-                                                  uriPtr->oiid,
-                                                  &updateResult);
+            sID = lwm2mcore_GetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2171,7 +2160,7 @@ int ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_ACTIVATION_STATE_RID:
         {
             bool value;
-            sID = lwm2mcore_UpdateGetSwActivationState(uriPtr->oiid, &value);
+            sID = lwm2mcore_GetSwUpdateActivationState(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2231,33 +2220,121 @@ int ExecSwUpdate
     {
         /* Resource 4: Install */
         case LWM2MCORE_SW_UPDATE_INSTALL_RID:
-            sID = lwm2mcore_UpdateLaunchUpdate(LWM2MCORE_SW_UPDATE_TYPE,
-                                               uriPtr->oiid,
-                                               bufferPtr,
-                                               len);
+            sID = lwm2mcore_LaunchUpdate(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, bufferPtr, len);
             break;
 
         /* Resource 6: Uninstall */
         case LWM2MCORE_SW_UPDATE_UNINSTALL_RID:
-            sID = lwm2mcore_UpdateLaunchSwUninstall(uriPtr->oiid,
-                                                    bufferPtr,
-                                                    len);
+            sID = lwm2mcore_LaunchSwUpdateUninstall(uriPtr->oiid, bufferPtr, len);
             break;
 
         /* Resource 10: Activate */
         case LWM2MCORE_SW_UPDATE_ACTIVATE_RID:
-            sID = lwm2mcore_UpdateActivateSoftware(true,
-                                                   uriPtr->oiid,
-                                                   bufferPtr,
-                                                   len);
+            sID = lwm2mcore_ActivateSoftware(true, uriPtr->oiid, bufferPtr, len);
             break;
 
         /* Resource 11: Deactivate */
         case LWM2MCORE_SW_UPDATE_DEACTIVATE_RID:
-            sID = lwm2mcore_UpdateActivateSoftware(false,
-                                                   uriPtr->oiid,
-                                                   bufferPtr,
-                                                   len);
+            sID = lwm2mcore_ActivateSoftware(false, uriPtr->oiid, bufferPtr, len);
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                              OBJECT 10241: SUBSCRIPTION
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 10241
+ * Object: 10241 - Subscription
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadSubscriptionObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Module identity */
+        case LWM2MCORE_SUBSCRIPTION_IMEI_RID:
+            sID = lwm2mcore_GetDeviceImei(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 1: SIM card identifier */
+        case LWM2MCORE_SUBSCRIPTION_ICCID_RID:
+            sID = lwm2mcore_GetIccid(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 2: Subscription identity */
+        case LWM2MCORE_SUBSCRIPTION_IDENTITY_RID:
+            sID = lwm2mcore_GetSubscriptionIdentity(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 3: Subscription phone number */
+        case LWM2MCORE_SUBSCRIPTION_MSISDN_RID:
+            sID = lwm2mcore_GetMsisdn(bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
             break;
 
         default:

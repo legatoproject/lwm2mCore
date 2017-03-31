@@ -334,6 +334,19 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+* Enumeration for LWM2M object 10241 (subscription) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SUBSCRIPTION_IMEI_RID = 0,            ///< Module identity (IMEI)
+    LWM2MCORE_SUBSCRIPTION_ICCID_RID,               ///< SIM card identifier (ICCID)
+    LWM2MCORE_SUBSCRIPTION_IDENTITY_RID,            ///< Subscription identity (MEID/ESN/IMSI)
+    LWM2MCORE_SUBSCRIPTION_MSISDN_RID               ///< Subscription phone number (MSISDN)
+}lwm2mcore_subscriptionResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
 * Enumeration for LWM2M object 10243 (SSL certificates) resources
  */
 //--------------------------------------------------------------------------------------------------

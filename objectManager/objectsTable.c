@@ -564,6 +564,49 @@ static lwm2mcore_Resource_t SoftwareUpdateResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Supported resources defined for Subscription, a Sierra Wireless proprietary object (10241)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t SubscriptionResources[] =
+{
+    {
+        LWM2MCORE_SUBSCRIPTION_IMEI_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadSubscriptionObj,                        //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SUBSCRIPTION_ICCID_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadSubscriptionObj,                        //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SUBSCRIPTION_IDENTITY_RID,        //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadSubscriptionObj,                        //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SUBSCRIPTION_MSISDN_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        ReadSubscriptionObj,                        //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * SSL certificate supported resources defined for LWM2M certificate object (10243)
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -642,6 +685,13 @@ lwm2mcore_Object_t ObjArray[] =
         LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(SoftwareUpdateResources),                                     //.resCnt
         SoftwareUpdateResources                                                 //.resources
+    },
+    /* object 10241, subscription */
+    {
+        LWM2MCORE_SUBSCRIPTION_OID,                                             //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(SubscriptionResources),                                       //.resCnt
+        SubscriptionResources                                                   //.resources
     },
     /* object 10243, SSL certificate */
     {

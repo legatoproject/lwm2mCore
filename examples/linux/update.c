@@ -27,7 +27,7 @@
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdatePushPackage
+lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -56,7 +56,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdatePushPackage
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateSetPackageUri
+lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -114,7 +114,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageUri
+lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -150,7 +150,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageUri
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateLaunchUpdate
+lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -187,7 +187,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateLaunchUpdate
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetUpdateState
+lwm2mcore_Sid_t lwm2mcore_GetUpdateState
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -236,7 +236,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetUpdateState
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetUpdateResult
+lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -282,7 +282,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetUpdateResult
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageName
+lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -307,7 +307,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageName
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageVersion
+lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -332,7 +332,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetPackageVersion
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateSetSwSupportedObjects
+lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
 (
     uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool value                      ///< [IN] Update supported objects field value
@@ -355,7 +355,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSetSwSupportedObjects
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetSwSupportedObjects
+lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
 (
     uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool* valuePtr                  ///< [INOUT] Update supported objects field value
@@ -387,7 +387,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetSwSupportedObjects
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateGetSwActivationState
+lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
 (
     uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     bool* valuePtr                  ///< [INOUT] Activation state
@@ -418,7 +418,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateGetSwActivationState
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateLaunchSwUninstall
+lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
 (
     uint16_t instanceId,            ///< [IN] Instance Id (any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
@@ -443,7 +443,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateLaunchSwUninstall
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateActivateSoftware
+lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
 (
     bool activation,        ///< [IN] Requested activation (true: activate, false: deactivate)
     uint16_t instanceId,    ///< [IN] Instance Id (any value for SW)
@@ -475,7 +475,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateActivateSoftware
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateSoftwareInstance
+lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
 (
     bool create,                ///<[IN] Create (true) or delete (false)
     uint16_t instanceId         ///<[IN] Object instance Id to create or delete
@@ -499,7 +499,7 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSoftwareInstance
  *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_UpdateFirmwareInstallResult
+lwm2mcore_Sid_t lwm2mcore_GetFirmwareUpdateInstallResult
 (
     void
 )
