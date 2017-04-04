@@ -2347,6 +2347,219 @@ int ReadSubscriptionObj
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *                          OBJECT 10242: EXTENDED CONNECTIVITY STATISTICS
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 10242
+ * Object: 10242 - Extended connectivity statistics
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadExtConnectivityStatsObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Signal bars */
+        case LWM2MCORE_EXT_CONN_STATS_SIGNAL_BARS_RID:
+        {
+            uint8_t signalBars = 0;
+            sID = lwm2mcore_GetSignalBars(&signalBars);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &signalBars,
+                                             sizeof(signalBars),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 1: Currently used cellular technology */
+        case LWM2MCORE_EXT_CONN_STATS_CELLULAR_TECH_RID:
+            sID = lwm2mcore_GetCellularTechUsed((char*)bufferPtr, (uint32_t*)lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen((char*)bufferPtr);
+            }
+            break;
+
+        /* Resource 2: Roaming indicator */
+        case LWM2MCORE_EXT_CONN_STATS_ROAMING_RID:
+        {
+            uint8_t roamingIndicator = 0;
+            sID = lwm2mcore_GetRoamingIndicator(&roamingIndicator);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &roamingIndicator,
+                                             sizeof(roamingIndicator),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 3: Ec/Io */
+        case LWM2MCORE_EXT_CONN_STATS_ECIO_RID:
+        {
+            int32_t ecIo = 0;
+            sID = lwm2mcore_GetEcIo(&ecIo);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &ecIo,
+                                             sizeof(ecIo),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 4: RSRP */
+        case LWM2MCORE_EXT_CONN_STATS_RSRP_RID:
+        {
+            int32_t rsrp = 0;
+            sID = lwm2mcore_GetRsrp(&rsrp);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &rsrp,
+                                             sizeof(rsrp),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 5: RSRQ */
+        case LWM2MCORE_EXT_CONN_STATS_RSRQ_RID:
+        {
+            int32_t rsrq = 0;
+            sID = lwm2mcore_GetRsrq(&rsrq);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &rsrq,
+                                             sizeof(rsrq),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 6: RSCP */
+        case LWM2MCORE_EXT_CONN_STATS_RSCP_RID:
+        {
+            int32_t rscp = 0;
+            sID = lwm2mcore_GetRscp(&rscp);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &rscp,
+                                             sizeof(rscp),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 7: Device temperature */
+        case LWM2MCORE_EXT_CONN_STATS_TEMPERATURE_RID:
+        {
+            int32_t deviceTemperature = 0;
+            sID = lwm2mcore_GetDeviceTemperature(&deviceTemperature);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &deviceTemperature,
+                                             sizeof(deviceTemperature),
+                                             true);
+            }
+        }
+        break;
+
+        /* Resource 8: Unexpected reset counter */
+        case LWM2MCORE_EXT_CONN_STATS_UNEXPECTED_RESETS_RID:
+        {
+            uint32_t unexpectedResets = 0;
+            sID = lwm2mcore_GetDeviceUnexpectedResets(&unexpectedResets);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &unexpectedResets,
+                                             sizeof(unexpectedResets),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 9: Total reset counter */
+        case LWM2MCORE_EXT_CONN_STATS_TOTAL_RESETS_RID:
+        {
+            uint32_t totalResets = 0;
+            sID = lwm2mcore_GetDeviceTotalResets(&totalResets);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &totalResets,
+                                             sizeof(totalResets),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 10: Location Area Code */
+        case LWM2MCORE_EXT_CONN_STATS_LAC_RID:
+        {
+            uint32_t lac = 0;
+            sID = lwm2mcore_GetLac(&lac);
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &lac,
+                                             sizeof(lac),
+                                             false);
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                              OBJECT 10243: SSL certificates
  */
 //--------------------------------------------------------------------------------------------------

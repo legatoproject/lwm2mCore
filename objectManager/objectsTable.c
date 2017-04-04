@@ -607,6 +607,106 @@ static lwm2mcore_Resource_t SubscriptionResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Supported resources defined for Extended connectivity statistics, a Sierra Wireless proprietary
+ * object (10242)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t ExtConnectivityStatsResources[] =
+{
+    {
+        LWM2MCORE_EXT_CONN_STATS_SIGNAL_BARS_RID,       //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_CELLULAR_TECH_RID,     //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_ROAMING_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_ECIO_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_RSRP_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_RSRQ_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_RSCP_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_TEMPERATURE_RID,       //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_UNEXPECTED_RESETS_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_TOTAL_RESETS_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_LAC_RID,               //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        ReadExtConnectivityStatsObj,                    //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * SSL certificate supported resources defined for LWM2M certificate object (10243)
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -692,6 +792,13 @@ lwm2mcore_Object_t ObjArray[] =
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(SubscriptionResources),                                       //.resCnt
         SubscriptionResources                                                   //.resources
+    },
+    /* object 10242, extended connectivity statistics */
+    {
+        LWM2MCORE_EXT_CONN_STATS_OID,                                           //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(ExtConnectivityStatsResources),                               //.resCnt
+        ExtConnectivityStatsResources                                           //.resources
     },
     /* object 10243, SSL certificate */
     {

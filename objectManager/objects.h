@@ -347,6 +347,26 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+* Enumeration for LWM2M object 10242 (extended connectivity statistics) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_EXT_CONN_STATS_SIGNAL_BARS_RID = 0,   ///< Signal bars
+    LWM2MCORE_EXT_CONN_STATS_CELLULAR_TECH_RID,     ///< Currently used cellular technology
+    LWM2MCORE_EXT_CONN_STATS_ROAMING_RID,           ///< Roaming indicator
+    LWM2MCORE_EXT_CONN_STATS_ECIO_RID,              ///< Ec/Io if UMTS or CDMA is used
+    LWM2MCORE_EXT_CONN_STATS_RSRP_RID,              ///< RSRP if LTE is used
+    LWM2MCORE_EXT_CONN_STATS_RSRQ_RID,              ///< RSRQ if LTE is used
+    LWM2MCORE_EXT_CONN_STATS_RSCP_RID,              ///< RSCP if UMTS is used
+    LWM2MCORE_EXT_CONN_STATS_TEMPERATURE_RID,       ///< Device temperature
+    LWM2MCORE_EXT_CONN_STATS_UNEXPECTED_RESETS_RID, ///< Unexpected reset counter
+    LWM2MCORE_EXT_CONN_STATS_TOTAL_RESETS_RID,      ///< Total reset counter
+    LWM2MCORE_EXT_CONN_STATS_LAC_RID                ///< Location Area Code (LAC)
+}lwm2mcore_extConnectivityStatsResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
 * Enumeration for LWM2M object 10243 (SSL certificates) resources
  */
 //--------------------------------------------------------------------------------------------------
