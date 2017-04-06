@@ -151,6 +151,8 @@ typedef enum
 {
     PKG_DWL_INIT,       ///< Package downloader initialization
     PKG_DWL_INFO,       ///< Retrieve information about the package
+    PKG_DWL_START,      ///< Request user agreement
+    PKG_DWL_WAIT,       ///< Wait for user agreement
     PKG_DWL_DOWNLOAD,   ///< Download file
     PKG_DWL_PARSE,      ///< Parse downloaded data
     PKG_DWL_STORE,      ///< Store downloaded data
@@ -1492,11 +1494,34 @@ static void PkgDwlGetInfo
     PkgDwlEvent(PKG_DWL_EVENT_DETAILS, pkgDwlPtr);
 
     // Download the package
-    PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+    PkgDwlObj.state = PKG_DWL_START;
     // Require to parse at least the length of DWL prolog, enough to determine the file type
     memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
     DwlParserObj.subsection = DWL_SUB_PROLOG;
     DwlParserObj.lenToParse = sizeof(DwlProlog_t);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Receive user agreement before starting download.
+ */
+//--------------------------------------------------------------------------------------------------
+static void PkgDwlGetUserAgreement
+(
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
+)
+{
+    // Pause the package downloader state machine.
+    PkgDwlObj.state = PKG_DWL_WAIT;
+
+    // Get user agreement.
+    LOG("Wait for user agreement.");
+    if (DWL_OK != (pkgDwlPtr->userAgreement((uint32_t)pkgDwlPtr->data.packageSize)))
+    {
+        LOG("Failed to get user agreement.");
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+        PkgDwlObj.state = PKG_DWL_ERROR;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1900,6 +1925,12 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
         return DWL_FAULT;
     }
 
+    if (!pkgDwlPtr->userAgreement)
+    {
+        LOG("Missing user agreement callback");
+        return DWL_FAULT;
+    }
+
     // Store the package downloader
     PkgDwlPtr = pkgDwlPtr;
 
@@ -1921,6 +1952,14 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
 
             case PKG_DWL_INFO:
                 PkgDwlGetInfo(pkgDwlPtr);
+                break;
+
+            case PKG_DWL_START:
+                PkgDwlGetUserAgreement(pkgDwlPtr);
+                break;
+
+            case PKG_DWL_WAIT:
+                // Do nothing till we get user agreement.
                 break;
 
             case PKG_DWL_DOWNLOAD:
@@ -2088,3 +2127,32 @@ void lwm2mcore_PackageDownloaderInit
         LOG("No package downloader workspace to delete");
     }
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Received user agreement; proceed to download package.
+ *
+ * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
+ * downloader thread. While the package downloader is waiting for user agreement, the avc thread
+ * merely changes the state of the package downloader and allows the package downloader to proceed.
+ * Care must be taken to protect 'PkgDwlObj' while modifying this function.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderAcceptDownload
+(
+    void
+)
+{
+    if (PkgDwlObj.state == PKG_DWL_WAIT)
+    {
+        // Received user agreement; proceed to download.
+        PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+    }
+    else
+    {
+        LOG_ARG("Invalid state %d", PkgDwlObj.state);
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+        PkgDwlObj.state = PKG_DWL_ERROR;
+    }
+}
+

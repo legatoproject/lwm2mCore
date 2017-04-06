@@ -223,6 +223,23 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Callback for getting user agreement before starting a download
+ *
+ * @return
+ *  - DWL_OK    The function succeeded
+ *  - DWL_FAULT The function failed
+ *
+ * @warning This callback should be set to NULL if not implemented
+ */
+//--------------------------------------------------------------------------------------------------
+typedef lwm2mcore_DwlResult_t (*lwm2mcore_DwlAgreement_t)
+(
+    uint32_t pkgSize         ///< Package size
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Package downloader structure
  *
  * @warning Unimplemented callbacks should be explicitly set to NULL
@@ -237,6 +254,7 @@ typedef struct
     lwm2mcore_SetFwUpdateResult_t     setFwUpdateResult;    ///< Set firmware update result
     lwm2mcore_SetSwUpdateState_t      setSwUpdateState;     ///< Set software update state
     lwm2mcore_SetSwUpdateResult_t     setSwUpdateResult;    ///< Set software update result
+    lwm2mcore_DwlAgreement_t          userAgreement;        ///< User agreement callback
     lwm2mcore_Download_t              download;             ///< Download callback
     lwm2mcore_StoreRange_t            storeRange;           ///< Storing callback
     lwm2mcore_EndDownload_t           endDownload;          ///< Ending callback
@@ -290,6 +308,16 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_PackageDownloaderInit
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Received user agreement; proceed to download package.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderAcceptDownload
 (
     void
 );
