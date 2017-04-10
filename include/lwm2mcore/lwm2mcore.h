@@ -586,7 +586,7 @@ bool lwm2mcore_UpdateSwList
 (
     int context,                    ///< [IN] Context (Set to 0 if this API is used if
                                     ///< lwm2mcore_init API was no called)
-    const char* ListPtr,            ///< [IN] Formatted list
+    const char* listPtr,            ///< [IN] Formatted list
     size_t listLen                  ///< [IN] Size of the update list
 );
 

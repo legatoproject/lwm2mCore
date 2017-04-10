@@ -1548,6 +1548,7 @@ static bool UpdateSwListWakaama
     uint16_t LenToCopy = 0;
     uint16_t oid;
     uint16_t oiid;
+    int numChars;
     char aOnePath[ ONE_PATH_MAX_LEN ];
     char prefix[ LWM2MCORE_NAME_LEN + 1];
     char* aData = NULL;
@@ -1558,7 +1559,16 @@ static bool UpdateSwListWakaama
      * All object instances of object 9 needs to be registered in Wakaama
      */
     tempPath[0] = 0;
-    snprintf(tempPath, LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN, "%s", SwObjectInstanceListPtr);
+    numChars = snprintf(tempPath,
+                        LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1,
+                        "%s",
+                        SwObjectInstanceListPtr);
+    /* Check that the string is not truncated or any error */
+    if ((numChars < 0) || (LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN < numChars))
+    {
+        LOG_ARG("Error on list: numChars %d", numChars);
+        return false;
+    }
 
     aData = strtok_r(tempPath, REG_PATH_END, &cSavePtr);
     while (NULL != aData)
@@ -1634,7 +1644,6 @@ static bool UpdateSwListWakaama
         }
         aData = strtok_r(NULL, REG_PATH_END, &cSavePtr);
     }
-    LOG("lwm2mcore_updateSwList END");
     LOG_ARG("%s", SwObjectInstanceListPtr);
 
     // if a new object instance is added and if the device is registered to the DM server,
@@ -1760,17 +1769,27 @@ bool lwm2mcore_UpdateSwList
     int context,                    ///< [IN] Context (Set to 0 if this API is used if
                                     ///< lwm2mcore_init API was no called)
     const char* listPtr,            ///< [IN] Formatted list
-    size_t ListLen                  ///< [IN] Size of the update list
+    size_t listLen                  ///< [IN] Size of the update list
 )
 {
-    if ((LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN < ListLen)
+    int numChars;
+
+    if ((LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN < listLen)
      || (NULL == listPtr))
     {
         return false;
     }
     // store the string
-    SwObjectInstanceListPtr[0] = 0;
-    snprintf(SwObjectInstanceListPtr, LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN, "%s", listPtr);
+    numChars = snprintf(SwObjectInstanceListPtr,
+                        LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1,
+                        "%s",
+                        listPtr);
+    /* Check that the string is not truncated or any error */
+    if ((numChars < 0) || (LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN < numChars))
+    {
+        LOG_ARG("Error on list: numChars %d", numChars);
+        return false;
+    }
 
     if (0 == context)
     {
