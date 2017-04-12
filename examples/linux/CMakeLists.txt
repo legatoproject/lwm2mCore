@@ -96,6 +96,7 @@ SET(SOURCES
     ${LWM2MCORE_DIR}/objectManager/handlers.c
     ${LWM2MCORE_DIR}/objectManager/objects.c
     ${LWM2MCORE_DIR}/objectManager/objectsTable.c
+    ${LWM2MCORE_DIR}/objectManager/utils.c
     ${LWM2MCORE_DIR}/objectManager/lwm2mcoreCoapHandlers.c
     ${LWM2MCORE_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
     ${LWM2MCORE_DIR}/sessionManager/dtlsConnection.c
@@ -104,6 +105,7 @@ SET(SOURCES
     debug.c
     device.c
     main.c
+    paramStorage.c
     platform.c
     security.c
     time.c

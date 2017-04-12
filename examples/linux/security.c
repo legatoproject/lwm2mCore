@@ -281,8 +281,7 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
 (
     lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be set
     char* bufferPtr,                        ///< [INOUT] data buffer
-    size_t len                              ///< [IN] length of input buffer and length of the
-                                            ///< returned data
+    size_t len                              ///< [IN] length of input buffer
 )
 {
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -406,7 +405,7 @@ bool lwm2mcore_CheckCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
- * This function erases one credential from NV storage
+ * This function erases one credential from platform storage
  *
  * @return
  *      - true if the credential is deleted

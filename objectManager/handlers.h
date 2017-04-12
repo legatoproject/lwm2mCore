@@ -43,6 +43,7 @@
  * Define possible values for binding mode (supported mode is UQ)
  */
 //--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_BINDING_STR_MAX_LEN    3
 #define LWM2MCORE_BINDING_UDP           "U"
 #define LWM2MCORE_BINDING_UDP_QUEUE     "UQ"
 #define LWM2MCORE_BINDING_SMS           "S"
@@ -518,6 +519,48 @@ int OnUnlistedObject
  */
 //--------------------------------------------------------------------------------------------------
 bool StoreCredentials
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read the bootstrap configuration from platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool GetBootstrapConfiguration
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to save the bootstrap configuration in platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool SetBootstrapConfiguration
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to know if the connection is secured or not
+ *
+ * @return
+ *      - true in case of secured connection
+ *      - false else
+ */
+//--------------------------------------------------------------------------------------------------
+bool IsSecuredMode
 (
     void
 );

@@ -11,6 +11,7 @@
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/security.h>
+#include <lwm2mcore/paramStorage.h>
 #include "liblwm2m.h"
 #include "objects.h"
 #include "sessionManager.h"
@@ -218,113 +219,6 @@ static lwm2mcore_internalResource_t* FindResource
     }
 
     return resourcePtr;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to convert bytes(in network byte order) to unsigned 16 bits integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-static uint16_t BytesToUint16
-(
-    const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
-)
-{
-    return (NULL == bytesPtr) ? 0 : ((bytesPtr[0] << 8) | bytesPtr[1]);
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to convert bytes(in network byte order) to unsigned 32 bits integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-static uint32_t BytesToUint32
-(
-    const uint8_t* bytesPtr
-)
-{
-    return (NULL == bytesPtr) ? 0 :
-                    ((bytesPtr[0] << 24) | (bytesPtr[1] << 16) | (bytesPtr[2] << 8) | bytesPtr[3]);
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to convert bytes(in network byte order) to unsigned 64 bits integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-static uint64_t BytesToUint64
-(
-    const uint8_t* bytesPtr
-)
-{
-    return (NULL == bytesPtr) ? 0 : (((uint64_t)BytesToUint32(bytesPtr) << 32)
-                                      | BytesToUint32(bytesPtr + 4));
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to convert bytes(in network byte order) to integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-inline int64_t BytesToInt
-(
-    const uint8_t* bytesPtr,
-    size_t len
-)
-{
-    int64_t value;
-
-    if (NULL == bytesPtr)
-    {
-        return 0;
-    }
-
-    switch(len)
-    {
-        case 1:
-        {
-            value = *bytesPtr;
-        }
-        break;
-
-        case 2:
-        {
-            value = (int16_t)BytesToUint16(bytesPtr);
-        }
-        break;
-
-        case 4:
-        {
-            value = (int32_t)BytesToUint32(bytesPtr);
-        }
-        break;
-
-        case 8:
-        {
-            value = (int64_t)BytesToUint64(bytesPtr);
-        }
-        break;
-
-        default:
-        {
-            value = -1;
-        }
-        break;
-    }
-
-    return value;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1390,8 +1284,10 @@ static bool RegisterObjTable
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false)
-     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
-     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY)
+     && ((IsSecuredMode()
+      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
+      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY))
+      || (false == IsSecuredMode()))
      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
     {
         dmServerPresence = true;
@@ -1697,6 +1593,18 @@ uint16_t lwm2mcore_objectRegister
 
         ClientData_t* dataPtr = (ClientData_t*)context;
         LOG_ARG("lwm2mcore_objectRegister context %d RegisteredObjNb %d", context, RegisteredObjNb);
+
+        /* Read the LWM2MCore configuration file */
+        if (false == GetBootstrapConfiguration())
+        {
+            /* If the file is not present:
+             * Delete DM credentials to force a connection to the bootstrap server
+             * Then the configuration file will be created at the end of the bootstrap procedure
+             */
+            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
+            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
+            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
+        }
 
         /* Register static object tables managed by LWM2MCore */
         result = RegisterObjTable(context, &Lwm2mcoreHandlers, &RegisteredObjNb, false);

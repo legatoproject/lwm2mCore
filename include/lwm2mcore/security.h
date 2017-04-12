@@ -95,10 +95,40 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
 (
     lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be set
     char *bufferPtr,                        ///< [INOUT] data buffer
-    size_t len                              ///< [IN] length of input buffer and length of the
-                                            ///< returned data
+    size_t len                              ///< [IN] length of input buffer
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to check if one credential is provisioned
+ *
+ * @note This API is called by LWM2MCore
+ *
+ * @return
+ *      - true if  a Device Management server was provided
+ *      - false else
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mCore_CheckCredential
+(
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to delete one credential from platform memory
+ *
+ * @note This API is called by LWM2MCore
+ *
+ * @return
+ *      - true if  a Device Management server was provided
+ *      - false else
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mCore_DeleteCredential
+(
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
+);
 
 //--------------------------------------------------------------------------------------------------
 /**
