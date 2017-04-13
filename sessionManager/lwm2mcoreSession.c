@@ -306,7 +306,7 @@ static uint32_t ConvertToCoapCode
             coapCode = UNAUTHORIZED_4_01;
             break;
         }
-        case COAP_RESOURCE_NOT_FOUND:
+        case COAP_NOT_FOUND:
         {
             coapCode = NOT_FOUND_4_04;
             break;

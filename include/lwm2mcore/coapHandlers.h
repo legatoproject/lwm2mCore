@@ -34,7 +34,7 @@ typedef enum
     COAP_CONTENT_AVAILABLE,         ///< Content available for read response
     COAP_BAD_REQUEST,               ///< Bad request
     COAP_METHOD_UNAUTHORIZED,       ///< Operation not allowed on this resource
-    COAP_RESOURCE_NOT_FOUND,        ///< Resource not found
+    COAP_NOT_FOUND,                 ///< Not found
     COAP_METHOD_NOT_ALLOWED,        ///< Method not allowed
     COAP_INTERNAL_ERROR             ///< Internal error
 }
