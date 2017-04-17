@@ -973,29 +973,57 @@ bool lwm2mcore_ConnectionGetType
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to set the push callback handler
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetPushCallback
+(
+    lwm2mcore_PushAckCallback_t callbackP  ///< [IN] push callback pointer
+)
+{
+    lwm2m_set_push_callback(callbackP);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to push data to lwm2mCore
  *
  * @return
- *      - true if a data push transaction is initiated
- *      - else false
+ *      - LWM2MCORE_PUSH_INITIATED if data push transaction is initiated
+ *      - LWM2MCORE_PUSH_FAILED if data push transaction failed
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_Push
+lwm2mcore_PushResult_t lwm2mcore_Push
 (
-    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
-    uint8_t* payloadPtr,            ///< [IN] payload
-    size_t payloadLength,           ///< [IN] payload length
-    void* callbackPtr               ///< [IN] callback for payload
+    lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
+    uint8_t* payloadPtr,                    ///< [IN] payload
+    size_t payloadLength,                   ///< [IN] payload length
+    lwm2mcore_PushContent_t content,        ///< [IN] content type
+    uint16_t* midPtr                        ///< [OUT] message id
 )
 {
     int rc;
-    bool result = false;
+    lwm2mcore_PushResult_t result = LWM2MCORE_PUSH_FAILED;
+    lwm2m_media_type_t contentType;
     bool registered = false;
     ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
     if (NULL == instanceRef)
     {
         return result;
+    }
+
+    switch (content)
+    {
+        case LWM2MCORE_PUSH_CONTENT_CBOR:
+            contentType = LWM2M_CONTENT_CBOR;
+            break;
+        case LWM2MCORE_PUSH_CONTENT_ZCBOR:
+            contentType = LWM2M_CONTENT_ZCBOR;
+            break;
+        default:
+            LOG_ARG("Invalid content type %d", content);
+            return LWM2MCORE_PUSH_FAILED;
     }
 
     /* Check that the device is registered to DM server */
@@ -1014,11 +1042,20 @@ bool lwm2mcore_Push
                                  targetPtr->shortID,
                                  payloadPtr,
                                  payloadLength,
-                                 callbackPtr);
+                                 contentType,
+                                 midPtr);
 
             if (rc == COAP_NO_ERROR)
             {
-                result = true;
+                result = LWM2MCORE_PUSH_INITIATED;
+            }
+            else if (rc == COAP_412_PRECONDITION_FAILED)
+            {
+                result = LWM2MCORE_PUSH_BUSY;
+            }
+            else
+            {
+                result = LWM2MCORE_PUSH_FAILED;
             }
         }
     }

@@ -279,6 +279,51 @@ typedef struct ClientData_s* lwm2mcore_Ref_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Enum for lwm2m push ack callback
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_ACK_RECEIVED = 0,     ///< Data transferred successfully.
+    LWM2MCORE_ACK_TIMEOUT           ///< Transaction time out
+} lwm2mcore_AckResult_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for lwm2m push result
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_PUSH_INITIATED = 0,    ///< Push successfully initiated.
+    LWM2MCORE_PUSH_BUSY,             ///< Busy doing a block transfer.
+    LWM2MCORE_PUSH_FAILED            ///< Failed to initiate push.
+} lwm2mcore_PushResult_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for lwm2m push content type
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_PUSH_CONTENT_CBOR = 60,    ///< Uncompressed CBOR
+    LWM2MCORE_PUSH_CONTENT_ZCBOR = 12118 ///< Proprietary compressed CBOR (zlib + CBOR)
+} lwm2mcore_PushContent_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function pointer of push callback function
+ */
+//--------------------------------------------------------------------------------------------------
+typedef void (*lwm2mcore_PushAckCallback_t)
+(
+    lwm2mcore_AckResult_t result,     ///< [IN] result of the transaction
+    uint16_t midPtr                    ///< [IN] message id
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * CoAP URI representation
  * \brief data structure represent the lwm2m request URI, obtained by parsing CoAP URI options.
  */
@@ -606,13 +651,26 @@ bool lwm2mcore_ConnectionGetType
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_Push
+lwm2mcore_PushResult_t lwm2mcore_Push
 (
-    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
-    uint8_t* payloadPtr,            ///< [IN] payload
-    size_t payloadLength,           ///< [IN] payload length
-    void* callbackPtr               ///< [IN] callback for payload
+    lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
+    uint8_t* payloadPtr,                    ///< [IN] payload
+    size_t payloadLength,                   ///< [IN] payload length
+    lwm2mcore_PushContent_t content,       ///< [IN] content type
+    uint16_t* midPtr                        ///< [OUT] message id
 );
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to set the push callback handler
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetPushCallback
+(
+    lwm2mcore_PushAckCallback_t callbackP  ///< [IN] push callback pointer
+);
+
 
 //--------------------------------------------------------------------------------------------------
 /**
