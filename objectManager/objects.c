@@ -1263,7 +1263,7 @@ void ObjectsFree
 //--------------------------------------------------------------------------------------------------
 static bool RegisterObjTable
 (
-    int context,                            ///< [IN] Context
+    lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
     lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     uint16_t* registeredObjNbPtr,           ///< [INOUT] Registered bject number
     bool clientTable                        ///< [IN] Indicate if the table is provided by the
@@ -1400,7 +1400,7 @@ static bool RegisterObjTable
             ObjectArray[ObjNb]->deleteFunc   = DeleteCb;
 
             /* Store the context */
-            ObjectArray[ObjNb]->userData = context;
+            ObjectArray[ObjNb]->userData = instanceRef;
             ObjNb++;
         }
     }
@@ -1426,10 +1426,10 @@ static bool RegisterObjTable
 //--------------------------------------------------------------------------------------------------
 static bool UpdateSwListWakaama
 (
-    int context
+    lwm2mcore_Ref_t instanceRef    ///< [IN] instance reference
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
     LOG_ARG("UpdateSwListWakaama strlen list %d", strlen(SwObjectInstanceListPtr));
 
@@ -1548,9 +1548,9 @@ static bool UpdateSwListWakaama
     //if (newObjectInstance)
     {
         bool registered = false;
-        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
+        if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
         {
-            lwm2mcore_Update(context);
+            lwm2mcore_Update(instanceRef);
         }
     }
     return true;
@@ -1564,7 +1564,7 @@ static bool UpdateSwListWakaama
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Register the object table and service API
+ * Register the object table and service API
  *
  * @note If handlerPtr parameter is NULL, LWM2MCore registers it's own "standard" object list
  *
@@ -1572,94 +1572,94 @@ static bool UpdateSwListWakaama
  *      - number of registered objects
  */
 //--------------------------------------------------------------------------------------------------
-uint16_t lwm2mcore_objectRegister
+uint16_t lwm2mcore_ObjectRegister
 (
-    int context,                            ///< [IN] Context
+    lwm2mcore_Ref_t instanceRef,             ///< [IN] instance reference
     char* endpointPtr,                      ///< [IN] Device endpoint
     lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
     void * const servicePtr                 ///< [IN] Client service API table
 )
 {
+    bool result;
     RegisteredObjNb = 0;
 
     /* For the moment, servicePtr can be NULL */
     if (NULL == endpointPtr)
     {
         LOG("param error");
+        return RegisteredObjNb;
     }
-    else
+
+    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
+    LOG_ARG("lwm2mcore_ObjectRegister RegisteredObjNb %d", RegisteredObjNb);
+
+    /* Read the LWM2MCore configuration file */
+    if (false == GetBootstrapConfiguration())
     {
-        bool result = false;
+        /* If the file is not present:
+         * Delete DM credentials to force a connection to the bootstrap server
+         * Then the configuration file will be created at the end of the bootstrap procedure
+         */
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
+    }
 
-        ClientData_t* dataPtr = (ClientData_t*)context;
-        LOG_ARG("lwm2mcore_objectRegister context %d RegisteredObjNb %d", context, RegisteredObjNb);
 
-        /* Read the LWM2MCore configuration file */
-        if (false == GetBootstrapConfiguration())
-        {
-            /* If the file is not present:
-             * Delete DM credentials to force a connection to the bootstrap server
-             * Then the configuration file will be created at the end of the bootstrap procedure
-             */
-            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
-            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
-            lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
-        }
+    /* Register static object tables managed by LWM2MCore */
+    result = RegisterObjTable(instanceRef, &Lwm2mcoreHandlers, &RegisteredObjNb, false);
+    if (result == false)
+    {
+        RegisteredObjNb = 0;
+        LOG("ERROR on registering LWM2MCore object table");
+        return RegisteredObjNb;
+    }
 
-        /* Register static object tables managed by LWM2MCore */
-        result = RegisterObjTable(context, &Lwm2mcoreHandlers, &RegisteredObjNb, false);
+    if (NULL != handlerPtr)
+    {
+        LOG("Register client object list");
+        /* Register object tables filled by the client */
+        result = RegisterObjTable(instanceRef, handlerPtr, &RegisteredObjNb, true);
         if (result == false)
         {
             RegisteredObjNb = 0;
-            LOG("ERROR on registering LWM2MCore object table");
+            LOG("ERROR on registering client object table");
+            return RegisteredObjNb;
+        }
+    }
+    else
+    {
+        LOG("Only register LWM2MCore object list");
+    }
+
+    if (true == result)
+    {
+        int test = 0;
+        /* Save the security object list in the context (used for connection) */
+        dataPtr->securityObjPtr = ObjectArray[LWM2M_SECURITY_OBJECT_ID];
+
+        /* Wakaama configuration and the object registration */
+        LOG_ARG("RegisteredObjNb %d", RegisteredObjNb);
+        test = lwm2m_configure(dataPtr->lwm2mHPtr,
+                               endpointPtr,
+                               NULL,
+                               NULL,
+                               RegisteredObjNb,
+                               ObjectArray);
+        if (test != COAP_NO_ERROR)
+        {
+            LOG_ARG("Failed to configure lwm2m client: test %d", test);
+            RegisteredObjNb = 0;
         }
         else
         {
-            if (NULL != handlerPtr)
-            {
-                LOG("Register client object list");
-                /* Register object tables filled by the client */
-                result = RegisterObjTable(context, handlerPtr, &RegisteredObjNb, true);
-                if (result == false)
-                {
-                    RegisteredObjNb = 0;
-                    LOG("ERROR on registering client object table");
-                }
-            }
-            else
-            {
-                LOG("Only register LWM2MCore object list");
-            }
-
-            if (true == result)
-            {
-                int test = 0;
-                /* Save the security object list in the context (used for connection) */
-                dataPtr->securityObjPtr = ObjectArray[LWM2M_SECURITY_OBJECT_ID];
-
-                /* Wakaama configuration and the object registration */
-                LOG_ARG("RegisteredObjNb %d", RegisteredObjNb);
-                test = lwm2m_configure(dataPtr->lwm2mHPtr,
-                                       endpointPtr,
-                                       NULL,
-                                       NULL,
-                                       RegisteredObjNb,
-                                       ObjectArray);
-                if (test != COAP_NO_ERROR)
-                {
-                    LOG_ARG("Failed to configure lwm2m client: test %d", test);
-                    RegisteredObjNb = 0;
-                }
-                else
-                {
-                    LOG("configure lwm2m client OK");
-                }
-
-                // Check if some software object instance exist
-                UpdateSwListWakaama(context);
-            }
+            LOG("configure lwm2m client OK");
         }
+
+        // Check if some software object instance exist
+        UpdateSwListWakaama(instanceRef);
     }
+
     return RegisteredObjNb;
 }
 
@@ -1674,7 +1674,7 @@ uint16_t lwm2mcore_objectRegister
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_UpdateSwList
 (
-    int context,                    ///< [IN] Context (Set to 0 if this API is used if
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] Instance reference (Set to NULL if this API is used if
                                     ///< lwm2mcore_init API was no called)
     const char* listPtr,            ///< [IN] Formatted list
     size_t listLen                  ///< [IN] Size of the update list
@@ -1699,11 +1699,11 @@ bool lwm2mcore_UpdateSwList
         return false;
     }
 
-    if (0 == context)
+    if (NULL == instanceRef)
     {
         return true;
     }
-    return UpdateSwListWakaama(context);
+    return UpdateSwListWakaama(instanceRef);
 }
 
 

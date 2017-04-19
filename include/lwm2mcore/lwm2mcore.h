@@ -272,6 +272,13 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * LWM2MCore instance reference
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct ClientData_s* lwm2mcore_Ref_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * CoAP URI representation
  * \brief data structure represent the lwm2m request URI, obtained by parsing CoAP URI options.
  */
@@ -491,11 +498,11 @@ typedef int (*lwm2mcore_StatusCb_t)
  * Initialize the LWM2M core
  *
  * @return
- *  - context address
- *  - -1 in case of error
+ *  - instance reference
+ *  - NULL in case of error
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_Init
+lwm2mcore_Ref_t lwm2mcore_Init
 (
     lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 );
@@ -508,7 +515,7 @@ int lwm2mcore_Init
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_Free
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -523,7 +530,7 @@ void lwm2mcore_Free
 //--------------------------------------------------------------------------------------------------
 uint16_t lwm2mcore_ObjectRegister
 (
-    int context,                            ///< [IN] Context
+    lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
     char* endpoint,                         ///< [IN] Device endpoint
     lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
                                             ///< This parameter can be set to NULL
@@ -541,7 +548,7 @@ uint16_t lwm2mcore_ObjectRegister
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Connect
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -555,7 +562,7 @@ bool lwm2mcore_Connect
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Disconnect
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -571,7 +578,7 @@ bool lwm2mcore_Disconnect
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Update
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -585,11 +592,10 @@ bool lwm2mcore_Update
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ConnectionGetType
 (
-    int context,                ///< [IN] context
-    bool* isDeviceManagement    ///< [INOUT] Session type (false: bootstrap,
-                                ///< true: device management)
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool* isDeviceManagement        ///< [INOUT] Session type (false: bootstrap,
+                                    ///< true: device management)
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -602,10 +608,10 @@ bool lwm2mcore_ConnectionGetType
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Push
 (
-    int context,                ///< [IN] context
-    uint8_t* payloadPtr,        ///< [IN] payload
-    size_t payloadLength,       ///< [IN] payload length
-    void* callbackPtr           ///< [IN] callback for payload
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    uint8_t* payloadPtr,            ///< [IN] payload
+    size_t payloadLength,           ///< [IN] payload length
+    void* callbackPtr               ///< [IN] callback for payload
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -619,7 +625,7 @@ bool lwm2mcore_Push
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_UpdateSwList
 (
-    int context,                    ///< [IN] Context (Set to 0 if this API is used if
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] Instance reference (Set to 0 if this API is used if
                                     ///< lwm2mcore_init API was no called)
     const char* listPtr,            ///< [IN] Formatted list
     size_t listLen                  ///< [IN] Size of the update list

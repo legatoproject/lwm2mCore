@@ -624,7 +624,7 @@ void lwm2mcore_UdpReceiveCb
     lwm2mcore_SocketConfig_t config     ///< [IN] Socket config
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*)config.context;
+    ClientData_t* dataPtr = (ClientData_t*)config.instanceRef;
     dtls_connection_t* connPtr;
     LOG("avc_udpCb");
 
@@ -660,44 +660,45 @@ void lwm2mcore_UdpReceiveCb
  * Initialize the LWM2M core
  *
  * @return
- *  - context address
- *  - -1 in case of error
+ *  - instance reference
+ *  - NULL in case of error
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_Init
+lwm2mcore_Ref_t lwm2mcore_Init
 (
     lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 )
 {
-    int result = -1;
-    if (NULL != eventCb)
+    ClientData_t* dataPtr = NULL;
+
+    if (NULL == eventCb)
     {
-        ClientData_t* dataPtr = NULL;
-        StatusCb = eventCb;
-
-        dataPtr = (ClientData_t*)lwm2m_malloc(sizeof (ClientData_t));
-        LWM2MCORE_ASSERT(dataPtr);
-        memset(dataPtr, 0, sizeof (ClientData_t));
-
-         /* Initialize LWM2M agent */
-        dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
-        LWM2MCORE_ASSERT(dataPtr->lwm2mHPtr);
-
-        dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr, ENDPOINT_CLIENT);
-        Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
-        LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
-
-        result = (int)dataPtr;
-        DataCtxPtr = dataPtr;
-
-        // Check if the update state/result should be changed after a FW install
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetFirmwareUpdateInstallResult())
-        {
-            LOG("Error while checking update state");
-        }
+        return NULL;
     }
-    LOG_ARG("lwm2mcore_init -> context %d", result);
-    return (int)result;
+
+    StatusCb = eventCb;
+    dataPtr = (ClientData_t*)lwm2m_malloc(sizeof(ClientData_t));
+    LWM2MCORE_ASSERT(dataPtr);
+    memset(dataPtr, 0, sizeof(ClientData_t));
+
+     /* Initialize LWM2M agent */
+    dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
+    LWM2MCORE_ASSERT(dataPtr->lwm2mHPtr);
+
+    dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr, ENDPOINT_CLIENT);
+    Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
+    LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
+
+    DataCtxPtr = dataPtr;
+
+    // Check if the update state/result should be changed after a FW install
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetFirmwareUpdateInstallResult())
+    {
+        LOG("Error while checking update state");
+    }
+
+    LOG_ARG("Init done -> context %p", dataPtr);
+    return dataPtr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -708,10 +709,10 @@ int lwm2mcore_Init
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_Free
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*)context;
+    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
 
     if (NULL != dataPtr)
     {
@@ -746,43 +747,44 @@ void lwm2mcore_Free
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Connect
 (
-    int context                             ///< [IN] LWM2MCore context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*)context;
+    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
 
-    LOG_ARG ("lwm2mcore_connect -> context %d", context);
-
-    if (dataPtr != NULL)
+    if (NULL == instanceRef)
     {
-        /* Create the socket */
-        memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
-        result = lwm2mcore_UdpOpen(context, lwm2mcore_UdpReceiveCb, &SocketConfig);
+        return result;
+    }
 
+    /* Create the socket */
+    memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
+    result = lwm2mcore_UdpOpen(instanceRef, lwm2mcore_UdpReceiveCb, &SocketConfig);
+
+    if (true == result)
+    {
         LOG_ARG ("lwm2mcore_connect -> socket %d opened ", SocketConfig.sock);
         dataPtr->sock = SocketConfig.sock;
         dataPtr->addressFamily = SocketConfig.af;
 
-        if (true == result)
+        /* Initialize the lwm2m client step timer */
+        DataCtxPtr = dataPtr;
+        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
         {
-            /* Initialize the lwm2m client step timer */
-            DataCtxPtr = dataPtr;
-            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
-            {
-                LOG("ERROR to launch the 1st step timer");
-            }
-            else
-            {
-                LOG("LWM2M Client started");
-                result = true;
-            }
+            LOG("ERROR to launch the 1st step timer");
         }
         else
         {
-            LOG("ERROR on socket create");
+            LOG("LWM2M Client started");
+            result = true;
         }
     }
+    else
+    {
+        LOG("ERROR on socket create");
+    }
+
     return result;
 }
 
@@ -799,59 +801,62 @@ bool lwm2mcore_Connect
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Update
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
-    if (NULL != dataPtr)
+    if (NULL == instanceRef)
     {
-        /* Check that the device is registered to DM server */
-        bool registered = false;
-        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
+        return result;
+    }
+
+    /* Check that the device is registered to DM server */
+    bool registered = false;
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        /* Retrieve the serverID from list */
+        lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
         {
-            /* Retrieve the serverID from list */
-            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
-            if (NULL == targetPtr)
-            {
-                LOG("serverList is NULL");
-            }
-            else
-            {
-                int iresult;
-                LOG_ARG("shortServerId %d", targetPtr->shortID);
-
-                iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
-                LOG_ARG("lwm2m_update_registration return %d", iresult);
-                if (!iresult)
-                {
-                    /* Stop the timer and launch it */
-                    if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
-                    {
-                        LOG("Error to stop the step timer");
-                    }
-
-                    /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
-                       to treat the update request */
-                    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
-                                                    1,
-                                                    Lwm2mClientStepHandler))
-                    {
-                        LOG("ERROR to launch the step timer for registration update");
-                    }
-                    else
-                    {
-                        result = true;
-                    }
-                }
-            }
+            LOG("serverList is NULL");
         }
         else
         {
-            LOG("REG update is requested but the device is not registered");
+            int iresult;
+            LOG_ARG("shortServerId %d", targetPtr->shortID);
+
+            iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
+            LOG_ARG("lwm2m_update_registration return %d", iresult);
+            if (!iresult)
+            {
+                /* Stop the timer and launch it */
+                if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
+                {
+                    LOG("Error to stop the step timer");
+                }
+
+                /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
+                   to treat the update request */
+                if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                                1,
+                                                Lwm2mClientStepHandler))
+                {
+                    LOG("ERROR to launch the step timer for registration update");
+                }
+                else
+                {
+                    result = true;
+                }
+            }
         }
     }
+    else
+    {
+        LOG("REG update is requested but the device is not registered");
+    }
+
     return result;
 }
 
@@ -866,39 +871,42 @@ bool lwm2mcore_Update
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Disconnect
 (
-    int context     ///< [IN] context
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
-    if (dataPtr != NULL)
+    if (NULL == instanceRef)
     {
-        /* Stop the current timers */
-        if (false == lwm2mcore_TimerStop (LWM2MCORE_TIMER_STEP))
-        {
-            LOG("Error to stop the step timer");
-        }
-
-        /* Stop the agent */
-        lwm2m_close(dataPtr->lwm2mHPtr);
-        connection_free(dataPtr->connListPtr);
-        dataPtr->lwm2mHPtr = NULL;
-        dataPtr->connListPtr = NULL;
-
-        /* Close the socket */
-        result = lwm2mcore_UdpClose(SocketConfig);
-        if (false == result)
-        {
-            LOG("ERROR in socket closure");
-        }
-        else
-        {
-            memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
-            /* Notify that the connection is stopped */
-            SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
-        }
+        return result;
     }
+
+    /* Stop the current timers */
+    if (false == lwm2mcore_TimerStop (LWM2MCORE_TIMER_STEP))
+    {
+        LOG("Error to stop the step timer");
+    }
+
+    /* Stop the agent */
+    lwm2m_close(dataPtr->lwm2mHPtr);
+    connection_free(dataPtr->connListPtr);
+    dataPtr->lwm2mHPtr = NULL;
+    dataPtr->connListPtr = NULL;
+
+    /* Close the socket */
+    result = lwm2mcore_UdpClose(SocketConfig);
+    if (false == result)
+    {
+        LOG("ERROR in socket closure");
+    }
+    else
+    {
+        memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
+        /* Notify that the connection is stopped */
+        SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
+    }
+
     return result;
 }
 
@@ -913,29 +921,31 @@ bool lwm2mcore_Disconnect
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ConnectionGetType
 (
-    int context,                ///< [IN] context
-    bool* isDeviceManagement    ///< [INOUT] Session type (false: bootstrap,
-                                ///< true: device management)
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool* isDeviceManagement        ///< [INOUT] Session type (false: bootstrap,
+                                    ///< true: device management)
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
-    if ((NULL != dataPtr) && (NULL != isDeviceManagement))
+    if ((NULL == instanceRef) || (NULL == isDeviceManagement))
     {
-        if ((dataPtr->lwm2mHPtr->state) >= STATE_REGISTER_REQUIRED )
-        {
-            *isDeviceManagement = true;
-        }
-        else
-        {
-            *isDeviceManagement = false;
-        }
-        result = true;
-
-        LOG_ARG("state %d --> isDeviceManagement %d",
-                dataPtr->lwm2mHPtr->state, *isDeviceManagement);
+        return result;
     }
+
+
+    if ((dataPtr->lwm2mHPtr->state) >= STATE_REGISTER_REQUIRED )
+    {
+        *isDeviceManagement = true;
+    }
+    else
+    {
+        *isDeviceManagement = false;
+    }
+    result = true;
+    LOG_ARG("state %d --> isDeviceManagement %d", dataPtr->lwm2mHPtr->state, *isDeviceManagement);
+
     return result;
 }
 
@@ -950,41 +960,43 @@ bool lwm2mcore_ConnectionGetType
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Push
 (
-    int context,                ///< [IN] context
-    uint8_t* payloadPtr,        ///< [IN] payload
-    size_t payloadLength,       ///< [IN] payload length
-    void* callbackPtr           ///< [IN] callback for payload
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    uint8_t* payloadPtr,            ///< [IN] payload
+    size_t payloadLength,           ///< [IN] payload length
+    void* callbackPtr               ///< [IN] callback for payload
 )
 {
     int rc;
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    bool registered = false;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
-    if (NULL != dataPtr)
+    if (NULL == instanceRef)
     {
-        /* Check that the device is registered to DM server */
-        bool registered = false;
-        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
-        {
-            /* Retrieve the serverID from list */
-            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
-            if (NULL == targetPtr)
-            {
-                LOG("serverList is NULL");
-            }
-            else
-            {
-                LOG_ARG("shortServerId %d", targetPtr->shortID);
-                rc = lwm2m_data_push(dataPtr->lwm2mHPtr,
-                                    targetPtr->shortID,
-                                    payloadPtr,
-                                    payloadLength,
-                                    callbackPtr);
+        return result;
+    }
 
-                if (rc == COAP_NO_ERROR)
-                {
-                    result = true;
-                }
+    /* Check that the device is registered to DM server */
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        /* Retrieve the serverID from list */
+        lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
+        {
+            LOG("serverList is NULL");
+        }
+        else
+        {
+            LOG_ARG("shortServerId %d", targetPtr->shortID);
+            rc = lwm2m_data_push(dataPtr->lwm2mHPtr,
+                                 targetPtr->shortID,
+                                 payloadPtr,
+                                 payloadLength,
+                                 callbackPtr);
+
+            if (rc == COAP_NO_ERROR)
+            {
+                result = true;
             }
         }
     }
@@ -1003,39 +1015,41 @@ bool lwm2mcore_Push
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_SendAsyncResponse
 (
-    int context,                                ///< [IN] context
+    lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
     lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] coap request refernce
     lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] coap response
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) context;
+    bool registered = false;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
 
-    if (NULL != dataPtr)
+    if (NULL == instanceRef)
     {
-        /* Check that the device is registered to DM server */
-        bool registered = false;
-        if ((true == lwm2mcore_ConnectionGetType(context, &registered) && registered))
+        return result;
+    }
+
+    /* Check that the device is registered to DM server */
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        /* Retrieve the serverID from list */
+        lwm2m_server_t* targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
         {
-            /* Retrieve the serverID from list */
-            lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
-            if (NULL == targetPtr)
-            {
-                LOG("serverList is NULL");
-                return false;
-            }
-            else
-            {
-                return lwm2m_async_response(dataPtr->lwm2mHPtr,
-                                            targetPtr->shortID,
-                                            requestPtr->messageId,
-                                            ConvertToCoapCode(responsePtr->code),
-                                            responsePtr->token,
-                                            responsePtr->tokenLength,
-                                            responsePtr->contentType,
-                                            responsePtr->payload,
-                                            responsePtr->payloadLength);
-            }
+            LOG("serverList is NULL");
+            return false;
+        }
+        else
+        {
+            return lwm2m_async_response(dataPtr->lwm2mHPtr,
+                                        targetPtr->shortID,
+                                        requestPtr->messageId,
+                                        ConvertToCoapCode(responsePtr->code),
+                                        responsePtr->token,
+                                        responsePtr->tokenLength,
+                                        responsePtr->contentType,
+                                        responsePtr->payload,
+                                        responsePtr->payloadLength);
         }
     }
 }

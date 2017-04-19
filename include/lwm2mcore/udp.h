@@ -63,7 +63,7 @@ void lwm2mcore_UdpReceiveCb
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_UdpOpen
 (
-    int context,                        ///< [IN] LWM2M context
+    lwm2mcore_Ref_t instanceRef,        ///< [IN] LWM2M instance reference
     lwm2mcore_UdpCb_t callback,         ///< [IN] callback for data receipt
     lwm2mcore_SocketConfig_t* config    ///< [INOUT] socket configuration
 );

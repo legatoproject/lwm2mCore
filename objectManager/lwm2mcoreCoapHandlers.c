@@ -134,7 +134,7 @@ static uint8_t GetCoapErrorCode
 /**
  * Set coap event handler
  */
- //--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 void lwm2mcore_SetCoapEventHandler
 (
     coap_request_handler_t handlerRef    ///< [IN] Coap action handler

@@ -62,7 +62,7 @@ typedef struct
     lwm2mcore_SocketType_t type;        ///< Socket type
     lwm2mcore_SocketPrototype_t proto;  ///< Socket prototype
     int sock;                           ///< Socket fd
-    int context;                        ///< Context
+    lwm2mcore_Ref_t instanceRef;        ///< Instance reference
 }lwm2mcore_SocketConfig_t;
 
 #endif /* __LWM2MCORE_SOCKET_H__ */

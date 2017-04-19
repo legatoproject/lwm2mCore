@@ -195,7 +195,7 @@ const unsigned int lwm2mcore_getContentType
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_sendAsyncResponse
 (
-    int context,                            ///< [IN] context
+    lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
     lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference
     lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response
 );
