@@ -1848,7 +1848,6 @@ int ExecFwUpdate
     return sID;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  *                                  OBJECT 6: LOCATION
@@ -1955,6 +1954,193 @@ int ReadLocationObj
             }
         }
         break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                              OBJECT 7: CONNECTIVITY STATISTICS
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 7
+ * Object: 7 - Connectivity statistics
+ * Resource: All with read operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ReadConnectivityStatisticsObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: SMS Tx counter */
+        case LWM2MCORE_CONN_STATS_TX_SMS_COUNT_RID:
+        {
+            uint64_t smsTxCount;
+            sID = lwm2mcore_GetSmsTxCount(&smsTxCount);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &smsTxCount,
+                                             sizeof(smsTxCount),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 1: SMS Rx counter */
+        case LWM2MCORE_CONN_STATS_RX_SMS_COUNT_RID:
+        {
+            uint64_t smsRxCount;
+            sID = lwm2mcore_GetSmsRxCount(&smsRxCount);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &smsRxCount,
+                                             sizeof(smsRxCount),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 2: Tx data */
+        case LWM2MCORE_CONN_STATS_TX_DATA_COUNT_RID:
+        {
+            uint64_t txData;
+            sID = lwm2mcore_GetTxData(&txData);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &txData,
+                                             sizeof(txData),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 3: Rx data */
+        case LWM2MCORE_CONN_STATS_RX_DATA_COUNT_RID:
+        {
+            uint64_t rxData;
+            sID = lwm2mcore_GetRxData(&rxData);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                                             &rxData,
+                                             sizeof(rxData),
+                                             false);
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a resource of object 7
+ * Object: 7 - Connectivity statistics
+ * Resource: All with execute operation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int ExecConnectivityStatistics
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID;
+
+    if ((NULL == uriPtr) || (len && (NULL == bufferPtr)))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_EXECUTE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 6: Start */
+        case LWM2MCORE_CONN_STATS_START_RID:
+            sID = lwm2mcore_StartConnectivityCounters();
+            break;
+
+        /* Resource 7: Stop */
+        case LWM2MCORE_CONN_STATS_STOP_RID:
+            sID = lwm2mcore_StopConnectivityCounters();
+            break;
 
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;

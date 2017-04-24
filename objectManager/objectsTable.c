@@ -465,6 +465,65 @@ static lwm2mcore_Resource_t LocationResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Supported resources defined for LWM2M Connectivity Statistics object.
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t ConnectivityStatisticsResources[] =
+{
+    {
+        LWM2MCORE_CONN_STATS_TX_SMS_COUNT_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        ReadConnectivityStatisticsObj,              //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CONN_STATS_RX_SMS_COUNT_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        ReadConnectivityStatisticsObj,              //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CONN_STATS_TX_DATA_COUNT_RID,     //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        ReadConnectivityStatisticsObj,              //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CONN_STATS_RX_DATA_COUNT_RID,     //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        ReadConnectivityStatisticsObj,              //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CONN_STATS_START_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.maxResInstCnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecConnectivityStatistics,                 //.exec
+    },
+    {
+        LWM2MCORE_CONN_STATS_STOP_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.maxResInstCnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        ExecConnectivityStatistics,                 //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * SoftwareResources: supported resources defined for LWM2M software update object (9)
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -778,6 +837,13 @@ lwm2mcore_Object_t ObjArray[] =
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(LocationResources),                                           //.resCnt
         LocationResources                                                       //.resources
+    },
+    /* object 7, connectivity statistics */
+    {
+        LWM2MCORE_CONN_STATS_OID,                                               //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(ConnectivityStatisticsResources),                             //.resCnt
+        ConnectivityStatisticsResources                                         //.resources
     },
     /* object 9, software update */
     {

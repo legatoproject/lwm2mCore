@@ -306,6 +306,24 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+* Enumeration for LWM2M object 7 (connectivity statistics) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_CONN_STATS_TX_SMS_COUNT_RID = 0,  ///< Number of SMS successfully transmitted
+    LWM2MCORE_CONN_STATS_RX_SMS_COUNT_RID,      ///< Number of SMS successfully received
+    LWM2MCORE_CONN_STATS_TX_DATA_COUNT_RID,     ///< Total amount of data transmitted
+    LWM2MCORE_CONN_STATS_RX_DATA_COUNT_RID,     ///< Total amount of data received
+    LWM2MCORE_CONN_STATS_MAX_MSG_SIZE_RID,      ///< Maximum message size used
+    LWM2MCORE_CONN_STATS_AVERAGE_MSG_SIZE_RID,  ///< Average message size used
+    LWM2MCORE_CONN_STATS_START_RID,             ///< Reset and start counters
+    LWM2MCORE_CONN_STATS_STOP_RID,              ///< Stop counters
+    LWM2MCORE_CONN_STATS_COLLECTION_PERIOD_RID  ///< Collection period in seconds
+}lwm2mcore_connectivityStatisticsResource_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
 * Enumeration for LWM2M object 9 (software update) resources
  */
 //--------------------------------------------------------------------------------------------------
