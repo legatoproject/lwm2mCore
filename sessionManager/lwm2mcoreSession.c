@@ -657,6 +657,75 @@ void lwm2mcore_UdpReceiveCb
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Private function to send an update message to the Device Management server
+ *
+ * @return
+ *      - true if the treatment is launched
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool UpdateRequest
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool withObjects                ///< [IN] indicates if supported object instance list needs to
+                                    ///< be sent
+)
+{
+    bool result = false;
+    bool registered = false;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+
+    if (NULL == dataPtr)
+    {
+        return false;
+    }
+
+    /* Check that the device is registered to DM server */
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        int iresult;
+        /* Retrieve the serverID from list */
+        lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
+        {
+            LOG("serverList is NULL");
+            return false;
+        }
+
+        LOG_ARG("shortServerId %d", targetPtr->shortID);
+        iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, withObjects);
+        LOG_ARG("lwm2m_update_registration return %d", iresult);
+        if (!iresult)
+        {
+            /* Stop the timer and launch it */
+            if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
+            {
+                LOG("Error to stop the step timer");
+            }
+
+            /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
+               to treat the update request */
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                            1,
+                                            Lwm2mClientStepHandler))
+            {
+                LOG("ERROR to launch the step timer for registration update");
+            }
+            else
+            {
+                result = true;
+            }
+        }
+    }
+    else
+    {
+        LOG("REG update is requested but the device is not registered");
+    }
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                      PUBLIC FUNCTIONS
  */
 //--------------------------------------------------------------------------------------------------
@@ -810,60 +879,7 @@ bool lwm2mcore_Update
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
-
-    if (NULL == instanceRef)
-    {
-        return result;
-    }
-
-    /* Check that the device is registered to DM server */
-    bool registered = false;
-    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
-    {
-        /* Retrieve the serverID from list */
-        lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
-        if (NULL == targetPtr)
-        {
-            LOG("serverList is NULL");
-        }
-        else
-        {
-            int iresult;
-            LOG_ARG("shortServerId %d", targetPtr->shortID);
-
-            iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, false);
-            LOG_ARG("lwm2m_update_registration return %d", iresult);
-            if (!iresult)
-            {
-                /* Stop the timer and launch it */
-                if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
-                {
-                    LOG("Error to stop the step timer");
-                }
-
-                /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
-                   to treat the update request */
-                if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
-                                                1,
-                                                Lwm2mClientStepHandler))
-                {
-                    LOG("ERROR to launch the step timer for registration update");
-                }
-                else
-                {
-                    result = true;
-                }
-            }
-        }
-    }
-    else
-    {
-        LOG("REG update is requested but the device is not registered");
-    }
-
-    return result;
+    return UpdateRequest(instanceRef, false);
 }
 
 //--------------------------------------------------------------------------------------------------

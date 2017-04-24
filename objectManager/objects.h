@@ -467,5 +467,21 @@ void ObjectsFree
     void
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Private function to send an update message to the Device Management server
+ *
+ * @return
+ *      - true if the treatment is launched
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool UpdateRequest
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool withObjects                ///< [IN] indicates if supported object instance list needs to
+                                    ///< be sent
+);
+
 #endif /* __OBJECTS_H__ */
 

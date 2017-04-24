@@ -69,6 +69,32 @@ char SwObjectInstanceListPtr[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Structure for supported application list (object 9)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _SwApplicationList_ SwApplicationList_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for supported application list (object 9)
+ */
+//--------------------------------------------------------------------------------------------------
+struct _SwApplicationList_
+{
+    SwApplicationList_t * nextPtr;  ///< matches lwm2m_list_t::next
+    uint16_t              oiid;     ///< object instance Id, matches lwm2m_list_t::id
+    bool                  check     ///< boolean for list update
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Object 9 instance list
+ */
+//--------------------------------------------------------------------------------------------------
+static SwApplicationList_t* SwApplicationListPtr;
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                      PRIVATE FUNCTIONS
  */
 //--------------------------------------------------------------------------------------------------
@@ -1429,18 +1455,8 @@ static bool UpdateSwListWakaama
     lwm2mcore_Ref_t instanceRef    ///< [IN] instance reference
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
-
-    LOG_ARG("UpdateSwListWakaama strlen list %d", strlen(SwObjectInstanceListPtr));
-
-    if ((NULL == dataPtr)
-    || (!strlen(SwObjectInstanceListPtr)))
-    {
-        return false;
-    }
-
     char tempPath[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
-    bool newObjectInstance = false;
+    bool updatedList = false;
     uint16_t LenToCopy = 0;
     uint16_t oid;
     uint16_t oiid;
@@ -1450,6 +1466,18 @@ static bool UpdateSwListWakaama
     char* aData = NULL;
     char* cSavePtr = NULL;
     char* cSaveOnePathPtr = NULL;
+    SwApplicationList_t* instancePtr;
+    lwm2m_list_t* wakaamaInstancePtr;
+    lwm2m_object_t* targetPtr;
+    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+
+    LOG_ARG("list len %d", strlen(SwObjectInstanceListPtr));
+    LOG_ARG("SwObjectInstanceListPtr %s", SwObjectInstanceListPtr);
+
+    if (NULL == dataPtr)
+    {
+        return false;
+    }
 
     /* Treat the list:
      * All object instances of object 9 needs to be registered in Wakaama
@@ -1464,6 +1492,15 @@ static bool UpdateSwListWakaama
     {
         LOG_ARG("Error on list: numChars %d", numChars);
         return false;
+    }
+
+    // Set all list entries to uncheck
+    instancePtr = SwApplicationListPtr;
+    while (NULL != instancePtr)
+    {
+        instancePtr->check = false;
+        LOG("Set check false");
+        instancePtr = instancePtr->nextPtr;
     }
 
     aData = strtok_r(tempPath, REG_PATH_END, &cSavePtr);
@@ -1508,31 +1545,38 @@ static bool UpdateSwListWakaama
                     /* If object Id is 9, check if the object instance Id exist in Wakaama */
                     if (LWM2M_SOFTWARE_UPDATE_OBJECT_ID == oid)
                     {
-                        lwm2m_object_t* targetPtr =
-                            (lwm2m_object_t*)LWM2M_LIST_FIND(dataPtr->lwm2mHPtr->objectList, oid);
+                        targetPtr = (lwm2m_object_t*)LWM2M_LIST_FIND(dataPtr->lwm2mHPtr->objectList,
+                                                                     oid);
                         if (NULL != targetPtr)
                         {
-                            lwm2m_list_t* instancePtr;
                             LOG("Obj 9 is registered");
-                            instancePtr = LWM2M_LIST_FIND(targetPtr->instanceList, oiid);
-                            if (NULL != instancePtr)
+
+                            instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
+                                                                         oiid);
+                            if (NULL == instancePtr)
                             {
-                                LOG("Obj instance is registered");
+                                // Object instance is not registered
+                                instancePtr =
+                                    (SwApplicationList_t*)lwm2m_malloc(sizeof(SwApplicationList_t));
+                                LOG("Obj instance is NOT registered");
+                                memset(instancePtr, 0, sizeof(SwApplicationList_t));
+                                instancePtr->nextPtr = NULL;
+                                instancePtr->oiid = oiid;
+                                instancePtr->check = true;
+                                SwApplicationListPtr =
+                                    (SwApplicationList_t*)LWM2M_LIST_ADD(SwApplicationListPtr,
+                                                                         instancePtr);
+                                updatedList = true;
                             }
                             else
                             {
-                                instancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
-                                LOG("Obj instance is NOT registered");
-                                memset(instancePtr, 0, sizeof(lwm2m_list_t));
-                                instancePtr->id = oiid;
-                                targetPtr->instanceList =
-                                            LWM2M_LIST_ADD(targetPtr->instanceList, instancePtr);
-                                newObjectInstance = true;
+                                instancePtr->check = true;
                             }
                         }
                         else
                         {
                             LOG("Obj 9 is not registered: AOTA is not possible");
+                            return false;
                         }
                     }
                 }
@@ -1542,16 +1586,79 @@ static bool UpdateSwListWakaama
     }
     LOG_ARG("%s", SwObjectInstanceListPtr);
 
-    // if a new object instance is added and if the device is registered to the DM server,
-    // send a registration update
-    // TODO: For the moment: always send the registration update
-    //if (newObjectInstance)
+    targetPtr = (lwm2m_object_t*)LWM2M_LIST_FIND(dataPtr->lwm2mHPtr->objectList,
+                                                 LWM2M_SOFTWARE_UPDATE_OBJECT_ID);
+    if (NULL != targetPtr)
     {
-        bool registered = false;
-        if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+        LOG("Obj 9 is registered");
+
+        // Search if one or several object instance of object 9 in SwApplicationListPtr need to be
+        // added or removed in Wakaama.
+
+        // Search in Wakaama list if object instance is in SwApplicationListPtr
+        instancePtr = SwApplicationListPtr;
+        while (NULL != instancePtr)
         {
-            lwm2mcore_Update(instanceRef);
+            LOG_ARG("SwApplicationListPtr /9/%d", instancePtr->oiid);
+            if (NULL == LWM2M_LIST_FIND(targetPtr->instanceList, instancePtr->oiid))
+            {
+                LOG_ARG("Oiid %d not registered in Wakaama", instancePtr->oiid);
+                wakaamaInstancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
+                memset(wakaamaInstancePtr, 0, sizeof(lwm2m_list_t));
+                wakaamaInstancePtr->id = oiid;
+                targetPtr->instanceList =
+                        (lwm2m_list_t*)LWM2M_LIST_ADD(targetPtr->instanceList, wakaamaInstancePtr);
+                updatedList = true;
+                instancePtr = instancePtr->nextPtr;
+            }
+            else
+            {
+                LOG_ARG("Oiid %d already registered in Wakaama --> check value %d",
+                        instancePtr->oiid, instancePtr->check);
+                if (false == instancePtr->check)
+                {
+                    SwApplicationList_t* appPtr;
+                    LOG_ARG("Remove oiid %d from SwApplicationListPtr", instancePtr->oiid);
+                    SwApplicationListPtr = (SwApplicationList_t*)LWM2M_LIST_RM(SwApplicationListPtr,
+                                                                               instancePtr->oiid,
+                                                                               &appPtr);
+                    lwm2m_free(instancePtr);
+                    instancePtr = SwApplicationListPtr;
+                }
+                else
+                {
+                    instancePtr = instancePtr->nextPtr;
+                }
+            }
         }
+
+        // Search in SwApplicationListPtr list if object instance is not in Wakaama list
+        wakaamaInstancePtr = targetPtr->instanceList;
+        while (NULL != wakaamaInstancePtr)
+        {
+            LOG_ARG("wakaamaInstancePtr /9/%d", wakaamaInstancePtr->id);
+            if (NULL == LWM2M_LIST_FIND(SwApplicationListPtr, wakaamaInstancePtr->id))
+            {
+                LOG_ARG("Oiid %d not registered in SwApplicationListPtr --> remove in Wakaama",
+                        wakaamaInstancePtr->id);
+                targetPtr->instanceList =
+                            LWM2M_LIST_RM(targetPtr->instanceList, wakaamaInstancePtr->id, NULL);
+                lwm2m_free(wakaamaInstancePtr);
+                updatedList = true;
+            }
+            else
+            {
+                LOG_ARG("Oiid %d already registered in SwApplicationListPtr --> keep it in Wakaama",
+                        wakaamaInstancePtr->id);
+            }
+            wakaamaInstancePtr = wakaamaInstancePtr->next;
+        }
+    }
+
+    // Send a registration update if the device is registered to the DM server
+    if (updatedList)
+    {
+        UpdateRequest(instanceRef, updatedList);
     }
     return true;
 }
@@ -1705,5 +1812,4 @@ bool lwm2mcore_UpdateSwList
     }
     return UpdateSwListWakaama(instanceRef);
 }
-
 
