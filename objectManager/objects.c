@@ -951,12 +951,27 @@ static uint8_t DeleteCb
 
     /* Search if the object instance was registered */
     instancePtr = LWM2M_LIST_FIND(objectPtr->instanceList, instanceId);
+    SwApplicationList_t* appPtr;
 
     if (NULL != instancePtr)
     {
         lwm2m_client_t* clientP;
         /* Delete the object instance in the Wakaama format */
         objectPtr->instanceList = LWM2M_LIST_RM(objectPtr->instanceList, instanceId, &clientP);
+        lwm2m_free(instancePtr);
+
+        LOG_ARG("Remove oiid %d from SwApplicationListPtr", instanceId);
+        instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
+                                                     instanceId);
+
+        if (NULL != instancePtr)
+        {
+            SwApplicationListPtr = (SwApplicationList_t*)LWM2M_LIST_RM(SwApplicationListPtr,
+                                                                       instanceId,
+                                                                       &appPtr);
+            lwm2m_free(instancePtr);
+        }
+
         result = COAP_202_DELETED;
     }
     else
@@ -1611,7 +1626,7 @@ static bool UpdateSwListWakaama
                 LOG_ARG("Oiid %d not registered in Wakaama", instancePtr->oiid);
                 wakaamaInstancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
                 memset(wakaamaInstancePtr, 0, sizeof(lwm2m_list_t));
-                wakaamaInstancePtr->id = oiid;
+                wakaamaInstancePtr->id = instancePtr->oiid;
                 targetPtr->instanceList =
                         (lwm2m_list_t*)LWM2M_LIST_ADD(targetPtr->instanceList, wakaamaInstancePtr);
                 updatedList = true;
