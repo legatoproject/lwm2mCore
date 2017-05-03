@@ -22,7 +22,7 @@
  * Maximum number of objects which can be registered in Wakaama
  */
 //--------------------------------------------------------------------------------------------------
-#define OBJ_COUNT 10
+#define OBJ_COUNT 11
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1319,6 +1319,12 @@ static bool RegisterObjTable
         dmServerPresence = true;
     }
     LOG_ARG("dmServerPresence %d", dmServerPresence);
+
+    /* Check if ObjectArray is large enough for all the objects */
+    if (OBJ_COUNT < handlerPtr->objCnt + ObjNb)
+    {
+        return false;
+    }
 
     /* Initialize all objects for Wakaama: handlerPtr */
     for (i = 0; i < handlerPtr->objCnt; i++)
