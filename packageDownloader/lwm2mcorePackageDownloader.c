@@ -45,6 +45,7 @@
  */
 
 #include <stdio.h>
+#include <semaphore.h>
 #include <liblwm2m.h>
 #include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
@@ -233,6 +234,7 @@ typedef struct
     size_t                      processedLen;        ///< Length of data processed by last parsing
     uint32_t                    downloadProgress;    ///< Overall download progress
     uint64_t                    updateGap;           ///< Gap between update and downloader offsets
+    bool                        isResume;            ///< Is this a resume operation?
 }
 PackageDownloaderObj_t;
 
@@ -340,6 +342,13 @@ static PackageDownloaderWorkspace_t PkgDwlWorkspace =
     .computedCRC         = 0,
     .sha1Ctx             = {0}
 };
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Semaphore to signal user agreement.
+ */
+//--------------------------------------------------------------------------------------------------
+static void* UserAgreementSemaphore;
 
 //--------------------------------------------------------------------------------------------------
 // Static functions
@@ -1466,6 +1475,9 @@ static void PkgDwlInit
         return;
     }
 
+    // Create a semaphore to coordinate user agreement
+    UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
+
     // Retrieve package information
     PkgDwlObj.state = PKG_DWL_INFO;
 }
@@ -1565,6 +1577,9 @@ static void PkgDwlDownload
     // Be ready to parse downloaded data
     PkgDwlObj.state = PKG_DWL_PARSE;
 
+    // Start new download
+    PkgDwlObj.isResume = false;
+
     // Read the stored package downloader workspace and check if download should be resumed
     if (   (DWL_OK == ReadPkgDwlWorkspace(&PkgDwlWorkspace))
         && (PkgDwlWorkspace.offset)
@@ -1595,6 +1610,9 @@ static void PkgDwlDownload
             // section where the package downloader workspace is stored.
             DwlParserObj.section = DWL_TYPE_BINA;
             DwlParserObj.subsection = DWL_SUB_BINARY;
+
+            // Skip user agreement for resume
+            PkgDwlObj.isResume = true;
         }
         else
         {
@@ -1809,7 +1827,7 @@ static void PkgDwlEnd
                 break;
             case LWM2MCORE_SW_UPDATE_TYPE:
                 PkgDwlObj.result =
-                        pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DELIVERED);
+                        pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOADED);
                 break;
             default:
                 LOG("unknown download type");
@@ -1833,6 +1851,9 @@ static void PkgDwlEnd
 
     // Delete the package downloader workspace file
     DeletePkgDwlWorkspace();
+
+    // Delete user agreement semaphore
+    lwm2mcore_SemDelete(UserAgreementSemaphore);
 
     // End of processing
     PkgDwlObj.endOfProcessing = true;
@@ -1955,11 +1976,20 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 break;
 
             case PKG_DWL_START:
-                PkgDwlGetUserAgreement(pkgDwlPtr);
+                if (PkgDwlObj.isResume)
+                {
+                    LOG("Skip user agreement for download resume");
+                    PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+                }
+                else
+                {
+                    PkgDwlGetUserAgreement(pkgDwlPtr);
+                }
                 break;
 
             case PKG_DWL_WAIT:
-                // Do nothing till we get user agreement.
+                // Wait for signal indicating user agreement accepted
+                lwm2mcore_SemWait(UserAgreementSemaphore);
                 break;
 
             case PKG_DWL_DOWNLOAD:
@@ -2154,5 +2184,8 @@ void lwm2mcore_PackageDownloaderAcceptDownload
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         PkgDwlObj.state = PKG_DWL_ERROR;
     }
+
+    // Indicate user agreement is received
+    lwm2mcore_SemPost(UserAgreementSemaphore);
 }
 

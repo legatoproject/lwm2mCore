@@ -113,6 +113,7 @@ SET(SOURCES
     time.c
     timer.c
     udp.c
+    sem.c
     update.c
 )
 
