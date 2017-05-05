@@ -41,6 +41,7 @@ typedef struct
     char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_LEN]; ///< URI of package to download
     uint64_t packageSize;                               ///< Package size given by server
     lwm2mcore_UpdateType_t updateType;                  ///< FW or SW update
+    bool     isResume;                                  ///< Is this a resume operation?
     uint64_t updateOffset;                              ///< Update offset for download resume
 }
 lwm2mcore_PackageDownloaderData_t;

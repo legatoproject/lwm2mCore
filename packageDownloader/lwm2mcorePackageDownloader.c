@@ -234,7 +234,6 @@ typedef struct
     size_t                      processedLen;        ///< Length of data processed by last parsing
     uint32_t                    downloadProgress;    ///< Overall download progress
     uint64_t                    updateGap;           ///< Gap between update and downloader offsets
-    bool                        isResume;            ///< Is this a resume operation?
 }
 PackageDownloaderObj_t;
 
@@ -1577,9 +1576,6 @@ static void PkgDwlDownload
     // Be ready to parse downloaded data
     PkgDwlObj.state = PKG_DWL_PARSE;
 
-    // Start new download
-    PkgDwlObj.isResume = false;
-
     // Read the stored package downloader workspace and check if download should be resumed
     if (   (DWL_OK == ReadPkgDwlWorkspace(&PkgDwlWorkspace))
         && (PkgDwlWorkspace.offset)
@@ -1610,9 +1606,6 @@ static void PkgDwlDownload
             // section where the package downloader workspace is stored.
             DwlParserObj.section = DWL_TYPE_BINA;
             DwlParserObj.subsection = DWL_SUB_BINARY;
-
-            // Skip user agreement for resume
-            PkgDwlObj.isResume = true;
         }
         else
         {
@@ -1976,7 +1969,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 break;
 
             case PKG_DWL_START:
-                if (PkgDwlObj.isResume)
+                if (pkgDwlPtr->data.isResume)
                 {
                     LOG("Skip user agreement for download resume");
                     PkgDwlObj.state = PKG_DWL_DOWNLOAD;
