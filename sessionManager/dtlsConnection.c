@@ -537,7 +537,7 @@ static int GetPort
    }
    else
    {
-       printf("non IPV4 or IPV6 address\n");
+       LOG("non IPV4 or IPV6 address");
        return  -1;
    }
 }
@@ -601,7 +601,7 @@ static int SockaddrCmp
     else
     {
         // unknown address type
-        printf("non IPV4 or IPV6 address\n");
+        LOG("non IPV4 or IPV6 address");
         return 0;
     }
 }
@@ -622,12 +622,9 @@ dtls_connection_t* connection_find
     size_t addrLen                          ///< [IN] Socket address structure length
 )
 {
-    dtls_connection_t* connPtr;
-
-    connPtr = connListPtr;
+    dtls_connection_t* connPtr = connListPtr;
     while (NULL != connPtr)
     {
-
        if (SockaddrCmp((struct sockaddr*) (&connPtr->addr), (struct sockaddr*) addrPtr))
        {
             return connPtr;
@@ -671,7 +668,6 @@ dtls_connection_t* connection_newIncoming
         connPtr->dtlsSessionPtr->size = connPtr->addrLen;
         connPtr->lastSend = lwm2m_gettime();
     }
-
     return connPtr;
 }
 
@@ -823,21 +819,19 @@ void connection_free
     dtls_connection_t* connListPtr
 )
 {
-    while (NULL != connListPtr)
-    {
-        dtls_connection_t* nextPtr;
-
-        nextPtr = connListPtr->nextPtr;
-        if (connListPtr->dtlsSessionPtr)
-        {
-          lwm2m_free(connListPtr->dtlsSessionPtr);
-        }
-        lwm2m_free(connListPtr);
-
-        connListPtr = nextPtr;
-    }
     dtls_free_context(DtlsContextPtr);
     DtlsContextPtr = NULL;
+
+    while (NULL != connListPtr)
+    {
+        dtls_connection_t* nextPtr = connListPtr->nextPtr;
+        if (connListPtr->dtlsSessionPtr)
+        {
+            lwm2m_free(connListPtr->dtlsSessionPtr);
+        }
+        lwm2m_free(connListPtr);
+        connListPtr = nextPtr;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
