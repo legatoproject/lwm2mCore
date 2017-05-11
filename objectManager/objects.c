@@ -1623,13 +1623,19 @@ static bool UpdateSwListWakaama
             LOG_ARG("SwApplicationListPtr /9/%d", instancePtr->oiid);
             if (NULL == LWM2M_LIST_FIND(targetPtr->instanceList, instancePtr->oiid))
             {
-                LOG_ARG("Oiid %d not registered in Wakaama", instancePtr->oiid);
-                wakaamaInstancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
-                memset(wakaamaInstancePtr, 0, sizeof(lwm2m_list_t));
-                wakaamaInstancePtr->id = instancePtr->oiid;
-                targetPtr->instanceList =
-                        (lwm2m_list_t*)LWM2M_LIST_ADD(targetPtr->instanceList, wakaamaInstancePtr);
-                updatedList = true;
+                LOG_ARG("Oiid %d not registered in Wakaama, check %d",
+                        instancePtr->oiid, instancePtr->check);
+                // Only add the object instance in Wakaama if check is true
+                if (instancePtr->check)
+                {
+                    wakaamaInstancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
+                    memset(wakaamaInstancePtr, 0, sizeof(lwm2m_list_t));
+                    wakaamaInstancePtr->id = instancePtr->oiid;
+                    targetPtr->instanceList =
+                            (lwm2m_list_t*)LWM2M_LIST_ADD(targetPtr->instanceList,
+                                                          wakaamaInstancePtr);
+                    updatedList = true;
+                }
                 instancePtr = instancePtr->nextPtr;
             }
             else
