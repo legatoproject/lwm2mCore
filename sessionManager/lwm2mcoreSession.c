@@ -411,18 +411,18 @@ void SendSessionEvent
                 {
                     LOG("REGISTER DONE");
 
+                    // Check if a download should be resumed
+                    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
+                    {
+                        LOG("Error while checking download resume");
+                    }
+
                     status.event = LWM2MCORE_EVENT_SESSION_STARTED;
                     SendStatusEvent(status);
 
                     status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                     status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
                     SendStatusEvent(status);
-
-                    // Check if a download should be resumed
-                    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
-                    {
-                        LOG("Error while checking download resume");
-                    }
                 }
                 break;
 
@@ -765,12 +765,6 @@ lwm2mcore_Ref_t lwm2mcore_Init
     LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
 
     DataCtxPtr = dataPtr;
-
-    // Check if the update state/result should be changed after a FW install
-    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetFirmwareUpdateInstallResult())
-    {
-        LOG("Error while checking update state");
-    }
 
     LOG_ARG("Init done -> context %p", dataPtr);
     return dataPtr;
