@@ -40,7 +40,7 @@ static  lwm2mcore_SocketConfig_t SocketConfig;
  *  Context
  */
 //--------------------------------------------------------------------------------------------------
-static ClientData_t* DataCtxPtr;
+static smanager_ClientData_t* DataCtxPtr;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -80,7 +80,7 @@ static lwm2m_client_state_t PreviousState;
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_context_t* InitContext
 (
-    ClientData_t* dataPtr,         ///< [IN] Context
+    smanager_ClientData_t* dataPtr,         ///< [IN] Context
     lwm2m_endpoint_type_t epType   ///< [IN] Lwm2m endpoint type, e.g. server/client.
 )
 {
@@ -95,7 +95,7 @@ static lwm2mcore_context_t* InitContext
  * Function called by the LWM2M core to initiate a connection to a server
  *
  * @return
- *  - dtls_connection_t structure adress on success
+ *  - dtls_Connection_t structure adress on success
  *  - NULL on failure
  */
 //--------------------------------------------------------------------------------------------------
@@ -105,10 +105,10 @@ void* lwm2m_connect_server
     void * userDataPtr          ///< [IN] User data
 )
 {
-    ClientData_t* dataPtr;
+    smanager_ClientData_t* dataPtr;
     lwm2m_list_t* instancePtr;
-    dtls_connection_t* newConnPtr = NULL;
-    dataPtr = (ClientData_t*)userDataPtr;
+    dtls_Connection_t* newConnPtr = NULL;
+    dataPtr = (smanager_ClientData_t*)userDataPtr;
 
     if (NULL != dataPtr)
     {
@@ -120,7 +120,7 @@ void* lwm2m_connect_server
             return NULL;
         }
 
-        newConnPtr = connection_create(dataPtr->connListPtr,
+        newConnPtr = dtls_CreateConnection(dataPtr->connListPtr,
                                        dataPtr->sock,
                                        securityObj,
                                        instancePtr->id,
@@ -148,11 +148,11 @@ void lwm2m_close_connection
     void* userDataPtr      ///< [IN] Context
 )
 {
-    ClientData_t* appDataPtr;
-    dtls_connection_t* targetPtr;
+    smanager_ClientData_t* appDataPtr;
+    dtls_Connection_t* targetPtr;
 
-    appDataPtr = (ClientData_t*)userDataPtr;
-    targetPtr = (dtls_connection_t*)sessionHPtr;
+    appDataPtr = (smanager_ClientData_t*)userDataPtr;
+    targetPtr = (dtls_Connection_t*)sessionHPtr;
 
     if ((NULL != appDataPtr) && (NULL != targetPtr))
     {
@@ -163,7 +163,7 @@ void lwm2m_close_connection
         }
         else
         {
-            dtls_connection_t* parentPtr;
+            dtls_Connection_t* parentPtr;
             parentPtr = appDataPtr->connListPtr;
             while ((parentPtr != NULL) && (parentPtr->nextPtr != targetPtr))
             {
@@ -280,7 +280,7 @@ static void Lwm2mClientStepHandler
 //--------------------------------------------------------------------------------------------------
 static uint32_t ConvertToCoapCode
 (
-    CoapResponseCode_t response
+    lwm2mcore_CoapResponseCode_t response
 )
 {
     uint32_t coapCode;
@@ -335,7 +335,7 @@ static uint32_t ConvertToCoapCode
  * session manager
  */
 //--------------------------------------------------------------------------------------------------
-void SendStatusEvent
+void smanager_SendStatusEvent
 (
     lwm2mcore_Status_t status
 )
@@ -356,10 +356,10 @@ void SendStatusEvent
  * Function for session events
  */
 //--------------------------------------------------------------------------------------------------
-void SendSessionEvent
+void smanager_SendSessionEvent
 (
-    SessionEventType_t eventId,         ///< [IN] Event Id
-    SessionEventStatus_t eventstatus    ///< [IN] Event status
+    smanager_EventType_t eventId,         ///< [IN] Event Id
+    smanager_EventStatus_t eventstatus    ///< [IN] Event status
 )
 {
     lwm2mcore_Status_t status;
@@ -380,7 +380,7 @@ void SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("BOOTSTRAP DONE");
-                    StoreCredentials();
+                    omanager_StoreCredentials();
                 }
                 break;
 
@@ -388,7 +388,7 @@ void SendSessionEvent
                 {
                     LOG("BOOTSTRAP FAILURE");
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -419,11 +419,11 @@ void SendSessionEvent
                     }
 
                     status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
 
                     status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                     status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -431,7 +431,7 @@ void SendSessionEvent
                 {
                     LOG("REGISTER FAILURE");
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
 
                     /* Delete DM credentials in order to force a connection to the BS server */
                     LOG("DELETE DM CREDENTIALS");
@@ -512,7 +512,7 @@ void SendSessionEvent
                 {
                     LOG ("AUTHENTICATION START");
                     status.event = LWM2MCORE_EVENT_AUTHENTICATION_STARTED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -523,11 +523,11 @@ void SendSessionEvent
                     if (BootstrapSession)
                     {
                         status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                        SendStatusEvent(status);
+                        smanager_SendStatusEvent(status);
 
                         status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
-                        SendStatusEvent(status);
+                        smanager_SendStatusEvent(status);
                         BootstrapSession = false;
                     }
                 }
@@ -537,7 +537,7 @@ void SendSessionEvent
                 {
                     LOG("AUTHENTICATION FAILURE");
                     status.event = LWM2MCORE_EVENT_AUTHENTICATION_FAILED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -590,7 +590,7 @@ void SendSessionEvent
                     LOG("SESSION DONE");
                     BootstrapSession = false;
                     status.event = LWM2MCORE_EVENT_SESSION_FINISHED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -599,7 +599,7 @@ void SendSessionEvent
                     LOG("SESSION FAILURE");
                     BootstrapSession = false;
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
-                    SendStatusEvent(status);
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -631,20 +631,20 @@ void lwm2mcore_UdpReceiveCb
     lwm2mcore_SocketConfig_t config     ///< [IN] Socket config
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*)config.instanceRef;
-    dtls_connection_t* connPtr;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)config.instanceRef;
+    dtls_Connection_t* connPtr;
     LOG("avc_udpCb");
 
     dataPtr->sock = config.sock;
     dataPtr->addressFamily = config.af;
 
-    connPtr = connection_find(dataPtr->connListPtr, addrPtr, addrLen);
+    connPtr = dtls_FindConnection(dataPtr->connListPtr, addrPtr, addrLen);
     if (NULL != connPtr)
     {
         // Let liblwm2m respond to the query depending on the context
         int result;
         LOG("Handle packet");
-        result = connection_handlePacket(connPtr, bufferPtr, (size_t)len);
+        result = dtls_HandlePacket(connPtr, bufferPtr, (size_t)len);
         if (0 != result)
         {
              LOG_ARG("Error handling message %d.",result);
@@ -665,7 +665,7 @@ void lwm2mcore_UdpReceiveCb
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool UpdateRequest
+bool omanager_UpdateRequest
 (
     lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
     bool withObjects                ///< [IN] indicates if supported object instance list needs to
@@ -674,7 +674,7 @@ bool UpdateRequest
 {
     bool result = false;
     bool registered = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if (NULL == dataPtr)
     {
@@ -745,7 +745,7 @@ lwm2mcore_Ref_t lwm2mcore_Init
     lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
 )
 {
-    ClientData_t* dataPtr = NULL;
+    smanager_ClientData_t* dataPtr = NULL;
 
     if (NULL == eventCb)
     {
@@ -753,9 +753,9 @@ lwm2mcore_Ref_t lwm2mcore_Init
     }
 
     StatusCb = eventCb;
-    dataPtr = (ClientData_t*)lwm2m_malloc(sizeof(ClientData_t));
+    dataPtr = (smanager_ClientData_t*)lwm2m_malloc(sizeof(smanager_ClientData_t));
     LWM2MCORE_ASSERT(dataPtr);
-    memset(dataPtr, 0, sizeof(ClientData_t));
+    memset(dataPtr, 0, sizeof(smanager_ClientData_t));
 
      /* Initialize LWM2M agent */
     dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
@@ -782,12 +782,12 @@ void lwm2mcore_Free
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
 
     if (NULL != dataPtr)
     {
         /* Free objects */
-        ObjectsFree();
+        omanager_ObjectsFree();
 
         if (NULL != dataPtr->lwm2mcoreCtxPtr)
         {
@@ -821,7 +821,7 @@ bool lwm2mcore_Connect
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
 
     if (NULL == instanceRef)
     {
@@ -874,7 +874,7 @@ bool lwm2mcore_Update
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    return UpdateRequest(instanceRef, false);
+    return omanager_UpdateRequest(instanceRef, false);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -892,7 +892,7 @@ bool lwm2mcore_Disconnect
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if (NULL == instanceRef)
     {
@@ -910,7 +910,7 @@ bool lwm2mcore_Disconnect
 
     /* Stop the agent */
     lwm2m_close(dataPtr->lwm2mHPtr);
-    connection_free(dataPtr->connListPtr);
+    dtls_FreeConnection(dataPtr->connListPtr);
     dataPtr->lwm2mHPtr = NULL;
     dataPtr->connListPtr = NULL;
 
@@ -924,7 +924,7 @@ bool lwm2mcore_Disconnect
     {
         memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
         /* Notify that the connection is stopped */
-        SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
+        smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
     }
 
     return result;
@@ -947,7 +947,7 @@ bool lwm2mcore_ConnectionGetType
 )
 {
     bool result = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if ((NULL == instanceRef) || (NULL == isDeviceManagement))
     {
@@ -1004,7 +1004,7 @@ lwm2mcore_PushResult_t lwm2mcore_Push
     lwm2mcore_PushResult_t result = LWM2MCORE_PUSH_FAILED;
     lwm2m_media_type_t contentType;
     bool registered = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if (NULL == instanceRef)
     {
@@ -1079,7 +1079,7 @@ bool lwm2mcore_SendAsyncResponse
 {
     bool result = false;
     bool registered = false;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if (NULL == instanceRef)
     {

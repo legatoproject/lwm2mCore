@@ -37,11 +37,11 @@ typedef struct
     lwm2m_object_t* securityObjPtr;         ///< Security object list
     lwm2m_object_t* serverObjectPtr;        ///< Server object list
     int sock;                               ///< Socket Id
-    dtls_connection_t* connListPtr;         ///< DTLS connection list
+    dtls_Connection_t* connListPtr;         ///< DTLS connection list
     lwm2m_context_t* lwm2mHPtr;             ///< Wakaama LWM2M context
     int addressFamily;                      ///< Socket family address
     lwm2mcore_context_t* lwm2mcoreCtxPtr;   ///< LWM2M Core context
-}ClientData_t;
+}smanager_ClientData_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -54,7 +54,7 @@ typedef enum
     EVENT_STATUS_DONE_SUCCESS,  ///< Event stopped successfully
     EVENT_STATUS_DONE_FAIL,     ///< Event stopped with failure
     EVENT_STATUS_MAX = 0xFF,    ///< Internal usage
-}SessionEventStatus_t;
+}smanager_EventStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -72,7 +72,7 @@ typedef enum
                                 ///< failed
     EVENT_SESSION,              ///< Session event: started or done with success or failure
     EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
-}SessionEventType_t;
+}smanager_EventType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -80,7 +80,7 @@ typedef enum
  * session manager
  */
 //--------------------------------------------------------------------------------------------------
-void SendStatusEvent
+void smanager_SendStatusEvent
 (
     lwm2mcore_Status_t status       ///< [IN] LWM2M status event
 );
@@ -90,10 +90,10 @@ void SendStatusEvent
  * Function for session events
  */
 //--------------------------------------------------------------------------------------------------
-void SendSessionEvent
+void smanager_SendSessionEvent
 (
-    SessionEventType_t eventId,     ///< [IN] Event Id
-    SessionEventStatus_t status     ///< [IN] Event status
+    smanager_EventType_t eventId,     ///< [IN] Event Id
+    smanager_EventStatus_t status     ///< [IN] Event status
 );
 
 #endif /* __SESSION_H__ */

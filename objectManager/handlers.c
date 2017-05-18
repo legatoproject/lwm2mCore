@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcoreHandlers.c
+ * @file handlers.c
  *
  * client of the LWM2M stack
  *
@@ -20,7 +20,6 @@
 #include "objects.h"
 #include "internals.h"
 #include "crypto.h"
-#include "paramContent.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -39,21 +38,6 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LIFETIME_VALUE_DISABLED       630720000
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Velocity type according to the Universal Geographical Area Description
- * Velocity type is defined in the 3GPP 23.032 standard, section 8.6
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_VELOCITY_H                       = 0, ///< Horizontal Velocity
-    LWM2MCORE_VELOCITY_H_AND_V                 = 1, ///< Horizontal with Vertical Velocity
-    LWM2MCORE_VELOCITY_H_AND_UNCERTAINTY       = 2, ///< Horizontal Velocity with Uncertainty
-    LWM2MCORE_VELOCITY_H_AND_V_AND_UNCERTAINTY = 3, ///< Horizontal with Vertical Velocity and
-                                                    ///< Uncertainty
-}VelocityType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -96,6 +80,87 @@ typedef enum
  */
 //--------------------------------------------------------------------------------------------------
 #define BS_CONFIG_VERSION           1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define for the number of supported server
+ */
+//--------------------------------------------------------------------------------------------------
+#define SERVER_NUMBER LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Velocity type according to the Universal Geographical Area Description
+ * Velocity type is defined in the 3GPP 23.032 standard, section 8.6
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_VELOCITY_H                       = 0, ///< Horizontal Velocity
+    LWM2MCORE_VELOCITY_H_AND_V                 = 1, ///< Horizontal with Vertical Velocity
+    LWM2MCORE_VELOCITY_H_AND_UNCERTAINTY       = 2, ///< Horizontal Velocity with Uncertainty
+    LWM2MCORE_VELOCITY_H_AND_V_AND_UNCERTAINTY = 3, ///< Horizontal with Vertical Velocity and
+                                                    ///< Uncertainty
+}VelocityType_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for security mode for LWM2M connection (object 0 (security); resource 2)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    SEC_PSK,                ///< PSK
+    SEC_RAW_PK,             ///< Raw PSK
+    SEC_CERTIFICATE,        ///< Certificate
+    SEC_NONE,               ///< No security
+    SEC_MODE_MAX            ///< Internal use only
+}SecurityMode_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for the security object (object 0)
+ * Serveur URI and credentials (PSKID, PSK) are managed as credentials
+ * SMS parameters are not supported
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+  bool              isBootstrapServer;          ///< Is bootstrap server?
+  SecurityMode_t    securityMode;               ///< Security mode
+  uint16_t          serverId;                   ///< Short server ID
+  uint16_t          clientHoldOffTime;          ///< Client hold off time
+  uint32_t          bootstrapAccountTimeout;    ///< Bootstrap server account timeout
+}ConfigSecurityObject_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for the server object (object 1)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+  uint16_t  serverId;                                    ///< Short server ID
+  uint32_t  lifetime;                                    ///< lifetime in seconds
+  uint16_t  defaultPmin;                                 ///< Default minimum period in seconds
+  uint16_t  defaultPmax;                                 ///< Default maximum period in seconds
+  bool      isDisable;                                   ///< Is device disabled?
+  uint32_t  disableTimeout;                              ///< Disable timeout in seconds
+  bool      isNotifStored;                               ///< Notification storing
+  uint8_t   bindingMode[LWM2MCORE_BINDING_STR_MAX_LEN];  ///< Binding mode
+}ConfigServerObject_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for bootstrap configuration to be stored in platform storage
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+  uint32_t                  version;                    ///< Configuration version
+  ConfigSecurityObject_t    security[SERVER_NUMBER];    ///< DM + BS server: security resources
+  ConfigServerObject_t      server;                     ///< one DM server resources
+}ConfigBootstrapFile_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -154,82 +219,6 @@ static uint16_t DmPskIdLen = 0;
 static uint8_t  DmPsk[DTLS_PSK_MAX_KEY_LEN];
 static uint16_t DmPskLen = 0;
 static uint8_t  DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to read the bootstrap configuration from platform memory
- *
- * @return
- *      - true in case of success
- *      - false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool GetBootstrapConfiguration
-(
-    void
-)
-{
-    lwm2mcore_Sid_t sid;
-    size_t len = sizeof(ConfigBootstrapFile_t);
-    /* Check if the LWM2MCore configuration file is stored */
-    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, &BsConfig, &len);
-    LOG_ARG("Read BS configiguration: len %d result %d", len, sid);
-
-    if ((LWM2MCORE_ERR_COMPLETED_OK == sid)
-     && (len == sizeof(ConfigBootstrapFile_t)))
-    {
-        /* Check if the file version is the supported one */
-        LOG_ARG("BS configuration version %d (only %d supported)",
-                BsConfig.version, BS_CONFIG_VERSION);
-        if (BS_CONFIG_VERSION == BsConfig.version)
-        {
-            return true;
-        }
-    }
-    // Delete file if necessary and copy the default config
-    LOG_ARG("Failed to read the BS configuration: read result %d, len %d", sid, len);
-    if (len)
-    {
-        /* The file is present but the size is not correct or the version is not correct
-         * Delete it
-         */
-        LOG("Delete bootstrap configuration");
-        sid = lwm2mcore_DeleteParam(LWM2MCORE_BOOTSTRAP_PARAM);
-        if (LWM2MCORE_ERR_COMPLETED_OK != sid)
-        {
-            LOG("Error to delete BS configuration parameter");
-        }
-    }
-    /* Copy the default configuration */
-    memcpy(&BsConfig, &BootstrapDefaultConfig, sizeof(ConfigBootstrapFile_t));
-    return false;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to save the bootstrap configuration in platform memory
- *
- * @return
- *      - true in case of success
- *      - false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool SetBootstrapConfiguration
-(
-    void
-)
-{
-    bool result = false;
-    lwm2mcore_Sid_t sid = lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
-                                             (uint8_t*)&BsConfig,
-                                             sizeof(ConfigBootstrapFile_t));
-    if (LWM2MCORE_ERR_COMPLETED_OK == sid)
-    {
-        result = true;
-    }
-    LOG_ARG("Set BS configuration %d", result);
-    return result;
-}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -340,6 +329,82 @@ static lwm2mcore_Sid_t BuildVelocity
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to read the bootstrap configuration from platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool omanager_GetBootstrapConfiguration
+(
+    void
+)
+{
+    lwm2mcore_Sid_t sid;
+    size_t len = sizeof(ConfigBootstrapFile_t);
+    /* Check if the LWM2MCore configuration file is stored */
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, &BsConfig, &len);
+    LOG_ARG("Read BS configiguration: len %d result %d", len, sid);
+
+    if ((LWM2MCORE_ERR_COMPLETED_OK == sid)
+     && (len == sizeof(ConfigBootstrapFile_t)))
+    {
+        /* Check if the file version is the supported one */
+        LOG_ARG("BS configuration version %d (only %d supported)",
+                BsConfig.version, BS_CONFIG_VERSION);
+        if (BS_CONFIG_VERSION == BsConfig.version)
+        {
+            return true;
+        }
+    }
+    // Delete file if necessary and copy the default config
+    LOG_ARG("Failed to read the BS configuration: read result %d, len %d", sid, len);
+    if (len)
+    {
+        /* The file is present but the size is not correct or the version is not correct
+         * Delete it
+         */
+        LOG("Delete bootstrap configuration");
+        sid = lwm2mcore_DeleteParam(LWM2MCORE_BOOTSTRAP_PARAM);
+        if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+        {
+            LOG("Error to delete BS configuration parameter");
+        }
+    }
+    /* Copy the default configuration */
+    memcpy(&BsConfig, &BootstrapDefaultConfig, sizeof(ConfigBootstrapFile_t));
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to save the bootstrap configuration in platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool omanager_SetBootstrapConfiguration
+(
+    void
+)
+{
+    bool result = false;
+    lwm2mcore_Sid_t sid = lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
+                                             (uint8_t*)&BsConfig,
+                                             sizeof(ConfigBootstrapFile_t));
+    if (LWM2MCORE_ERR_COMPLETED_OK == sid)
+    {
+        result = true;
+    }
+    LOG_ARG("Set BS configuration %d", result);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                                  OBJECT 0: SECURITY
  */
 //--------------------------------------------------------------------------------------------------
@@ -361,7 +426,7 @@ static lwm2mcore_Sid_t BuildVelocity
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteSecurityObj
+int omanager_WriteSecurityObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -420,14 +485,15 @@ int WriteSecurityObj
 
         /* Resource 1: Bootstrap server (true or false) */
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
-            BsConfig.security[uriPtr->oiid].isBootstrapServer = (bool)BytesToInt(bufferPtr, len);
+            BsConfig.security[uriPtr->oiid].isBootstrapServer =
+                (bool)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 2: Security mode */
         case LWM2MCORE_SECURITY_MODE_RID:
             BsConfig.security[uriPtr->oiid].securityMode =
-                                                    (SecurityMode_t)BytesToInt(bufferPtr, len);
+                (SecurityMode_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -518,14 +584,15 @@ int WriteSecurityObj
 
         /* Resource 10: Short server ID */
         case LWM2MCORE_SECURITY_SERVER_ID_RID:
-            BsConfig.security[uriPtr->oiid].serverId = (uint16_t)BytesToInt(bufferPtr, len);
+            BsConfig.security[uriPtr->oiid].serverId =
+                (uint16_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 11: Client hold of time */
         case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
             BsConfig.security[uriPtr->oiid].clientHoldOffTime =
-                                                            (uint16_t)BytesToInt(bufferPtr, len);
+                (uint16_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -553,7 +620,7 @@ int WriteSecurityObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSecurityObj
+int omanager_ReadSecurityObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -608,7 +675,7 @@ int ReadSecurityObj
 
         /* Resource 1: Bootstrap server (true or false) */
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                   &BsConfig.security[uriPtr->oiid].isBootstrapServer,
                                   sizeof(BsConfig.security[uriPtr->oiid].isBootstrapServer),
                                   false);
@@ -617,7 +684,7 @@ int ReadSecurityObj
 
         /* Resource 2: Security mode */
         case LWM2MCORE_SECURITY_MODE_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                         &BsConfig.security[uriPtr->oiid].securityMode,
                                         sizeof(BsConfig.security[uriPtr->oiid].securityMode),
                                         false);
@@ -693,7 +760,7 @@ int ReadSecurityObj
 
         /* Resource 10: Short server ID */
         case LWM2MCORE_SECURITY_SERVER_ID_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.security[uriPtr->oiid].serverId,
                                          sizeof(BsConfig.security[uriPtr->oiid].serverId),
                                          false);
@@ -702,7 +769,7 @@ int ReadSecurityObj
 
         /* Resource 11: Client hold of time */
         case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.security[uriPtr->oiid].clientHoldOffTime,
                                          sizeof(BsConfig.security[uriPtr->oiid].clientHoldOffTime),
                                         false);
@@ -725,7 +792,7 @@ int ReadSecurityObj
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool StoreCredentials
+bool omanager_StoreCredentials
 (
     void
 )
@@ -797,7 +864,7 @@ bool StoreCredentials
     }
     LOG_ARG("credentials storage: %d", result);
     /* Set the bootstrap configuration */
-    SetBootstrapConfiguration();
+    omanager_SetBootstrapConfiguration();
     return result;
 }
 
@@ -818,7 +885,7 @@ bool StoreCredentials
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int SmsDummy
+int omanager_SmsDummy
 (
     lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
@@ -879,7 +946,7 @@ int SmsDummy
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteServerObj
+int omanager_WriteServerObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -909,37 +976,38 @@ int WriteServerObj
     {
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
-            BsConfig.server.serverId = (uint16_t)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
-            BsConfig.server.lifetime = (uint64_t)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.lifetime = (uint64_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-            BsConfig.server.defaultPmin = (uint16_t)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-            BsConfig.server.defaultPmax = (uint16_t)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 5: Disable timeout */
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
-            BsConfig.server.disableTimeout = (uint32_t)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.disableTimeout =
+                (uint32_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
 
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-            BsConfig.server.isNotifStored = (bool)BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -973,7 +1041,7 @@ int WriteServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadServerObj
+int omanager_ReadServerObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1005,7 +1073,7 @@ int ReadServerObj
     {
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.serverId,
                                          sizeof(BsConfig.server.serverId),
                                          false);
@@ -1014,7 +1082,7 @@ int ReadServerObj
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.lifetime,
                                          sizeof(BsConfig.server.lifetime),
                                          false);
@@ -1024,7 +1092,7 @@ int ReadServerObj
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.defaultPmin,
                                          sizeof(BsConfig.server.defaultPmin),
                                          false);
@@ -1033,7 +1101,7 @@ int ReadServerObj
 
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.defaultPmax,
                                          sizeof(BsConfig.server.defaultPmax),
                                          false);
@@ -1042,7 +1110,7 @@ int ReadServerObj
 
         /* Resource 5: Disable timeout */
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.disableTimeout,
                                          sizeof(BsConfig.server.disableTimeout),
                                          false);
@@ -1051,7 +1119,7 @@ int ReadServerObj
 
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-            *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.isNotifStored,
                                          sizeof(BsConfig.server.isNotifStored),
                                          false);
@@ -1095,7 +1163,7 @@ int ReadServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteDeviceObj
+int omanager_WriteDeviceObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1161,7 +1229,7 @@ int WriteDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadDeviceObj
+int omanager_ReadDeviceObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1235,7 +1303,7 @@ int ReadDeviceObj
             sID = lwm2mcore_GetBatteryLevel(&batteryLevel);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &batteryLevel,
                                              sizeof(batteryLevel),
                                              false);
@@ -1250,7 +1318,7 @@ int ReadDeviceObj
             sID = lwm2mcore_GetDeviceCurrentTime(&currentTime);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &currentTime,
                                              sizeof(currentTime),
                                              false);
@@ -1296,7 +1364,7 @@ int ReadDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadConnectivityMonitoringObj
+int omanager_ReadConnectivityMonitoringObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1334,7 +1402,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetNetworkBearer(&networkBearer);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &networkBearer,
                                              sizeof(networkBearer),
                                              false);
@@ -1369,7 +1437,7 @@ int ReadConnectivityMonitoringObj
                 {
                     if (uriPtr->riid < bearersNb)
                     {
-                        *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                                      &bearersList[uriPtr->riid],
                                                      sizeof(bearersList[uriPtr->riid]),
                                                      false);
@@ -1393,7 +1461,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetSignalStrength(&signalStrength);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &signalStrength,
                                              sizeof(signalStrength),
                                              true);
@@ -1408,7 +1476,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetLinkQuality(&linkQuality);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &linkQuality,
                                              sizeof(linkQuality),
                                              false);
@@ -1511,7 +1579,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetLinkUtilization(&linkUtilization);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &linkUtilization,
                                              sizeof(linkUtilization),
                                              false);
@@ -1569,7 +1637,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetCellId(&cellId);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &cellId,
                                              sizeof(cellId),
                                              false);
@@ -1584,7 +1652,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetMncMcc(&mnc, NULL);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &mnc,
                                              sizeof(mnc),
                                              false);
@@ -1599,7 +1667,7 @@ int ReadConnectivityMonitoringObj
             sID = lwm2mcore_GetMncMcc(NULL, &mcc);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &mcc,
                                              sizeof(mcc),
                                              false);
@@ -1638,7 +1706,7 @@ int ReadConnectivityMonitoringObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteFwUpdateObj
+int omanager_WriteFwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1704,7 +1772,7 @@ int WriteFwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadFwUpdateObj
+int omanager_ReadFwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1748,7 +1816,7 @@ int ReadFwUpdateObj
             sID = lwm2mcore_GetUpdateState(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateState);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                              &updateState,
                                              sizeof(updateState),
                                              false);
@@ -1763,7 +1831,7 @@ int ReadFwUpdateObj
             sID = lwm2mcore_GetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                             &updateResult,
                                             sizeof(updateResult),
                                             false);
@@ -1805,7 +1873,7 @@ int ReadFwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecFwUpdate
+int omanager_ExecFwUpdate
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1872,7 +1940,7 @@ int ExecFwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadLocationObj
+int omanager_ReadLocationObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -1947,7 +2015,7 @@ int ReadLocationObj
             sID = lwm2mcore_GetLocationTimestamp(&timestamp);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &timestamp,
                                              sizeof(timestamp),
                                              false);
@@ -1987,7 +2055,7 @@ int ReadLocationObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadConnectivityStatisticsObj
+int omanager_ReadConnectivityStatisticsObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2025,7 +2093,7 @@ int ReadConnectivityStatisticsObj
             sID = lwm2mcore_GetSmsTxCount(&smsTxCount);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &smsTxCount,
                                              sizeof(smsTxCount),
                                              false);
@@ -2040,7 +2108,7 @@ int ReadConnectivityStatisticsObj
             sID = lwm2mcore_GetSmsRxCount(&smsRxCount);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &smsRxCount,
                                              sizeof(smsRxCount),
                                              false);
@@ -2055,7 +2123,7 @@ int ReadConnectivityStatisticsObj
             sID = lwm2mcore_GetTxData(&txData);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &txData,
                                              sizeof(txData),
                                              false);
@@ -2070,7 +2138,7 @@ int ReadConnectivityStatisticsObj
             sID = lwm2mcore_GetRxData(&rxData);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &rxData,
                                              sizeof(rxData),
                                              false);
@@ -2103,7 +2171,7 @@ int ReadConnectivityStatisticsObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecConnectivityStatistics
+int omanager_ExecConnectivityStatistics
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2173,7 +2241,7 @@ int ExecConnectivityStatistics
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteSwUpdateObj
+int omanager_WriteSwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2193,12 +2261,12 @@ int WriteSwUpdateObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    LOG_ARG("WriteSwUpdateObj rid %d", uriPtr->rid);
+    LOG_ARG("omanager_WriteSwUpdateObj rid %d", uriPtr->rid);
     switch (uriPtr->rid)
     {
         /* Resource 3: Package URI */
         case LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID:
-            LOG_ARG("WriteSwUpdateObj len %d", len);
+            LOG_ARG("omanager_WriteSwUpdateObj len %d", len);
             if (LWM2MCORE_BUFFER_MAX_LEN < len)
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
@@ -2221,7 +2289,7 @@ int WriteSwUpdateObj
             else
             {
                 sID = lwm2mcore_SetSwUpdateSupportedObjects(uriPtr->oiid,
-                                                            (bool)BytesToInt(bufferPtr, len));
+                                                        (bool)omanager_BytesToInt(bufferPtr, len));
             }
             break;
 
@@ -2249,7 +2317,7 @@ int WriteSwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSwUpdateObj
+int omanager_ReadSwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2304,7 +2372,7 @@ int ReadSwUpdateObj
             sID = lwm2mcore_GetUpdateState(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                              &updateResult,
                                              sizeof(updateResult),
                                              false);
@@ -2319,7 +2387,7 @@ int ReadSwUpdateObj
             sID = lwm2mcore_GetSwUpdateSupportedObjects(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                              &value,
                                              sizeof(value),
                                              false);
@@ -2334,7 +2402,7 @@ int ReadSwUpdateObj
             sID = lwm2mcore_GetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                              &updateResult,
                                              sizeof(updateResult),
                                              false);
@@ -2349,7 +2417,7 @@ int ReadSwUpdateObj
             sID = lwm2mcore_GetSwUpdateActivationState(uriPtr->oiid, &value);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*) bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                              &value,
                                              sizeof(value),
                                              false);
@@ -2381,7 +2449,7 @@ int ReadSwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecSwUpdate
+int omanager_ExecSwUpdate
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2456,7 +2524,7 @@ int ExecSwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSubscriptionObj
+int omanager_ReadSubscriptionObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2555,7 +2623,7 @@ int ReadSubscriptionObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadExtConnectivityStatsObj
+int omanager_ReadExtConnectivityStatsObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -2593,7 +2661,7 @@ int ReadExtConnectivityStatsObj
             sID = lwm2mcore_GetSignalBars(&signalBars);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &signalBars,
                                              sizeof(signalBars),
                                              false);
@@ -2616,7 +2684,7 @@ int ReadExtConnectivityStatsObj
             uint8_t roamingIndicator = 0;
             sID = lwm2mcore_GetRoamingIndicator(&roamingIndicator);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &roamingIndicator,
                                              sizeof(roamingIndicator),
                                              false);
@@ -2630,7 +2698,7 @@ int ReadExtConnectivityStatsObj
             int32_t ecIo = 0;
             sID = lwm2mcore_GetEcIo(&ecIo);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &ecIo,
                                              sizeof(ecIo),
                                              true);
@@ -2644,7 +2712,7 @@ int ReadExtConnectivityStatsObj
             int32_t rsrp = 0;
             sID = lwm2mcore_GetRsrp(&rsrp);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &rsrp,
                                              sizeof(rsrp),
                                              true);
@@ -2658,7 +2726,7 @@ int ReadExtConnectivityStatsObj
             int32_t rsrq = 0;
             sID = lwm2mcore_GetRsrq(&rsrq);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &rsrq,
                                              sizeof(rsrq),
                                              true);
@@ -2672,7 +2740,7 @@ int ReadExtConnectivityStatsObj
             int32_t rscp = 0;
             sID = lwm2mcore_GetRscp(&rscp);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &rscp,
                                              sizeof(rscp),
                                              true);
@@ -2686,7 +2754,7 @@ int ReadExtConnectivityStatsObj
             int32_t deviceTemperature = 0;
             sID = lwm2mcore_GetDeviceTemperature(&deviceTemperature);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &deviceTemperature,
                                              sizeof(deviceTemperature),
                                              true);
@@ -2700,7 +2768,7 @@ int ReadExtConnectivityStatsObj
             uint32_t unexpectedResets = 0;
             sID = lwm2mcore_GetDeviceUnexpectedResets(&unexpectedResets);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &unexpectedResets,
                                              sizeof(unexpectedResets),
                                              false);
@@ -2714,7 +2782,7 @@ int ReadExtConnectivityStatsObj
             uint32_t totalResets = 0;
             sID = lwm2mcore_GetDeviceTotalResets(&totalResets);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &totalResets,
                                              sizeof(totalResets),
                                              false);
@@ -2728,7 +2796,7 @@ int ReadExtConnectivityStatsObj
             uint32_t lac = 0;
             sID = lwm2mcore_GetLac(&lac);
             {
-                *lenPtr = FormatValueToBytes((uint8_t*)bufferPtr,
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
                                              &lac,
                                              sizeof(lac),
                                              false);
@@ -2767,7 +2835,7 @@ int ReadExtConnectivityStatsObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnSslCertif
+int omanager_OnSslCertif
 (
     lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
@@ -2832,7 +2900,7 @@ int OnSslCertif
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnUnlistedObject
+int omanager_OnUnlistedObject
 (
     lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
@@ -2855,7 +2923,7 @@ int OnUnlistedObject
  *      - false else
  */
 //--------------------------------------------------------------------------------------------------
-bool IsSecuredMode
+bool omanager_IsSecuredMode
 (
     void
 )

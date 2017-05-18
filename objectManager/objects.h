@@ -419,7 +419,7 @@ typedef struct _lwm2mcore_internalResource
     DLIST_ENTRY(_lwm2mcore_internalResource) list;  ///< list entry for resource linked list
     uint16_t id;                        ///< resource id
     uint16_t iid;                       ///< resource instance id
-    lwm2m_ResourceType_t type;          ///< resource data type
+    lwm2mcore_ResourceType_t type;      ///< resource data type
     uint16_t maxInstCount;              ///< maximal number of instances for this resource
     lwm2m_attribute_t attr;             ///< resource attributes
 
@@ -463,24 +463,10 @@ DLIST_HEAD(_lwm2mcore_objectsList, _lwm2mcore_internalObject);
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to convert bytes(in network byte order) to integer
- *
- * @return
- *      - converted data
- */
-//--------------------------------------------------------------------------------------------------
-int64_t BytesToInt
-(
-    const uint8_t *bytes,
-    size_t len
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
  *  Free the registered objects and resources (LWM2MCore and Wakaama)
  */
 //--------------------------------------------------------------------------------------------------
-void ObjectsFree
+void omanager_ObjectsFree
 (
     void
 );
@@ -494,12 +480,21 @@ void ObjectsFree
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------
-bool UpdateRequest
+bool omanager_UpdateRequest
 (
     lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
     bool withObjects                ///< [IN] indicates if supported object instance list needs to
                                     ///< be sent
 );
 
-#endif /* __OBJECTS_H__ */
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Get the registered objects and resources
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Handler_t* omanager_GetHandlers
+(
+     void
+);
 
+#endif /* __OBJECTS_H__ */

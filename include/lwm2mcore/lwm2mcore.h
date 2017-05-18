@@ -201,7 +201,7 @@ typedef enum
     LWM2MCORE_RESOURCE_TYPE_FLOAT,          ///< resource type: float
     LWM2MCORE_RESOURCE_TYPE_TIME,           ///< resource type: time
     LWM2MCORE_RESOURCE_TYPE_UNKNOWN         ///< resource type: unknown
-}lwm2m_ResourceType_t;
+}lwm2mcore_ResourceType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -470,7 +470,7 @@ typedef int (*lwm2mcore_ExecuteCallback_t)
 typedef struct
 {
     uint16_t id;                        ///< resource id: one of the LWM2M_xyz_RID above
-    lwm2m_ResourceType_t type;          ///< resource data type
+    lwm2mcore_ResourceType_t type;      ///< resource data type
     uint16_t maxResInstCnt;             ///< maximum number of resource instance
                                         ///< count. 1 means single instance
     lwm2mcore_ReadCallback_t read;      ///< operation handler: READ handler

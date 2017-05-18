@@ -41,9 +41,9 @@
  * Structure for DTLS connection
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _dtls_connection_t
+typedef struct _dtls_Connection_t
 {
-    struct _dtls_connection_t*  nextPtr;        ///< Next entry in the list
+    struct _dtls_Connection_t*  nextPtr;        ///< Next entry in the list
     int                         sock;           ///< Socket Id used for the DTLS connection
     struct sockaddr_in6         addr;           ///< Socket addess structure
     size_t                      addrLen;        ///< Socket addess structure length
@@ -54,20 +54,20 @@ typedef struct _dtls_connection_t
     dtls_context_t*             dtlsContextPtr; ///< DTLS context
     time_t                      lastSend;       ///< Last time a data was sent to the server
                                                 ///< (used for NAT timeouts)
-}dtls_connection_t;
+}dtls_Connection_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to search if a DTLS connection is available
  *
  * @return
- *  - dtls_connection_t pointer if the DTLS connection is available
+ *  - dtls_Connection_t pointer if the DTLS connection is available
  *  - NULL if the DTLS connection is not available in the indicated socket
  */
 //--------------------------------------------------------------------------------------------------
-dtls_connection_t* connection_find
+dtls_Connection_t* dtls_FindConnection
 (
-    dtls_connection_t* connListPtr,         ///< [IN] DTLS connection list
+    dtls_Connection_t* connListPtr,         ///< [IN] DTLS connection list
     const struct sockaddr_storage* addrPtr, ///< [IN] Socket address structure
     size_t addrLen                          ///< [IN] Socket address structure length
 );
@@ -77,13 +77,13 @@ dtls_connection_t* connection_find
  * Function to create a new DTLS connection
  *
  * @return
- *  - DTLS connection structure (dtls_connection_t);
+ *  - DTLS connection structure (dtls_Connection_t);
  *  - NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-dtls_connection_t* connection_newIncoming
+dtls_Connection_t* dtls_HandleNewIncoming
 (
-    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection list
+    dtls_Connection_t* connListPtr,     ///< [IN] DTLS connection list
     int sock,                           ///< [IN] Socket Id on which the DTLS needs to be created
     const struct sockaddr* addrPtr,     ///< [IN] Socket address structure
     size_t addrLen                      ///< [IN] Socket address structure length
@@ -94,13 +94,13 @@ dtls_connection_t* connection_newIncoming
  * Function to create a new connection to the server
  *
  * @return
- *  - DTLS connection pointer (dtls_connection_t)
+ *  - DTLS connection pointer (dtls_Connection_t)
  *  - NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-dtls_connection_t* connection_create
+dtls_Connection_t* dtls_CreateConnection
 (
-    dtls_connection_t* connListPtr,     ///< [IN] DTLS connection structure
+    dtls_Connection_t* connListPtr,     ///< [IN] DTLS connection structure
     int sock,                           ///< [IN] Socket Id
     lwm2m_object_t* securityObjPtr,     ///< [IN] Security object pointer
     int instanceId,                     ///< [IN] Security object instance Id
@@ -113,9 +113,9 @@ dtls_connection_t* connection_create
  * Function to free the DTLS connection list
  */
 //--------------------------------------------------------------------------------------------------
-void connection_free
+void dtls_FreeConnection
 (
-    dtls_connection_t* connListPtr      ///< [IN] DTLS connection structure
+    dtls_Connection_t* connListPtr      ///< [IN] DTLS connection structure
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -128,9 +128,9 @@ void connection_free
  *  - -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-int connection_send
+int dtls_Send
 (
-    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    dtls_Connection_t* connPtr,         ///< [IN] DTLS connection structure
     uint8_t* bufferPtr,                 ///< [IN] Buffer to be sent
     size_t length                       ///< [IN] Buffer length
 );
@@ -145,9 +145,9 @@ int connection_send
  *  - negative value in case of failure (see dtls_alert_t)
  */
 //--------------------------------------------------------------------------------------------------
-int connection_handlePacket
+int dtls_HandlePacket
 (
-    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    dtls_Connection_t* connPtr,         ///< [IN] DTLS connection structure
     uint8_t* bufferPtr,                 ///< [IN] Received buffer
     size_t numBytes                     ///< [IN] Buffer length
 );
@@ -162,11 +162,10 @@ int connection_handlePacket
  *  - -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-int connection_rehandshake
+int dtls_Rehandshake
 (
-    dtls_connection_t* connPtr,         ///< [IN] DTLS connection structure
+    dtls_Connection_t* connPtr,         ///< [IN] DTLS connection structure
     bool sendCloseNotify                ///< [IN] Flag to send a DTLS_STATE_CLOSED
 );
 
 #endif
-

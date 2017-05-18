@@ -74,7 +74,7 @@
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteSecurityObj
+int omanager_WriteSecurityObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -99,7 +99,7 @@ int WriteSecurityObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSecurityObj
+int omanager_ReadSecurityObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -126,7 +126,7 @@ int ReadSecurityObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int SmsDummy
+int omanager_SmsDummy
 (
     lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -158,7 +158,7 @@ int SmsDummy
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteServerObj
+int omanager_WriteServerObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -183,7 +183,7 @@ int WriteServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadServerObj
+int omanager_ReadServerObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -216,7 +216,7 @@ int ReadServerObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteDeviceObj
+int omanager_WriteDeviceObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -241,7 +241,7 @@ int WriteDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadDeviceObj
+int omanager_ReadDeviceObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -275,7 +275,7 @@ int ReadDeviceObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadConnectivityMonitoringObj
+int omanager_ReadConnectivityMonitoringObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -308,7 +308,7 @@ int ReadConnectivityMonitoringObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteFwUpdateObj
+int omanager_WriteFwUpdateObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -333,7 +333,7 @@ int WriteFwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadFwUpdateObj
+int omanager_ReadFwUpdateObj
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -360,7 +360,7 @@ int ReadFwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecFwUpdate
+int omanager_ExecFwUpdate
 (
     lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
@@ -393,7 +393,7 @@ int ExecFwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadLocationObj
+int omanager_ReadLocationObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -427,7 +427,7 @@ int ReadLocationObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadConnectivityStatisticsObj
+int omanager_ReadConnectivityStatisticsObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -454,7 +454,7 @@ int ReadConnectivityStatisticsObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecConnectivityStatistics
+int omanager_ExecConnectivityStatistics
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -485,7 +485,7 @@ int ExecConnectivityStatistics
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int WriteSwUpdateObj
+int omanager_WriteSwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -510,7 +510,7 @@ int WriteSwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSwUpdateObj
+int omanager_ReadSwUpdateObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -537,7 +537,7 @@ int ReadSwUpdateObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ExecSwUpdate
+int omanager_ExecSwUpdate
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -569,7 +569,7 @@ int ExecSwUpdate
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadSubscriptionObj
+int omanager_ReadSubscriptionObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -603,7 +603,7 @@ int ReadSubscriptionObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int ReadExtConnectivityStatsObj
+int omanager_ReadExtConnectivityStatsObj
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -636,7 +636,7 @@ int ReadExtConnectivityStatsObj
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnSslCertif
+int omanager_OnSslCertif
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -661,7 +661,7 @@ int OnSslCertif
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
-int OnUnlistedObject
+int omanager_OnUnlistedObject
 (
     lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource
@@ -680,7 +680,7 @@ int OnUnlistedObject
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool StoreCredentials
+bool omanager_StoreCredentials
 (
     void
 );
@@ -694,7 +694,7 @@ bool StoreCredentials
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool GetBootstrapConfiguration
+bool omanager_GetBootstrapConfiguration
 (
     void
 );
@@ -708,7 +708,7 @@ bool GetBootstrapConfiguration
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool SetBootstrapConfiguration
+bool omanager_SetBootstrapConfiguration
 (
     void
 );
@@ -722,7 +722,7 @@ bool SetBootstrapConfiguration
  *      - false else
  */
 //--------------------------------------------------------------------------------------------------
-bool IsSecuredMode
+bool omanager_IsSecuredMode
 (
     void
 );

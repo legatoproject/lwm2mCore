@@ -653,7 +653,7 @@ static void PkgDwlEvent
     }
 
     // Send the status event
-    SendStatusEvent(status);
+    smanager_SendStatusEvent(status);
 }
 
 //--------------------------------------------------------------------------------------------------

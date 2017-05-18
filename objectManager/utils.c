@@ -21,7 +21,7 @@
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint16ToBytes
+size_t omanager_FormatUint16ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint16_t u        ///< [IN] the value to be converted
@@ -40,7 +40,7 @@ size_t FormatUint16ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint32ToBytes
+size_t omanager_FormatUint32ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint32_t u        ///< [IN] the value to be converted
@@ -61,14 +61,14 @@ size_t FormatUint32ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint64ToBytes
+size_t omanager_FormatUint64ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint64_t u        ///< [IN] the value to be converted
 )
 {
-    FormatUint32ToBytes(bytesPtr, (u >> 32) & 0xffffffff);
-    FormatUint32ToBytes(bytesPtr + 4, u & 0xffffffff);
+    omanager_FormatUint32ToBytes(bytesPtr, (u >> 32) & 0xffffffff);
+    omanager_FormatUint32ToBytes(bytesPtr + 4, u & 0xffffffff);
     return (sizeof(uint64_t));
 }
 
@@ -81,7 +81,7 @@ size_t FormatUint64ToBytes
  */
 //--------------------------------------------------------------------------------------------------
 // TODO: check if the Wakaama utils_encodeInt function does not make the same treatment
-size_t FormatValueToBytes
+size_t omanager_FormatValueToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] bytes buffer in which uPtr value will be written
     void* uPtr,             ///< [INOUT] Data to be written
@@ -193,21 +193,21 @@ size_t FormatValueToBytes
             case 2:
             {
                 uint16_t* u16Value = (uint16_t*)uPtr;
-                lReturn = FormatUint16ToBytes(bytesPtr, *u16Value);
+                lReturn = omanager_FormatUint16ToBytes(bytesPtr, *u16Value);
             }
             break;
 
             case 4:
             {
                 uint32_t* u32Value = (uint32_t*)uPtr;
-                lReturn = FormatUint32ToBytes(bytesPtr, *u32Value);
+                lReturn = omanager_FormatUint32ToBytes(bytesPtr, *u32Value);
             }
             break;
 
             case 8:
             {
                 uint64_t* u64Value = (uint64_t*)uPtr;
-                lReturn = FormatUint64ToBytes(bytesPtr, *u64Value);
+                lReturn = omanager_FormatUint64ToBytes(bytesPtr, *u64Value);
             }
             break;
 
@@ -230,7 +230,7 @@ size_t FormatValueToBytes
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint16_t BytesToUint16
+uint16_t omanager_BytesToUint16
 (
     const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 )
@@ -246,7 +246,7 @@ uint16_t BytesToUint16
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint32_t BytesToUint32
+uint32_t omanager_BytesToUint32
 (
     const uint8_t* bytesPtr
 )
@@ -262,13 +262,13 @@ uint32_t BytesToUint32
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint64_t BytesToUint64
+uint64_t omanager_BytesToUint64
 (
     const uint8_t* bytesPtr
 )
 {
-    return (((uint64_t)BytesToUint32(bytesPtr) << 32)
-            | BytesToUint32(bytesPtr + 4));
+    return (((uint64_t)omanager_BytesToUint32(bytesPtr) << 32)
+            | omanager_BytesToUint32(bytesPtr + 4));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -279,7 +279,7 @@ uint64_t BytesToUint64
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-int64_t BytesToInt
+int64_t omanager_BytesToInt
 (
     const uint8_t* bytesPtr,
     size_t len
@@ -297,19 +297,19 @@ int64_t BytesToInt
 
         case 2:
         {
-            value = (int16_t)BytesToUint16(bytesPtr);
+            value = (int16_t)omanager_BytesToUint16(bytesPtr);
         }
         break;
 
         case 4:
         {
-            value = (int32_t)BytesToUint32(bytesPtr);
+            value = (int32_t)omanager_BytesToUint32(bytesPtr);
         }
         break;
 
         case 8:
         {
-            value = (int64_t)BytesToUint64(bytesPtr);
+            value = (int64_t)omanager_BytesToUint64(bytesPtr);
         }
         break;
 

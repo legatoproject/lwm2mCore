@@ -38,7 +38,7 @@ typedef enum
     COAP_METHOD_NOT_ALLOWED,        ///< Method not allowed
     COAP_INTERNAL_ERROR             ///< Internal error
 }
-CoapResponseCode_t;
+lwm2mcore_CoapResponseCode_t;
 
 
 //--------------------------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ CoapResponseCode_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    CoapResponseCode_t code;            ///< [IN] response code
+    lwm2mcore_CoapResponseCode_t code;  ///< [IN] response code
     uint8_t token[8];                   ///< [IN] token
     uint8_t tokenLength;                ///< [IN] token length
     unsigned int contentType;           ///< [IN] payload content type
@@ -199,6 +199,5 @@ bool lwm2mcore_sendAsyncResponse
     lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference
     lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response
 );
-
 
 #endif /* LWM2MCORE_COAP_HANDLERS_H */

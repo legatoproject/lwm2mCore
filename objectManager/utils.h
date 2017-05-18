@@ -19,7 +19,7 @@
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint16ToBytes
+size_t omanager_FormatUint16ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint16_t u        ///< [IN] the value to be converted
@@ -33,7 +33,7 @@ size_t FormatUint16ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint32ToBytes
+size_t omanager_FormatUint32ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint32_t u        ///< [IN] the value to be converted
@@ -47,7 +47,7 @@ size_t FormatUint32ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatUint64ToBytes
+size_t omanager_FormatUint64ToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] the buffer contains data converted
     const uint64_t u        ///< [IN] the value to be converted
@@ -61,7 +61,7 @@ size_t FormatUint64ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-size_t FormatValueToBytes
+size_t omanager_FormatValueToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] bytes buffer in which uPtr value will be written
     void* uPtr,             ///< [INOUT] Data to be written
@@ -77,7 +77,7 @@ size_t FormatValueToBytes
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint16_t BytesToUint16
+uint16_t omanager_BytesToUint16
 (
     const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 );
@@ -90,7 +90,7 @@ uint16_t BytesToUint16
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint32_t BytesToUint32
+uint32_t omanager_BytesToUint32
 (
     const uint8_t* bytesPtr
 );
@@ -103,7 +103,7 @@ uint32_t BytesToUint32
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-uint64_t BytesToUint64
+uint64_t omanager_BytesToUint64
 (
     const uint8_t* bytesPtr
 );
@@ -116,11 +116,10 @@ uint64_t BytesToUint64
  *      - converted data
  */
 //--------------------------------------------------------------------------------------------------
-int64_t BytesToInt
+int64_t omanager_BytesToInt
 (
     const uint8_t* bytesPtr,
     size_t len
 );
 
 #endif /* __UTILS_H__ */
-

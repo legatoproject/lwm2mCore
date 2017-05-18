@@ -48,13 +48,6 @@ static lwm2m_object_t * ObjectArray[OBJ_COUNT];
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Client defined handlers
- */
-//--------------------------------------------------------------------------------------------------
-extern lwm2mcore_Handler_t Lwm2mcoreHandlers;
-
-//--------------------------------------------------------------------------------------------------
-/**
  * LWM2M core context
  */
 //--------------------------------------------------------------------------------------------------
@@ -258,10 +251,10 @@ static lwm2mcore_internalResource_t* FindResource
 //--------------------------------------------------------------------------------------------------
 static uint8_t EncodeData
 (
-    lwm2m_ResourceType_t type,  ///< [IN] LWM2M resource type
-    uint8_t* bufPtr,            ///< [IN] Data to encode
-    size_t bufSize,             ///< [IN] Length of data to encode
-    lwm2m_data_t* dataPtr       ///< [INOUT] Encoded LWM2M data
+    lwm2mcore_ResourceType_t type,  ///< [IN] LWM2M resource type
+    uint8_t* bufPtr,                ///< [IN] Data to encode
+    size_t bufSize,                 ///< [IN] Length of data to encode
+    lwm2m_data_t* dataPtr           ///< [INOUT] Encoded LWM2M data
 )
 {
     uint8_t result = COAP_205_CONTENT;
@@ -272,7 +265,7 @@ static uint8_t EncodeData
         case LWM2MCORE_RESOURCE_TYPE_TIME:
         {
             int64_t value = 0;
-            value = BytesToInt(bufPtr, bufSize);
+            value = omanager_BytesToInt(bufPtr, bufSize);
             lwm2m_data_encode_int(value, dataPtr);
         }
         break;
@@ -1258,7 +1251,7 @@ static void InitObjectsList
  *
  */
 //--------------------------------------------------------------------------------------------------
-void ObjectsFree
+void omanager_ObjectsFree
 (
     void
 )
@@ -1325,10 +1318,10 @@ static bool RegisterObjTable
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false)
-     && ((IsSecuredMode()
+     && ((omanager_IsSecuredMode()
       && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
       && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY))
-      || (false == IsSecuredMode()))
+      || (false == omanager_IsSecuredMode()))
      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
     {
         dmServerPresence = true;
@@ -1490,7 +1483,7 @@ static bool UpdateSwListWakaama
     SwApplicationList_t* instancePtr;
     lwm2m_list_t* wakaamaInstancePtr;
     lwm2m_object_t* targetPtr;
-    ClientData_t* dataPtr = (ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     LOG_ARG("list len %d", strlen(SwObjectInstanceListPtr));
     LOG_ARG("SwObjectInstanceListPtr %s", SwObjectInstanceListPtr);
@@ -1685,7 +1678,7 @@ static bool UpdateSwListWakaama
     // Send a registration update if the device is registered to the DM server
     if (updatedList)
     {
-        UpdateRequest(instanceRef, updatedList);
+        omanager_UpdateRequest(instanceRef, updatedList);
     }
     return true;
 }
@@ -1709,12 +1702,14 @@ static bool UpdateSwListWakaama
 uint16_t lwm2mcore_ObjectRegister
 (
     lwm2mcore_Ref_t instanceRef,             ///< [IN] instance reference
-    char* endpointPtr,                      ///< [IN] Device endpoint
-    lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
-    void * const servicePtr                 ///< [IN] Client service API table
+    char* endpointPtr,                       ///< [IN] Device endpoint
+    lwm2mcore_Handler_t* const handlerPtr,   ///< [IN] List of supported object/resource by client
+    void * const servicePtr                  ///< [IN] Client service API table
 )
 {
     bool result;
+    lwm2mcore_Handler_t* lwm2mcoreHandlersPtr;
+
     RegisteredObjNb = 0;
 
     /* For the moment, servicePtr can be NULL */
@@ -1724,11 +1719,11 @@ uint16_t lwm2mcore_ObjectRegister
         return RegisteredObjNb;
     }
 
-    ClientData_t* dataPtr = (ClientData_t*)instanceRef;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
     LOG_ARG("lwm2mcore_ObjectRegister RegisteredObjNb %d", RegisteredObjNb);
 
     /* Read the LWM2MCore configuration file */
-    if (false == GetBootstrapConfiguration())
+    if (false == omanager_GetBootstrapConfiguration())
     {
         /* If the file is not present:
          * Delete DM credentials to force a connection to the bootstrap server
@@ -1739,9 +1734,10 @@ uint16_t lwm2mcore_ObjectRegister
         lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
     }
 
+    lwm2mcoreHandlersPtr = omanager_GetHandlers();
 
     /* Register static object tables managed by LWM2MCore */
-    result = RegisterObjTable(instanceRef, &Lwm2mcoreHandlers, &RegisteredObjNb, false);
+    result = RegisterObjTable(instanceRef, lwm2mcoreHandlersPtr, &RegisteredObjNb, false);
     if (result == false)
     {
         RegisteredObjNb = 0;
