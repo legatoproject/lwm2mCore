@@ -460,5 +460,19 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
     void
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend a package download if necessary
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
+(
+    void
+);
+
 #endif /* __LWM2MCORE_UPDATE_H__ */
 

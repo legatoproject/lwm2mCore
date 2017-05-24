@@ -2182,3 +2182,20 @@ void lwm2mcore_PackageDownloaderAcceptDownload
     lwm2mcore_SemPost(UserAgreementSemaphore);
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend a package download
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void pdownloader_SuspendDownload
+(
+    void
+)
+{
+    LOG("Suspend Download");
+    // End of processing
+    PkgDwlObj.endOfProcessing = true;
+
+    lwm2mcore_SuspendPackageDownload();
+}

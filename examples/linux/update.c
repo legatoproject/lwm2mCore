@@ -506,3 +506,19 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
     return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend a package download if necessary
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
+(
+    void
+)
+{
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
