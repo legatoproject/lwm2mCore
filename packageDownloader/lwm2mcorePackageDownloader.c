@@ -347,7 +347,7 @@ static PackageDownloaderWorkspace_t PkgDwlWorkspace =
  * Semaphore to signal user agreement.
  */
 //--------------------------------------------------------------------------------------------------
-static void* UserAgreementSemaphore;
+static void* UserAgreementSemaphore = NULL;
 
 //--------------------------------------------------------------------------------------------------
 // Static functions
@@ -1474,9 +1474,6 @@ static void PkgDwlInit
         return;
     }
 
-    // Create a semaphore to coordinate user agreement
-    UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
-
     // Retrieve package information
     PkgDwlObj.state = PKG_DWL_INFO;
 }
@@ -1847,6 +1844,7 @@ static void PkgDwlEnd
 
     // Delete user agreement semaphore
     lwm2mcore_SemDelete(UserAgreementSemaphore);
+    UserAgreementSemaphore = NULL;
 
     // End of processing
     PkgDwlObj.endOfProcessing = true;
@@ -1872,6 +1870,12 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
+    // Create a semaphore to coordinate user agreement
+    if (UserAgreementSemaphore == NULL)
+    {
+        UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
+    }
+
     // Check input parameters
     if (!pkgDwlPtr)
     {
