@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <ctype.h>
 #include <zlib.h>
 #include <openssl/sha.h>

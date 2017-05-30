@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/paramStorage.h>
 

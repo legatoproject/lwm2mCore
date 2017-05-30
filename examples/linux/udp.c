@@ -7,7 +7,7 @@
  *
  */
 
-#include <stdbool.h>
+#include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/udp.h>
 #include <platform/inet.h>

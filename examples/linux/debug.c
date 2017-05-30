@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <stdint.h>
 
 //--------------------------------------------------------------------------------------------------

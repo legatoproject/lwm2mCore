@@ -9,7 +9,7 @@
 
 /* include files */
 #include <stdint.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <stddef.h>
 #include "utils.h"
 

@@ -11,7 +11,7 @@
 #define  __LWM2MCORE_H__
 
 #include <stdint.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <stddef.h>
 
 //--------------------------------------------------------------------------------------------------

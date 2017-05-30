@@ -8,7 +8,7 @@
  */
 
 
-#include <stdbool.h>
+#include <platform/types.h>
 #include <stdint.h>
 #include <lwm2mcore/timer.h>
 

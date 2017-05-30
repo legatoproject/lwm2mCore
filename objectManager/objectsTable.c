@@ -8,7 +8,7 @@
  */
 
 /* include files */
-#include <stdbool.h>
+#include <platform/types.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <lwm2mcore/lwm2mcore.h>

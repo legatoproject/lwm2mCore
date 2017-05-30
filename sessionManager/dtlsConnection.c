@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include "objects.h"
 #include "dtlsConnection.h"

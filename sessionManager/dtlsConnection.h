@@ -22,7 +22,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <stdint.h>
-#include <stdbool.h>
+#include <platform/types.h>
 #include <platform/inet.h>
 #include "tinydtls.h"
 #include "dtls.h"
