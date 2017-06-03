@@ -984,6 +984,9 @@ int omanager_WriteServerObj
         case LWM2MCORE_SERVER_LIFETIME_RID:
             BsConfig.server.lifetime = (uint64_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
+
+            lwm2mcore_SetPollingTimer(BsConfig.server.lifetime);
+
             break;
 
         /* Resource 2: Server default minimum period */
@@ -1082,6 +1085,9 @@ int omanager_ReadServerObj
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
+            // Attempt to read the polling timer value from the config tree
+            lwm2mcore_GetPollingTimer(&BsConfig.server.lifetime);
+
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.lifetime,
                                          sizeof(BsConfig.server.lifetime),
