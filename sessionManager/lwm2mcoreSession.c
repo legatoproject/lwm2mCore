@@ -19,7 +19,6 @@
 #include "objects.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
-#include "packageDownloader.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -900,7 +899,8 @@ bool lwm2mcore_Disconnect
     }
 
     /* Stop package download if one is on-going */
-    pdownloader_SuspendDownload();
+    LOG("Suspend Download");
+    lwm2mcore_SuspendPackageDownload();
 
     /* Stop the current timers */
     if (false == lwm2mcore_TimerStop (LWM2MCORE_TIMER_STEP))

@@ -114,6 +114,7 @@ SET(SOURCES
     timer.c
     udp.c
     sem.c
+    mutex.c
     update.c
 )
 

@@ -316,9 +316,30 @@ void lwm2mcore_PackageDownloaderInit
 //--------------------------------------------------------------------------------------------------
 /**
  * Received user agreement; proceed to download package.
+ *
+ * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
+ * downloader thread. While the package downloader is waiting for user agreement, the avc thread
+ * merely changes the state of the package downloader and allows the package downloader to proceed.
+ * Care must be taken to protect 'PkgDwlObj' while modifying this function.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_PackageDownloaderAcceptDownload
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend the package downloader.
+ *
+ * This function is called to suspend the package downloader
+ *
+ * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
+ * downloader thread. The avc thread merely changes the state of the package downloader to suspend
+ * processing. Care must be taken to protect 'PkgDwlObj' while modifying this function.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderSuspend
 (
     void
 );
