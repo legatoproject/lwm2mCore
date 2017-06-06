@@ -87,6 +87,21 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Mutex to prevent race condition between threads.
+ */
+//--------------------------------------------------------------------------------------------------
+static void* PkgDwlStateMutex = NULL;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Macro used to prevent race condition between threads.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LOCK()    lwm2mcore_MutexLock(PkgDwlStateMutex)
+#define UNLOCK()  lwm2mcore_MutexUnlock(PkgDwlStateMutex)
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Magic number identifying a DWL prolog
  */
 //--------------------------------------------------------------------------------------------------
@@ -158,6 +173,7 @@ typedef enum
     PKG_DWL_PARSE,      ///< Parse downloaded data
     PKG_DWL_STORE,      ///< Store downloaded data
     PKG_DWL_END,        ///< Download closing and clean up
+    PKG_DWL_SUSPEND,    ///< Suspend package download
     PKG_DWL_ERROR       ///< Package downloader error
 }
 PackageDownloaderState_t;
@@ -352,6 +368,51 @@ static void* UserAgreementSemaphore = NULL;
 //--------------------------------------------------------------------------------------------------
 // Static functions
 //--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Get package download state
+ */
+//--------------------------------------------------------------------------------------------------
+static PackageDownloaderState_t GetPkgDwlState
+(
+    void
+)
+{
+    PackageDownloaderState_t currentPkgDwlState;
+
+    LOCK();
+    currentPkgDwlState = PkgDwlObj.state;
+    UNLOCK();
+
+    return currentPkgDwlState;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set package download state
+ *
+ * @note The avc thread can change the state of the package download to suspend processing. When
+ * the package download is in suspend state changing state is not allowed.
+ */
+//--------------------------------------------------------------------------------------------------
+static void SetPkgDwlState
+(
+    PackageDownloaderState_t newPkgDwlState   ///< New package download state
+)
+{
+    // Do not change the state if we are already in suspended state.
+    if (GetPkgDwlState() != PKG_DWL_SUSPEND)
+    {
+        LOCK();
+        PkgDwlObj.state = newPkgDwlState;
+        UNLOCK();
+    }
+    else
+    {
+        LOG("State unchanged: package download suspended");
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -917,7 +978,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
             LOG_ARG("Package CRC: 0x%08x", DwlParserObj.packageCRC);
 
             // Parse DWL comments
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_COMMENTS;
             DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
@@ -933,7 +994,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
                                        - dwlPrologPtr->fileSize;
 
             // Parse DWL comments
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_COMMENTS;
             DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
@@ -946,7 +1007,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
                                          - sizeof(DwlProlog_t);
 
             // Parse DWL comments
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_COMMENTS;
             DwlParserObj.lenToParse = DwlParserObj.commentSize;
             break;
@@ -1001,21 +1062,21 @@ static lwm2mcore_DwlResult_t ParseDwlComments
     {
         case DWL_TYPE_UPCK:
             // Parse UPCK header
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_HEADER;
             DwlParserObj.lenToParse = LWM2MCORE_UPCK_HEADER_SIZE;
             break;
 
         case DWL_TYPE_BINA:
             // Parse BINA header
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_HEADER;
             DwlParserObj.lenToParse = LWM2MCORE_BINA_HEADER_SIZE;
             break;
 
         case DWL_TYPE_SIGN:
             // Parse signature
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_SIGNATURE;
             DwlParserObj.lenToParse = DwlParserObj.signatureSize;
             break;
@@ -1076,7 +1137,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
             }
 
             // Parse next DWL prolog
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_PROLOG;
             DwlParserObj.lenToParse = sizeof(DwlProlog_t);
         }
@@ -1084,7 +1145,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
 
         case DWL_TYPE_BINA:
             // Parse DWL binary data
-            PkgDwlObj.state = PKG_DWL_PARSE;
+            SetPkgDwlState(PKG_DWL_PARSE);
             DwlParserObj.subsection = DWL_SUB_BINARY;
             DwlParserObj.lenToParse = DwlParserObj.binarySize;
             DwlParserObj.remainingBinaryData = DwlParserObj.binarySize;
@@ -1137,7 +1198,7 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
     }
 
     // Store downloaded binary data
-    PkgDwlObj.state = PKG_DWL_STORE;
+    SetPkgDwlState(PKG_DWL_STORE);
 
     // Check if all binary data is received
     if (0 == DwlParserObj.remainingBinaryData)
@@ -1188,7 +1249,7 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
     }
 
     // Parse next DWL prolog
-    PkgDwlObj.state = PKG_DWL_PARSE;
+    SetPkgDwlState(PKG_DWL_PARSE);
     DwlParserObj.subsection = DWL_SUB_PROLOG;
     DwlParserObj.lenToParse = sizeof(DwlProlog_t);
 
@@ -1236,7 +1297,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
     }
 
     // End of file
-    PkgDwlObj.state = PKG_DWL_END;
+    SetPkgDwlState(PKG_DWL_END);
 
     return result;
 }
@@ -1302,7 +1363,7 @@ static lwm2mcore_DwlResult_t DwlParser
     }
 
     // Check if the DWL parsing is finished
-    if ((DWL_OK != result) || (PKG_DWL_END == PkgDwlObj.state))
+    if ((DWL_OK != result) || (PKG_DWL_END == GetPkgDwlState()))
     {
         // Cancel the SHA1 computation and reset SHA1 context
         if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_CancelSha1(&DwlParserObj.sha1CtxPtr))
@@ -1383,7 +1444,7 @@ static lwm2mcore_DwlResult_t BufferAndSetDataToParse
             LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max = %d",
                     PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-            PkgDwlObj.state = PKG_DWL_ERROR;
+            SetPkgDwlState(PKG_DWL_ERROR);
             return DWL_FAULT;
         }
     }
@@ -1413,7 +1474,7 @@ static lwm2mcore_DwlResult_t BufferAndSetDataToParse
             LOG_ARG("Unable to store %zu bytes in temporary buffer, contains %d, max=%d",
                     PkgDwlObj.downloadedLen, PkgDwlObj.tmpDataLen, TMP_DATA_MAX_LEN);
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-            PkgDwlObj.state = PKG_DWL_ERROR;
+            SetPkgDwlState(PKG_DWL_ERROR);
             return DWL_FAULT;
         }
     }
@@ -1440,7 +1501,7 @@ static void PkgDwlInit
     {
         LOG("Error during download initialization");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 
@@ -1463,19 +1524,19 @@ static void PkgDwlInit
         default:
             LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
             SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
-            PkgDwlObj.state = PKG_DWL_ERROR;
+            SetPkgDwlState(PKG_DWL_ERROR);
             return;
     }
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 
     // Retrieve package information
-    PkgDwlObj.state = PKG_DWL_INFO;
+    SetPkgDwlState(PKG_DWL_INFO);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1494,7 +1555,7 @@ static void PkgDwlGetInfo
     {
         LOG("Error while getting the package information");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 
@@ -1502,7 +1563,7 @@ static void PkgDwlGetInfo
     PkgDwlEvent(PKG_DWL_EVENT_DETAILS, pkgDwlPtr);
 
     // Download the package
-    PkgDwlObj.state = PKG_DWL_START;
+    SetPkgDwlState(PKG_DWL_START);
     // Require to parse at least the length of DWL prolog, enough to determine the file type
     memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
     DwlParserObj.subsection = DWL_SUB_PROLOG;
@@ -1520,7 +1581,7 @@ static void PkgDwlGetUserAgreement
 )
 {
     // Pause the package downloader state machine.
-    PkgDwlObj.state = PKG_DWL_WAIT;
+    SetPkgDwlState(PKG_DWL_WAIT);
 
     // Get user agreement.
     LOG("Wait for user agreement.");
@@ -1528,7 +1589,7 @@ static void PkgDwlGetUserAgreement
     {
         LOG("Failed to get user agreement.");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
     }
 }
 
@@ -1563,7 +1624,7 @@ static void PkgDwlDownload
     {
         LOG("Unable to set update state");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 
@@ -1571,7 +1632,7 @@ static void PkgDwlDownload
     PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
 
     // Be ready to parse downloaded data
-    PkgDwlObj.state = PKG_DWL_PARSE;
+    SetPkgDwlState(PKG_DWL_PARSE);
 
     // Read the stored package downloader workspace and check if download should be resumed
     if (   (DWL_OK == ReadPkgDwlWorkspace(&PkgDwlWorkspace))
@@ -1627,7 +1688,7 @@ static void PkgDwlDownload
         {
             LOG("Unable to restore SHA1 context");
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-            PkgDwlObj.state = PKG_DWL_ERROR;
+            SetPkgDwlState(PKG_DWL_ERROR);
             return;
         }
     }
@@ -1639,7 +1700,7 @@ static void PkgDwlDownload
     {
         LOG_ARG("Error during download, result %d", PkgDwlObj.result);
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 }
@@ -1660,7 +1721,7 @@ static void PkgDwlParse
     {
         LOG("Error while parsing the DWL package");
         // No need to change update result, already set by DWL parser
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
     }
 }
 
@@ -1682,12 +1743,12 @@ static void PkgDwlStore
     {
         LOG("Error during data storage");
         SetUpdateResult(PKG_DWL_ERROR_OUT_OF_MEMORY);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
         return;
     }
 
     // Parse next downloaded data
-    PkgDwlObj.state = PKG_DWL_PARSE;
+    SetPkgDwlState(PKG_DWL_PARSE);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1747,7 +1808,7 @@ static void PkgDwlError
             PkgDwlObj.updateResult.fw : PkgDwlObj.updateResult.sw));
 
     // End of download
-    PkgDwlObj.state = PKG_DWL_END;
+    SetPkgDwlState(PKG_DWL_END);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1832,6 +1893,14 @@ static void PkgDwlEnd
     // Notify the application of the download end
     PkgDwlEvent(PKG_DWL_EVENT_DL_END, pkgDwlPtr);
 
+    // Delete user agreement semaphore
+    if (UserAgreementSemaphore != NULL)
+    {
+        LOG("Delete user agreement semaphore");
+        lwm2mcore_SemDelete(UserAgreementSemaphore);
+        UserAgreementSemaphore = NULL;
+    }
+
     // End of download
     PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
     if (DWL_OK != PkgDwlObj.result)
@@ -1842,9 +1911,36 @@ static void PkgDwlEnd
     // Delete the package downloader workspace file
     DeletePkgDwlWorkspace();
 
+    // End of processing
+    PkgDwlObj.endOfProcessing = true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend the download process
+ */
+//--------------------------------------------------------------------------------------------------
+static void PkgDwlSuspend
+(
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
+)
+{
+    LOG("Suspend package download");
+
     // Delete user agreement semaphore
-    lwm2mcore_SemDelete(UserAgreementSemaphore);
-    UserAgreementSemaphore = NULL;
+    if (UserAgreementSemaphore != NULL)
+    {
+        LOG("Delete user agreement semaphore");
+        lwm2mcore_SemDelete(UserAgreementSemaphore);
+        UserAgreementSemaphore = NULL;
+    }
+
+    // End of download
+    PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
+    {
+        LOG("Error while ending the download");
+    }
 
     // End of processing
     PkgDwlObj.endOfProcessing = true;
@@ -1873,6 +1969,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     // Create a semaphore to coordinate user agreement
     if (UserAgreementSemaphore == NULL)
     {
+        LOG("Create user agreement semaphore");
         UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
     }
 
@@ -1954,7 +2051,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
 
     // Package downloader object initialization
     memset(&PkgDwlObj, 0, sizeof(PackageDownloaderObj_t));
-    PkgDwlObj.state = PKG_DWL_INIT;
+    SetPkgDwlState(PKG_DWL_INIT);
     PkgDwlObj.endOfProcessing = false;
     PkgDwlObj.packageType = LWM2MCORE_PKG_NONE;
 
@@ -1962,7 +2059,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     while (!PkgDwlObj.endOfProcessing)
     {
         // Run the package downloader action based on the current state
-        switch (PkgDwlObj.state)
+        switch (GetPkgDwlState())
         {
             case PKG_DWL_INIT:
                 PkgDwlInit(pkgDwlPtr);
@@ -1976,7 +2073,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 if (pkgDwlPtr->data.isResume)
                 {
                     LOG("Skip user agreement for download resume");
-                    PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+                    SetPkgDwlState(PKG_DWL_DOWNLOAD);
                 }
                 else
                 {
@@ -1985,8 +2082,10 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 break;
 
             case PKG_DWL_WAIT:
+                LOG("Wait for the semaphore");
                 // Wait for signal indicating user agreement accepted
                 lwm2mcore_SemWait(UserAgreementSemaphore);
+                LOG("Received user agreement proceed to download");
                 break;
 
             case PKG_DWL_DOWNLOAD:
@@ -2006,8 +2105,12 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 PkgDwlEnd(pkgDwlPtr);
                 break;
 
+            case PKG_DWL_SUSPEND:
+                PkgDwlSuspend(pkgDwlPtr);
+                break;
+
             default:
-                LOG_ARG("Unknown package downloader state %d in Run", PkgDwlObj.state);
+                LOG_ARG("Unknown package downloader state %d in Run", GetPkgDwlState());
                 PkgDwlObj.result = DWL_FAULT;
                 PkgDwlObj.endOfProcessing = true;
                 break;
@@ -2060,7 +2163,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
     // Parse and store all the received data
     while ((PkgDwlObj.downloadedLen > 0) && (DWL_OK == PkgDwlObj.result))
     {
-        switch (PkgDwlObj.state)
+        switch (GetPkgDwlState())
         {
             case PKG_DWL_PARSE:
             {
@@ -2083,7 +2186,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
                 break;
 
             default:
-                LOG_ARG("Unexpected package downloader state %d in ReceiveData", PkgDwlObj.state);
+                LOG_ARG("Unexpected package downloader state %d in ReceiveData", GetPkgDwlState());
                 PkgDwlObj.result = DWL_FAULT;
                 PkgDwlObj.endOfProcessing = true;
                 break;
@@ -2091,7 +2194,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
 
         // Update data pointer and length according to processed data
         // If storing is necessary, processing is not complete yet
-        if (PKG_DWL_STORE != PkgDwlObj.state)
+        if (PKG_DWL_STORE != GetPkgDwlState())
         {
             double downloadProgress;
 
@@ -2126,7 +2229,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
 
             // Update and store package downloader workspace during the DWL parsing
             // in order to be able to resume the download
-            if (PKG_DWL_PARSE == PkgDwlObj.state)
+            if (PKG_DWL_PARSE == GetPkgDwlState())
             {
                 UpdateAndStorePkgDwlWorkspace();
             }
@@ -2153,6 +2256,45 @@ void lwm2mcore_PackageDownloaderInit
     {
         LOG("No package downloader workspace to delete");
     }
+
+    // Initialize the mutex
+    if (PkgDwlStateMutex == NULL)
+    {
+        LOG("Create download thread mutex");
+        PkgDwlStateMutex = lwm2mcore_MutexCreate("DownloadThreadMutex");
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Suspend the package downloader.
+ *
+ * This function is called to suspend the package downloader
+ *
+ * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
+ * downloader thread. The avc thread merely changes the state of the package downloader to suspend
+ * processing. Care must be taken to protect 'PkgDwlObj' while modifying this function.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderSuspend
+(
+    void
+)
+{
+    PackageDownloaderState_t currentState;
+    currentState = GetPkgDwlState();
+
+    LOG("Suspend package download state machine");
+
+    // suspend download thread
+    SetPkgDwlState(PKG_DWL_SUSPEND);
+
+    // Post a semaphore to kick off the state machine again
+    if (currentState == PKG_DWL_WAIT)
+    {
+        LOG("post semaphore");
+        lwm2mcore_SemPost(UserAgreementSemaphore);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2170,36 +2312,19 @@ void lwm2mcore_PackageDownloaderAcceptDownload
     void
 )
 {
-    if (PkgDwlObj.state == PKG_DWL_WAIT)
+    if (GetPkgDwlState() == PKG_DWL_WAIT)
     {
         // Received user agreement; proceed to download.
-        PkgDwlObj.state = PKG_DWL_DOWNLOAD;
+        SetPkgDwlState(PKG_DWL_DOWNLOAD);
     }
     else
     {
-        LOG_ARG("Invalid state %d", PkgDwlObj.state);
+        LOG_ARG("Invalid state %d", GetPkgDwlState());
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
+        SetPkgDwlState(PKG_DWL_ERROR);
     }
 
     // Indicate user agreement is received
     lwm2mcore_SemPost(UserAgreementSemaphore);
 }
 
-//--------------------------------------------------------------------------------------------------
-/**
- * Suspend a package download
- *
- */
-//--------------------------------------------------------------------------------------------------
-void pdownloader_SuspendDownload
-(
-    void
-)
-{
-    LOG("Suspend Download");
-    // End of processing
-    PkgDwlObj.endOfProcessing = true;
-
-    lwm2mcore_SuspendPackageDownload();
-}
