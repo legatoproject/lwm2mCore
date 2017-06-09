@@ -237,6 +237,14 @@ static lwm2mcore_Resource_t DeviceResources[] =
         NULL,                                       //.exec
     },
     {
+        LWM2MCORE_DEVICE_REBOOT_RID,                //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        1,                                          //.maxResInstCnt
+        NULL,                                       //.read
+        NULL,                                       //.write
+        omanager_ExecDeviceObj,                     //.exec
+    },
+    {
         LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,         //.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
         1,                                          //.maxResInstCnt
