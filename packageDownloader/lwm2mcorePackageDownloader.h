@@ -315,6 +315,16 @@ void lwm2mcore_PackageDownloaderInit
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * One time initialization for package downloader
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderGlobalInit
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Received user agreement; proceed to download package.
  *
  * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package

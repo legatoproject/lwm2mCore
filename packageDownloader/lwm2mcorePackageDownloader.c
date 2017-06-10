@@ -1893,14 +1893,6 @@ static void PkgDwlEnd
     // Notify the application of the download end
     PkgDwlEvent(PKG_DWL_EVENT_DL_END, pkgDwlPtr);
 
-    // Delete user agreement semaphore
-    if (UserAgreementSemaphore != NULL)
-    {
-        LOG("Delete user agreement semaphore");
-        lwm2mcore_SemDelete(UserAgreementSemaphore);
-        UserAgreementSemaphore = NULL;
-    }
-
     // End of download
     PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
     if (DWL_OK != PkgDwlObj.result)
@@ -1926,14 +1918,6 @@ static void PkgDwlSuspend
 )
 {
     LOG("Suspend package download");
-
-    // Delete user agreement semaphore
-    if (UserAgreementSemaphore != NULL)
-    {
-        LOG("Delete user agreement semaphore");
-        lwm2mcore_SemDelete(UserAgreementSemaphore);
-        UserAgreementSemaphore = NULL;
-    }
 
     // End of download
     PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
@@ -1966,13 +1950,6 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    // Create a semaphore to coordinate user agreement
-    if (UserAgreementSemaphore == NULL)
-    {
-        LOG("Create user agreement semaphore");
-        UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
-    }
-
     // Check input parameters
     if (!pkgDwlPtr)
     {
@@ -2256,13 +2233,25 @@ void lwm2mcore_PackageDownloaderInit
     {
         LOG("No package downloader workspace to delete");
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * One time initialization for package downloader
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_PackageDownloaderGlobalInit
+(
+    void
+)
+{
+    // Create a semaphore to coordinate user agreement
+    LOG("Create user agreement semaphore");
+    UserAgreementSemaphore = lwm2mcore_SemCreate("UserAgreementSem", 0);
 
     // Initialize the mutex
-    if (PkgDwlStateMutex == NULL)
-    {
-        LOG("Create download thread mutex");
-        PkgDwlStateMutex = lwm2mcore_MutexCreate("DownloadThreadMutex");
-    }
+    LOG("Create download thread mutex");
+    PkgDwlStateMutex = lwm2mcore_MutexCreate("DownloadThreadMutex");
 }
 
 //--------------------------------------------------------------------------------------------------
