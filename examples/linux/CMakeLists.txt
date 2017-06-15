@@ -116,7 +116,6 @@ SET(SOURCES
     sem.c
     mutex.c
     update.c
-    config.c
 )
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
