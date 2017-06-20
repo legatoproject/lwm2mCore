@@ -875,7 +875,6 @@ static int ConnectionSend
             }
         }
         LOG_ARG("ConnectionSend SEC length %d", length);
-        lwm2mcore_DataDump("Data to send", bufferPtr, length);
         if (-1 == dtls_write(connPtr->dtlsContextPtr,
                              connPtr->dtlsSessionPtr,
                              bufferPtr,
