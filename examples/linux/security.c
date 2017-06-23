@@ -843,88 +843,24 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert a DER key to PEM key
+ * Update SSL Certificate
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the conversion succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the conversion fails
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_ConvertDERToPEM
+lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
 (
-    unsigned char*  derKeyPtr,      ///< [IN]       DER key
-    int             derKeyLen,      ///< [IN]       DER key length
-    unsigned char*  pemKeyPtr,      ///< [OUT]      PEM key
-    int*            pemKeyLenPtr    ///< [IN/OUT]   PEM key length
+    unsigned char*  certPtr,    ///< [IN] Certificate
+    int             len         ///< [IN] Certificate len
 )
 {
-    X509 *certPtr;
-    BIO *memPtr;
-    int count;
-
-    if ( (!derKeyPtr) || (!pemKeyPtr) || (!pemKeyLenPtr) )
-    {
-        LOG_ARG("invalid input arguments: derKeyPtr (%p), pemKeyPtr(%p), "
-            "pemKeyLenPtr(%p)", derKeyPtr, pemKeyPtr);
-        return LWM2MCORE_ERR_INVALID_ARG;
-    }
-
-    if (!derKeyLen)
-    {
-        LOG("derKeyLen cannot be 0");
-        return LWM2MCORE_ERR_INVALID_ARG;
-    }
-
-    certPtr = d2i_X509(NULL, &derKeyPtr, derKeyLen);
     if (!certPtr)
     {
-        LOG("unable to parse certificate");
-        PrintOpenSSLErrors();
-        return LWM2MCORE_ERR_GENERAL_ERROR;
+        LOG("NULL certificate");
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-
-    memPtr = BIO_new(BIO_s_mem());
-    if (!memPtr)
-    {
-        LOG("failed to set BIO type");
-        PrintOpenSSLErrors();
-        goto x509_err;
-    }
-
-    if (!PEM_write_bio_X509(memPtr, certPtr))
-    {
-        LOG("failed to write certificate");
-        PrintOpenSSLErrors();
-        goto bio_err;
-    }
-
-    if (memPtr->num_write > *pemKeyLenPtr)
-    {
-        LOG("not enough space to hold the key");
-        goto bio_err;
-    }
-
-    memset(pemKeyPtr, 0, memPtr->num_write + 1);
-
-    *pemKeyLenPtr = BIO_read(memPtr, pemKeyPtr, memPtr->num_write);
-    if (*pemKeyLenPtr < memPtr->num_write)
-    {
-        LOG_ARG("failed to read certificate: count (%d)", *pemKeyLenPtr);
-        PrintOpenSSLErrors();
-        goto pem_err;
-    }
-
-    BIO_free(memPtr);
-    X509_free(certPtr);
 
     return LWM2MCORE_ERR_COMPLETED_OK;
-
-pem_err:
-    memset(pemKeyPtr, 0, memPtr->num_write + 1);
-bio_err:
-    BIO_free(memPtr);
-x509_err:
-    X509_free(certPtr);
-    return LWM2MCORE_ERR_GENERAL_ERROR;
 }

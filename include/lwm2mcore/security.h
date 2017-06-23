@@ -247,20 +247,21 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert a DER key to PEM key
+ * Update SSL Certificate
+ *
+ * @note To delete the saved certificate, set the length to 0
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the conversion succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the conversion fails
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_ConvertDERToPEM
+lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
 (
-    unsigned char*  derKeyPtr,      ///< [IN]       DER key
-    int             derKeyLen,      ///< [IN]       DER key length
-    unsigned char*  pemKeyPtr,      ///< [OUT]      PEM key
-    int*            pemKeyLenPtr    ///< [IN/OUT]   PEM key length
+    unsigned char*  certPtr,    ///< [IN] Certificate
+    int             len         ///< [IN] Certificate len
 );
 
 #endif /* __LWM2MCORE_SECURITY_H__ */

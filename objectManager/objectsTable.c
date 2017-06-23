@@ -785,8 +785,8 @@ static lwm2mcore_Resource_t SslCertificateResources[] =
         LWM2MCORE_SSL_CERTIFICATE_CERTIF,           //.id
         LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
         1,                                          //.maxResInstCnt
-        omanager_OnSslCertif,                       //.read
-        omanager_OnSslCertif,                       //.write
+        NULL,                                       //.read
+        omanager_WriteSslCertif,                    //.write
         NULL,                                       //.exec
     }
 };

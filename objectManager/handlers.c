@@ -2893,69 +2893,38 @@ int omanager_ReadExtConnectivityStatsObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read/write the SSL certificates
+ * Function to update the SSL certificates
  * Object: 10243 - SSL certificates
  * Resource: 0
  *
+ * @note To delete the saved certificate, set the length to 0
+ *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - positive value for asynchronous response
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
-int omanager_OnSslCertif
+int omanager_WriteSslCertif
 (
-    lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
-                                            ///< object/resource
-    char* bufferPtr,                        ///< [INOUT] data buffer for information
-    size_t* lenPtr,                         ///< [INOUT] length of input buffer and length of the
-                                            ///< returned data
-    valueChangedCallback_t changedCb        ///< [IN] not used for READ operation but for WRITE one
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
-    if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
+    if (!uriPtr)
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    if (0 == (uriPtr->op & (LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE)))
+    if ( (!(uriPtr->op & LWM2MCORE_OP_WRITE)) || (uriPtr->oiid) )
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Only one instance */
-    if (0 < uriPtr->oiid)
-    {
-        return LWM2MCORE_ERR_INCORRECT_RANGE;
-    }
-
-    /* This resource needs the BLOCK1 option support */
-    if (uriPtr->op & LWM2MCORE_OP_READ)
-    {
-        /* Read operation */
-        if (0 == *lenPtr)
-        {
-            /* Delete the certificates */
-            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-        else
-        {
-            /* Read the stored certificates */
-            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-    }
-    else
-    {
-        /* Write a certificate */
-        sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-    }
-    return sID;
+    return lwm2mcore_UpdateSslCertificate(bufferPtr, len);
 }
 
 //--------------------------------------------------------------------------------------------------
