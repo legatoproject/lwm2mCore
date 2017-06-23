@@ -2071,7 +2071,14 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
 
             case PKG_DWL_PARSE:
             case PKG_DWL_STORE:
-                // Nothing to do, just wait for the parsing and storing end
+                // The package downloading function PkgDwlDownload is blocking and the received
+                // data are processed by the lwm2mcore_PackageDownloaderReceiveData callback.
+                // After the download end, the state is set to END or ERROR, PkgDwlDownload returns
+                // and this loop is unblocked.
+                // The state should therefore never be set to PARSE or STORE in this loop.
+                LOG_ARG("Unexpected package downloader state %d in Run", GetPkgDwlState());
+                PkgDwlObj.result = DWL_FAULT;
+                PkgDwlObj.endOfProcessing = true;
                 break;
 
             case PKG_DWL_ERROR:
