@@ -985,8 +985,8 @@ int omanager_WriteServerObj
             BsConfig.server.lifetime = (uint64_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
 
-            lwm2mcore_SetPollingTimer(BsConfig.server.lifetime);
-
+            // Convert the polling timer from sec to min for Legato
+            lwm2mcore_SetPollingTimer(BsConfig.server.lifetime / 60);
             break;
 
         /* Resource 2: Server default minimum period */
@@ -1085,8 +1085,15 @@ int omanager_ReadServerObj
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
+        {
             // Attempt to read the polling timer value from the config tree
-            lwm2mcore_GetPollingTimer(&BsConfig.server.lifetime);
+            uint32_t pollingTimer = 0;
+            lwm2mcore_GetPollingTimer(&pollingTimer);
+
+            // Convert the polling timer from min in Legato to sec
+            pollingTimer = pollingTimer * 60;
+
+            BsConfig.server.lifetime = (pollingTimer == 0) ? LIFETIME_VALUE_DISABLED : pollingTimer;
 
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.lifetime,
@@ -1095,6 +1102,7 @@ int omanager_ReadServerObj
             LOG_ARG("lifetime read len %d", *lenPtr);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
+        }
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
