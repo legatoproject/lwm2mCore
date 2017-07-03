@@ -79,8 +79,7 @@ static lwm2m_client_state_t PreviousState;
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_context_t* InitContext
 (
-    smanager_ClientData_t* dataPtr,         ///< [IN] Context
-    lwm2m_endpoint_type_t epType   ///< [IN] Lwm2m endpoint type, e.g. server/client.
+    smanager_ClientData_t* dataPtr          ///< [IN] Context
 )
 {
     dataPtr->lwm2mcoreCtxPtr = (lwm2mcore_context_t*)lwm2m_malloc(sizeof(lwm2mcore_context_t));
@@ -760,7 +759,7 @@ lwm2mcore_Ref_t lwm2mcore_Init
     dataPtr->lwm2mHPtr = lwm2m_init(dataPtr);
     LWM2MCORE_ASSERT(dataPtr->lwm2mHPtr);
 
-    dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr, ENDPOINT_CLIENT);
+    dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr);
     Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
     LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
 
