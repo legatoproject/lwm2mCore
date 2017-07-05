@@ -863,11 +863,15 @@ static int ConnectionSend
     }
     else
     {
-        LOG_ARG("now - connP->lastSend %d", lwm2m_gettime() - connPtr->lastSend);
+        time_t timeFromLastData = lwm2m_gettime() - connPtr->lastSend;
+        LOG_ARG("now - connP->lastSend %d", timeFromLastData);
         if ((0 < DTLS_NAT_TIMEOUT)
-         && (DTLS_NAT_TIMEOUT < (lwm2m_gettime() - connPtr->lastSend)))
+         && ((DTLS_NAT_TIMEOUT < timeFromLastData)
+            // If difference is negative, a time update could have been made on platform side.
+            // In this case, do a rehandshake
+          || (timeFromLastData < 0)))
         {
-            // we need to rehandhake because our source IP/port probably changed for the server
+            // We need to rehandhake because our source IP/port probably changed for the server
             if (0 != dtls_Rehandshake(connPtr, false))
             {
                 LOG("can't send due to rehandshake error");
