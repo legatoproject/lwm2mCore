@@ -70,6 +70,29 @@ bool lwm2mcore_UdpOpen
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Connect to the server
+ * This function is called by the LWM2MCore and must be adapted to the platform
+ * The aim of this function is to connect
+ *
+ * @return
+ *      - true on success
+ *      - false on error
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_UdpConnect
+(
+    char* serverAddressPtr,             ///< [IN] Server address URL
+    char* hostPtr,                      ///< [IN] Host
+    char* portPtr,                      ///< [IN] Port
+    int addressFamily,                  ///< [IN] Address familly
+    struct sockaddr* saPtr,             ///< [IN] Socket address pointer
+    socklen_t* slPtr,                   ///< [IN] Socket address length
+    int* sockPtr                        ///< [IN] socket file descriptor
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Close the socket
  * This function is called by the LWM2MCore and must be adapted to the platform
  * The aim of this function is to close a socket

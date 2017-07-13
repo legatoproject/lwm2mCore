@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/socket.h>
 #include "objects.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
@@ -690,11 +691,8 @@ dtls_Connection_t* dtls_CreateConnection
     int addressFamily                   ///< [IN] Address familly
 )
 {
-    struct addrinfo hints;
-    struct addrinfo* servinfoPtr = NULL;
-    struct addrinfo* p;
     int s;
-    struct sockaddr* saPtr;
+    struct sockaddr saPtr;
     socklen_t sl;
     dtls_Connection_t* connPtr = NULL;
     char uriBuf[URI_LENGTH];
@@ -703,14 +701,9 @@ dtls_Connection_t* dtls_CreateConnection
     char* portPtr;
     char* defaultPortPtr;
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = addressFamily;
-    hints.ai_socktype = SOCK_DGRAM;
-
     LOG("Entering");
 
     uriPtr = SecurityGetUri(securityObjPtr, instanceId, uriBuf, URI_LENGTH);
-    LOG_ARG("dtls_CreateConnection uri %s", uriPtr);
     if (NULL == uriPtr)
     {
         return NULL;
@@ -753,33 +746,19 @@ dtls_Connection_t* dtls_CreateConnection
         *portPtr = 0;
         portPtr++;
     }
-    LOG_ARG("port %s", portPtr);
 
-    if (0 != getaddrinfo(hostPtr, portPtr, &hints, &servinfoPtr) || servinfoPtr == NULL)
+    if (false == lwm2mcore_UdpConnect(uriPtr, hostPtr, portPtr, addressFamily, &saPtr, &sl, &s))
     {
+        LOG("Connect failure");
         return NULL;
     }
 
-    // we test the various addresses
-    s = -1;
-    for(p = servinfoPtr ; p != NULL && s == -1 ; p = p->ai_next)
-    {
-        s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (s >= 0)
-        {
-            saPtr = p->ai_addr;
-            sl = p->ai_addrlen;
-            if (-1 == connect(s, p->ai_addr, p->ai_addrlen))
-            {
-                close(s);
-                s = -1;
-            }
-        }
-    }
     if (s >= 0)
     {
-        connPtr = dtls_HandleNewIncoming(connListPtr, sock, saPtr, sl);
-        close(s);
+        lwm2mcore_SocketConfig_t config;
+        connPtr = dtls_HandleNewIncoming(connListPtr, sock, &saPtr, sl);
+        config.sock = s;
+        lwm2mcore_UdpClose(config);
 
         // do we need to start tinydtls?
         if (NULL != connPtr)
@@ -799,11 +778,6 @@ dtls_Connection_t* dtls_CreateConnection
                 connPtr->dtlsSessionPtr = NULL;
             }
         }
-    }
-
-    if (NULL != servinfoPtr)
-    {
-        lwm2m_free(servinfoPtr);
     }
 
     return connPtr;
