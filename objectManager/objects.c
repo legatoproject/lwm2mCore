@@ -1306,7 +1306,7 @@ static bool RegisterObjTable
 {
     uint32_t i = 0;
     uint32_t j = 0;
-    uint16_t ObjNb = *registeredObjNbPtr;
+    uint16_t ObjNb = 0;
     uint16_t objInstanceNb = 0;
     bool dmServerPresence = false;
     struct _lwm2mcore_objectsList *objectsListPtr = NULL;
@@ -1315,6 +1315,8 @@ static bool RegisterObjTable
     {
         return false;
     }
+
+    ObjNb = *registeredObjNbPtr;
 
     /* Check if a DM server was provided: only for static LWM2MCore case */
     if ((clientTable == false)
