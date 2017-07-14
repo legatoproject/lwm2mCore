@@ -100,6 +100,25 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Get the status of credentials provisioned on the device
+ *
+ * @return
+ *     LWM2MCORE_NO_CREDENTIAL_PROVISIONED
+ *          - If neither Bootstrap nor Device Management credential is provisioned.
+ *     LWM2MCORE_BS_CREDENTIAL_PROVISIONED
+ *          - If Bootstrap credential is provisioned but Device Management credential is
+              not provisioned.
+ *     LWM2MCORE_DM_CREDENTIAL_PROVISIONED
+ *          - If Device Management credential is provisioned.
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to check if one credential is provisioned
  *
  * @note This API is called by LWM2MCore

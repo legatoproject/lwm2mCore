@@ -189,6 +189,19 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Enumeration for the status of credential provisioning
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_NO_CREDENTIAL_PROVISIONED   = 0x01,             ///< Neither DM nor BS key provisioned
+    LWM2MCORE_BS_CREDENTIAL_PROVISIONED   = 0x02,             ///< BS key provisioned
+    LWM2MCORE_DM_CREDENTIAL_PROVISIONED   = 0x03              ///< DM key provisioned
+
+}lwm2mcore_CredentialStatus_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Enumeration for LWM2M resource data type
  */
 //--------------------------------------------------------------------------------------------------
