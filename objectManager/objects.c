@@ -862,6 +862,11 @@ static uint8_t CreateCb
         lwm2m_list_t* instancePtr;
         /* Add the object instance in the Wakaama format */
         instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+        if (!instancePtr)
+        {
+           LOG("instancePtr is NULL");
+           return COAP_500_INTERNAL_SERVER_ERROR;
+        }
         instancePtr->id = instanceId;
         objectPtr->instanceList = LWM2M_LIST_ADD(objectPtr->instanceList, instancePtr);
     }
@@ -1221,6 +1226,11 @@ static void InitObjectsList
         {
             /*Unknown object instance count is always assumed to be multiple */
             objPtr = InitObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
+            if (!objPtr)
+            {
+               LOG("objPtr is NULL");
+               return;
+            }
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
         else if ((clientHandlerPtr->objects + i)->maxObjInstCnt > 1)
@@ -1228,6 +1238,11 @@ static void InitObjectsList
             for (j = 0; j < (clientHandlerPtr->objects + i)->maxObjInstCnt; j++)
             {
                 objPtr = InitObject(clientHandlerPtr->objects + i, j, true);
+                if (!objPtr)
+                {
+                   LOG("objPtr is NULL");
+                   return;
+                }
                 DLIST_INSERT_TAIL(objects_list, objPtr, list);
             }
         }
@@ -1260,6 +1275,11 @@ void omanager_ObjectsFree
     lwm2mcore_internalObject_t* objPtr = NULL;
     lwm2mcore_internalResource_t* resPtr = NULL;
     uint32_t i = 0;
+    if (NULL == objectsListPtr)
+    {
+       LOG("objectsListPtr is NULL");
+       return;
+    }
 
     /* Free memory for objects and resources for LWM2MCore */
     while ((objPtr = DLIST_FIRST(objectsListPtr)) != NULL)
@@ -1383,6 +1403,11 @@ static bool RegisterObjTable
                 {
                     /* Add the object instance in the Wakaama format */
                     instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+                    if (!instancePtr)
+                    {
+                       LOG("instancePtr is NULL");
+                       return false;
+                    }
                     instancePtr->id = j;
                     ObjectArray[ObjNb]->instanceList =
                         LWM2M_LIST_ADD (ObjectArray[ObjNb]->instanceList,
@@ -1578,6 +1603,11 @@ static bool UpdateSwListWakaama
                                 instancePtr =
                                     (SwApplicationList_t*)lwm2m_malloc(sizeof(SwApplicationList_t));
                                 LOG("Obj instance is NOT registered");
+                                if (!instancePtr)
+                                {
+                                   LOG("instancePtr is NULL");
+                                   return false;
+                                }
                                 memset(instancePtr, 0, sizeof(SwApplicationList_t));
                                 instancePtr->nextPtr = NULL;
                                 instancePtr->oiid = oiid;
@@ -1627,6 +1657,11 @@ static bool UpdateSwListWakaama
                 if (instancePtr->check)
                 {
                     wakaamaInstancePtr = (lwm2m_list_t*)lwm2m_malloc(sizeof(lwm2m_list_t));
+                    if (!wakaamaInstancePtr)
+                    {
+                       LOG("instancePtr is NULL");
+                       return false;
+                    }
                     memset(wakaamaInstancePtr, 0, sizeof(lwm2m_list_t));
                     wakaamaInstancePtr->id = instancePtr->oiid;
                     targetPtr->instanceList =

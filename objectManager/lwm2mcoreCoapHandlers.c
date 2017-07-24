@@ -156,7 +156,7 @@ void lwm2mcore_SetCoapEventHandler
  * Retrieves the registered coap request handler and returns the coap request details
  *
  *  * @return
- *      - Coap error code from user application
+ *      - CoAP error code from user application
  *      - COAP_501_NOT_IMPLEMENTED if there is no registered handler found.
  */
 //--------------------------------------------------------------------------------------------------
@@ -170,9 +170,21 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     lwm2mcore_CoapRequest_t* requestPtr;
 
     requestPtr = (lwm2mcore_CoapRequest_t*)lwm2m_malloc(sizeof(lwm2mcore_CoapRequest_t));
+    if (!requestPtr)
+    {
+       LOG("requestPtr is NULL");
+       return COAP_500_INTERNAL_SERVER_ERROR;
+    }
 
     requestPtr->uri = coap_get_multi_option_as_string(message->uri_path);
-    requestPtr->uriLength = strlen(requestPtr->uri);
+    if (requestPtr->uri)
+    {
+      requestPtr->uriLength = strlen(requestPtr->uri);
+    }
+    else
+    {
+      requestPtr->uriLength = 0;
+    }
     requestPtr->method = message->code;
     requestPtr->buffer = message->payload;
     requestPtr->bufferLength = message->payload_len;

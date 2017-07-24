@@ -59,6 +59,11 @@ static char* SecurityGetUri
     int size = 1;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
     uint8_t test;
+    if (!dataPtr)
+    {
+       LOG("Memory not allocated for dataPtr");
+       return NULL;
+    }
     dataPtr->id = LWM2M_SECURITY_URI_ID;
 
     test = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
@@ -107,6 +112,11 @@ static int64_t SecurityGetMode
     int64_t mode;
     int size = 1;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    if (!dataPtr)
+    {
+       LOG("Memory not allocated for dataPtr");
+       return LWM2M_SECURITY_MODE_NONE;
+    }
     dataPtr->id = LWM2MCORE_SECURITY_MODE_RID;
 
     objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
@@ -139,6 +149,11 @@ static char* SecurityGetPublicId
 {
     int size = 1;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    if (!dataPtr)
+    {
+       LOG("Memory not allocated for dataPtr");
+       return NULL;
+    }
     dataPtr->id = LWM2MCORE_SECURITY_PKID_RID;
 
     objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
@@ -181,6 +196,11 @@ static char* SecurityGetSecretKey
 {
     int size = 1;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
+    if (!dataPtr)
+    {
+       LOG("Memory not allocated for dataPtr");
+       return NULL;
+    }
     dataPtr->id = LWM2MCORE_SECURITY_SECRET_KEY_RID;
 
     objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
@@ -491,6 +511,7 @@ static dtls_handler_t cb = {
  *
  * @return
  *  - dtls_context_t pointer
+ *  - NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 static dtls_context_t* GetDtlsContext
@@ -505,6 +526,7 @@ static dtls_context_t* GetDtlsContext
         if (NULL == DtlsContextPtr)
         {
             LOG("Failed to create the DTLS context");
+            return NULL;
         }
         dtls_set_handler(DtlsContextPtr, &cb);
     }
@@ -666,6 +688,11 @@ dtls_Connection_t* dtls_HandleNewIncoming
         connPtr->nextPtr = connListPtr;
 
         connPtr->dtlsSessionPtr = (session_t*)lwm2m_malloc(sizeof(session_t));
+        if (!(connPtr->dtlsSessionPtr))
+        {
+           LOG("connPtr->dtlsSessionPtr is NULL");
+           return NULL;
+        }
         connPtr->dtlsSessionPtr->addr.sin6 = connPtr->addr;
         connPtr->dtlsSessionPtr->size = connPtr->addrLen;
         connPtr->lastSend = lwm2m_gettime();
