@@ -457,6 +457,7 @@ static int dtlsEventCb
         break;
 
         case DTLS_ALERT_INTERNAL_ERROR:
+        case DTLS_ALERT_HANDSHAKE_FAILURE:
         {
             /* Notify that the device authentication fails */
             smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);

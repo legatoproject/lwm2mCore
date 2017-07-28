@@ -510,6 +510,14 @@ void smanager_SendSessionEvent
                 {
                     LOG ("AUTHENTICATION START");
                     status.event = LWM2MCORE_EVENT_AUTHENTICATION_STARTED;
+                    if (BootstrapSession)
+                    {
+                        status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
+                    }
+                    else
+                    {
+                        status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
+                    }
                     smanager_SendStatusEvent(status);
                 }
                 break;
@@ -535,6 +543,14 @@ void smanager_SendSessionEvent
                 {
                     LOG("AUTHENTICATION FAILURE");
                     status.event = LWM2MCORE_EVENT_AUTHENTICATION_FAILED;
+                    if (BootstrapSession)
+                    {
+                        status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
+                    }
+                    else
+                    {
+                        status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
+                    }
                     smanager_SendStatusEvent(status);
                 }
                 break;
