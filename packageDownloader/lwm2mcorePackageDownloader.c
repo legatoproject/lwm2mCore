@@ -735,7 +735,7 @@ static void UpdateAndStorePkgDwlWorkspace
     }
 
     // Update the workspace
-    PkgDwlWorkspace.offset = PkgDwlObj.offset;
+    PkgDwlWorkspace.offset = PkgDwlObj.offset + PkgDwlObj.processedLen;
     PkgDwlWorkspace.section = DwlParserObj.section;
     PkgDwlWorkspace.subsection = DwlParserObj.subsection;
     PkgDwlWorkspace.packageCRC = DwlParserObj.packageCRC;
@@ -894,6 +894,10 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
     void
 )
 {
+
+    LOG_ARG("CRC: expected 0x%08x, computed 0x%08x",
+            DwlParserObj.packageCRC, DwlParserObj.computedCRC);
+
     // Compare package CRC retrieved from first DWL prolog and computed CRC.
     if (DwlParserObj.packageCRC != DwlParserObj.computedCRC)
     {
@@ -1199,14 +1203,6 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
 
     // Store downloaded binary data
     SetPkgDwlState(PKG_DWL_STORE);
-
-    // Check if all binary data is received
-    if (0 == DwlParserObj.remainingBinaryData)
-    {
-        // End of binary data, prepare download of DWL padding data
-        DwlParserObj.subsection = DWL_SUB_PADDING;
-        DwlParserObj.lenToParse = DwlParserObj.paddingSize;
-    }
 
     return result;
 }
@@ -2167,7 +2163,20 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
             break;
 
             case PKG_DWL_STORE:
+                // store meta data to workspace
+                UpdateAndStorePkgDwlWorkspace();
+
+                // store downloaded data to disk
                 PkgDwlStore(PkgDwlPtr);
+
+                // Check if all binary data is received
+                if (0 == DwlParserObj.remainingBinaryData)
+                {
+                    LOG("Prepare downloading of DWL padding data");
+                    // End of binary data, prepare download of DWL padding data
+                    DwlParserObj.subsection = DWL_SUB_PADDING;
+                    DwlParserObj.lenToParse = DwlParserObj.paddingSize;
+                }
                 break;
 
             default:
@@ -2210,13 +2219,6 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
                 // Update downloaded data pointer
                 PkgDwlObj.dwlDataPtr += PkgDwlObj.processedLen;
                 PkgDwlObj.downloadedLen -= PkgDwlObj.processedLen;
-            }
-
-            // Update and store package downloader workspace during the DWL parsing
-            // in order to be able to resume the download
-            if (PKG_DWL_PARSE == GetPkgDwlState())
-            {
-                UpdateAndStorePkgDwlWorkspace();
             }
         }
     }
