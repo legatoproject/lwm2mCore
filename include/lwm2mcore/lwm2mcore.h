@@ -372,7 +372,7 @@ typedef struct
 typedef struct
 {
     lwm2mcore_PkgDwlType_t pkgType;     ///< Package type
-    uint32_t numBytes;                  ///< For package download, downloaded bytes
+    uint32_t numBytes;                  ///< For package download, num of bytes to be downloaded
     uint32_t progress;                  ///< For package download, package download progress in %
     uint32_t errorCode;                 ///< For package download, error code
 }lwm2mcore_PkgDwlStatus_t;

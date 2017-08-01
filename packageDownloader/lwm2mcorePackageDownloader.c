@@ -621,14 +621,16 @@ static void PkgDwlEvent
 
             status.event = LWM2MCORE_EVENT_DOWNLOAD_PROGRESS;
             status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
-            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
+            status.u.pkgStatus.numBytes = (uint32_t)pkgDwlPtr->data.packageSize
+                                            - (uint32_t)PkgDwlObj.offset;
             status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
             status.u.pkgStatus.errorCode = 0;
             break;
 
         case PKG_DWL_EVENT_DL_END:
             status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
-            status.u.pkgStatus.numBytes = (uint32_t)PkgDwlObj.offset;
+            status.u.pkgStatus.numBytes = (uint32_t)pkgDwlPtr->data.packageSize
+                                            - (uint32_t)PkgDwlObj.offset;
             status.u.pkgStatus.progress = PkgDwlObj.downloadProgress;
 
             // Determine download status with update result
