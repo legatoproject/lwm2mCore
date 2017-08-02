@@ -461,7 +461,7 @@ int omanager_WriteSecurityObj
     {
         /* Resource 0: LWM2M server URI */
         case LWM2MCORE_SECURITY_SERVER_URI_RID:
-            if (LWM2MCORE_BUFFER_MAX_LEN < len)
+            if ((LWM2MCORE_SERVER_URI_MAX_LEN < len) || (LWM2MCORE_BUFFER_MAX_LEN < len))
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             }
@@ -536,7 +536,7 @@ int omanager_WriteSecurityObj
 
         /* Resource 5: Secret key */
         case LWM2MCORE_SECURITY_SECRET_KEY_RID:
-            if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
+            if ((DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len) || (DTLS_PSK_MAX_KEY_LEN < len))
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             }
