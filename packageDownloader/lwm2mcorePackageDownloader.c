@@ -1495,16 +1495,7 @@ static void PkgDwlInit
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    // Initialize download
-    PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != PkgDwlObj.result)
-    {
-        LOG("Error during download initialization");
-        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        SetPkgDwlState(PKG_DWL_ERROR);
-        return;
-    }
-
+    // Set update type and initialize update result
     switch (pkgDwlPtr->data.updateType)
     {
         case LWM2MCORE_FW_UPDATE_TYPE:
@@ -1530,6 +1521,16 @@ static void PkgDwlInit
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+        SetPkgDwlState(PKG_DWL_ERROR);
+        return;
+    }
+
+    // Initialize download
+    PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
+    {
+        LOG("Error during download initialization");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         SetPkgDwlState(PKG_DWL_ERROR);
         return;
@@ -1821,6 +1822,10 @@ static void PkgDwlEnd
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
+    // Use a local result as the global package downloader
+    // result shouldn't be affected anymore at this stage
+    lwm2mcore_DwlResult_t result = DWL_OK;
+
     // Check if an error was detected during the package download or parsing
     if (PKG_DWL_NO_ERROR != GetPackageDownloaderError())
     {
@@ -1828,18 +1833,18 @@ static void PkgDwlEnd
         switch (pkgDwlPtr->data.updateType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
-                PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
+                result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
                 break;
 
             case LWM2MCORE_SW_UPDATE_TYPE:
-                PkgDwlObj.result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult.sw);
+                result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult.sw);
                 break;
 
             default:
                 LOG("unknown download type");
                 return;
         }
-        if (DWL_OK != PkgDwlObj.result)
+        if (DWL_OK != result)
         {
             LOG("Unable to set update result");
         }
@@ -1848,20 +1853,18 @@ static void PkgDwlEnd
         switch (pkgDwlPtr->data.updateType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
-                PkgDwlObj.result =
-                        pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
+                result = pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
                 break;
 
             case LWM2MCORE_SW_UPDATE_TYPE:
-                PkgDwlObj.result =
-                        pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_INITIAL);
+                result = pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_INITIAL);
                 break;
 
             default:
                 LOG("unknown download type");
                 return;
         }
-        if (DWL_OK != PkgDwlObj.result)
+        if (DWL_OK != result)
         {
             LOG("Unable to set update state");
         }
@@ -1873,18 +1876,16 @@ static void PkgDwlEnd
         switch (pkgDwlPtr->data.updateType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
-                PkgDwlObj.result =
-                        pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
+                result = pkgDwlPtr->setFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
                 break;
             case LWM2MCORE_SW_UPDATE_TYPE:
-                PkgDwlObj.result =
-                        pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOADED);
+                result = pkgDwlPtr->setSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOADED);
                 break;
             default:
                 LOG("unknown download type");
                 return;
         }
-        if (DWL_OK != PkgDwlObj.result)
+        if (DWL_OK != result)
         {
             LOG("Unable to set update state");
         }
@@ -1894,8 +1895,8 @@ static void PkgDwlEnd
     PkgDwlEvent(PKG_DWL_EVENT_DL_END, pkgDwlPtr);
 
     // End of download
-    PkgDwlObj.result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
-    if (DWL_OK != PkgDwlObj.result)
+    result = pkgDwlPtr->endDownload(pkgDwlPtr->ctxPtr);
+    if (DWL_OK != result)
     {
         LOG("Error while ending the download");
     }
