@@ -1277,15 +1277,18 @@ void omanager_ObjectsFree
     LOG_ARG("Wakaama RegisteredObjNb %d", RegisteredObjNb);
     for (i = 0; i < RegisteredObjNb; i++)
     {
-        while (ObjectArray[i]->instanceList != NULL )
+        if (ObjectArray[i])
         {
-            lwm2m_list_t *listPtr = ObjectArray[i]->instanceList;
-            ObjectArray[i]->instanceList = ObjectArray[i]->instanceList->next;
-            lwm2m_free(listPtr);
-        }
+            while (ObjectArray[i]->instanceList != NULL)
+            {
+                lwm2m_list_t *listPtr = ObjectArray[i]->instanceList;
+                ObjectArray[i]->instanceList = ObjectArray[i]->instanceList->next;
+                lwm2m_free(listPtr);
+            }
 
-        lwm2m_free(ObjectArray[i]);
-        ObjectArray[i] = NULL;
+            lwm2m_free(ObjectArray[i]);
+            ObjectArray[i] = NULL;
+        }
     }
 }
 
