@@ -248,7 +248,7 @@ static int SendData
 
 #ifdef WITH_LOGS
     char s[INET6_ADDRSTRLEN];
-    in_port_t port;
+    in_port_t port = 0;
 
     s[0] = 0;
 
