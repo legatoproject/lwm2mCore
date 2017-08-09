@@ -166,6 +166,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
 )
 {
     void* coapHandler;
+    uint8_t coapErrorCode;
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
     lwm2mcore_CoapRequest_t* requestPtr;
 
@@ -199,7 +200,13 @@ coap_status_t lwm2mcore_CallCoapEventHandler
         result = LWM2MCORE_ERR_ASYNC_OPERATION;
     }
 
-    return GetCoapErrorCode(result, requestPtr->method);
+    coapErrorCode = GetCoapErrorCode(result, requestPtr->method);
+    if ((NULL == RequestHandlerRef) && (requestPtr))
+    {
+       lwm2m_free(requestPtr);
+    }
+
+    return coapErrorCode;
 }
 
 

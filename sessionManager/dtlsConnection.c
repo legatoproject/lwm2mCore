@@ -339,6 +339,11 @@ static int GetPskInfo
 #endif
             if (resultLength < idLen)
             {
+                if (idPtr)
+                {
+                   lwm2m_free(idPtr);
+                }
+
                 LOG("cannot set psk_identity -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
@@ -357,6 +362,11 @@ static int GetPskInfo
 #endif
             if (resultLength < keyLen)
             {
+                if (keyPtr)
+                {
+                   lwm2m_free(keyPtr);
+                }
+
                 LOG("cannot set psk -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }

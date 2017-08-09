@@ -819,6 +819,7 @@ static uint8_t WriteCb
         LOG_ARG("Object %d not found", objectPtr->objID);
         result = COAP_404_NOT_FOUND;
     }
+
     LOG_ARG("WriteCb result %d", result);
     return result;
 }
@@ -1775,6 +1776,7 @@ static bool UpdateSwListWakaama
                 LOG_ARG("Oiid %d already registered in SwApplicationListPtr --> keep it in Wakaama",
                         wakaamaInstancePtr->id);
             }
+
             wakaamaInstancePtr = wakaamaInstancePtr->next;
         }
     }
