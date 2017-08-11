@@ -1092,13 +1092,12 @@ bool lwm2mcore_SendAsyncResponse
     lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] coap response
 )
 {
-    bool result = false;
     bool registered = false;
     smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
 
     if (NULL == instanceRef)
     {
-        return result;
+        return false;
     }
 
     /* Check that the device is registered to DM server */
@@ -1124,4 +1123,6 @@ bool lwm2mcore_SendAsyncResponse
                                         responsePtr->payloadLength);
         }
     }
+
+    return false;
 }
