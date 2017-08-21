@@ -247,10 +247,20 @@ static lwm2mcore_Sid_t BuildVelocity
 
     /* Get the direction of movement */
     lsID = lwm2mcore_GetDirection(&direction);
-    if (LWM2MCORE_ERR_COMPLETED_OK != lsID)
+    switch (lsID)
     {
-        /* Direction is necessary to build the velocity */
-        return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        case LWM2MCORE_ERR_NOT_YET_IMPLEMENTED:
+            /* No direction available, assume 0 */
+            direction = 0;
+            break;
+
+        case LWM2MCORE_ERR_COMPLETED_OK:
+            /* Direction successfully retrieved */
+            break;
+
+        default:
+            /* Direction is necessary to build the velocity */
+            return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
     }
 
     /* Get the horizontal speed */
@@ -312,6 +322,7 @@ static lwm2mcore_Sid_t BuildVelocity
 
         sID = LWM2MCORE_ERR_COMPLETED_OK;
     }
+    lwm2mcore_DataDump("Velocity buffer", gadVelocity, gadVelocityLen);
 
     /* Copy the velocity to the output buffer */
     if (*lenPtr < gadVelocityLen)
@@ -2075,10 +2086,6 @@ int omanager_ReadLocationObj
         case LWM2MCORE_LOCATION_VELOCITY_RID:
             /* Build the velocity with direction, horizontal and vertical speeds */
             sID = BuildVelocity(bufferPtr, (uint32_t*)lenPtr);
-            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
-            {
-                *lenPtr = strlen(bufferPtr);
-            }
             break;
 
         /* Resource 5: Timestamp */
