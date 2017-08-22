@@ -1315,11 +1315,21 @@ static void InitObjectsList
         {
             /* the maxObjInstCnt is 1 for this object, but this is actually multiple instance */
             objPtr = InitObject(clientHandlerPtr->objects + i, 0, true);
+            if (!objPtr)
+            {
+               LOG("objPtr is NULL");
+               return;
+            }
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
         else
         {
             objPtr = InitObject(clientHandlerPtr->objects + i, 0, false);
+            if (!objPtr)
+            {
+               LOG("objPtr is NULL");
+               return;
+            }
             DLIST_INSERT_TAIL(objects_list, objPtr, list);
         }
     }
