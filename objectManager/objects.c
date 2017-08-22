@@ -1876,3 +1876,37 @@ bool lwm2mcore_UpdateSwList
     return UpdateSwListWakaama(instanceRef);
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read the lifetime from the server object.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetLifetime
+(
+    uint32_t* lifetimePtr           ///< [OUT] Lifetime in seconds
+)
+{
+    return omanager_GetLifetime(lifetimePtr);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to set the lifetime in the server object and save to disk.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetLifetime
+(
+    uint32_t lifetime               ///< [IN] Lifetime in seconds
+)
+{
+    return omanager_SetLifetime(lifetime);
+}
+

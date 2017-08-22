@@ -735,29 +735,30 @@ void lwm2mcore_DataDump
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read the polling timer.
+ * Function to read the lifetime from the server object.
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetPollingTimer
+lwm2mcore_Sid_t lwm2mcore_GetLifetime
 (
-    uint32_t* pollingTimerPtr  ///< [OUT] Polling timer
+    uint32_t* lifetimePtr       ///< [OUT] Lifetime in seconds
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to set the polling timer.
+ * Function to set the lifetime in the server object and save to disk.
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_SetPollingTimer
+lwm2mcore_Sid_t lwm2mcore_SetLifetime
 (
-    uint32_t pollingTimer ///< [IN] Polling timer
+    uint32_t lifetime           ///< [IN] Lifetime in seconds
 );
 
 #endif /*  __LWM2MCORE_H__ */

@@ -347,24 +347,24 @@ static lwm2mcore_Sid_t BuildVelocity
  *      - false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-bool omanager_GetBootstrapConfiguration
+static bool GetBootstrapConfiguration
 (
-    void
+    ConfigBootstrapFile_t *configPtr        ///< [OUT] configuration
 )
 {
     lwm2mcore_Sid_t sid;
     size_t len = sizeof(ConfigBootstrapFile_t);
     /* Check if the LWM2MCore configuration file is stored */
-    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, &BsConfig, &len);
-    LOG_ARG("Read BS configiguration: len %d result %d", len, sid);
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, (uint8_t*)configPtr, &len);
+    LOG_ARG("Read BS configuration: len %d result %d", len, sid);
 
     if ((LWM2MCORE_ERR_COMPLETED_OK == sid)
      && (len == sizeof(ConfigBootstrapFile_t)))
     {
         /* Check if the file version is the supported one */
         LOG_ARG("BS configuration version %d (only %d supported)",
-                BsConfig.version, BS_CONFIG_VERSION);
-        if (BS_CONFIG_VERSION == BsConfig.version)
+                configPtr->version, BS_CONFIG_VERSION);
+        if (BS_CONFIG_VERSION == configPtr->version)
         {
             return true;
         }
@@ -384,8 +384,51 @@ bool omanager_GetBootstrapConfiguration
         }
     }
     /* Copy the default configuration */
-    memcpy(&BsConfig, &BootstrapDefaultConfig, sizeof(ConfigBootstrapFile_t));
+    memcpy(configPtr, &BootstrapDefaultConfig, sizeof(ConfigBootstrapFile_t));
     return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to save the bootstrap configuration in platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static bool SetBootstrapConfiguration
+(
+    ConfigBootstrapFile_t *configPtr        ///< [OUT] configuration
+)
+{
+    bool result = false;
+    lwm2mcore_Sid_t sid = lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
+                                             (uint8_t*)configPtr,
+                                             sizeof(ConfigBootstrapFile_t));
+    if (LWM2MCORE_ERR_COMPLETED_OK == sid)
+    {
+        result = true;
+    }
+    LOG_ARG("Set BS configuration %d", result);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read the bootstrap configuration from platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool omanager_GetBootstrapConfiguration
+(
+    void
+)
+{
+   return GetBootstrapConfiguration(&BsConfig);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -402,17 +445,88 @@ bool omanager_SetBootstrapConfiguration
     void
 )
 {
-    bool result = false;
-    lwm2mcore_Sid_t sid = lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
-                                             (uint8_t*)&BsConfig,
-                                             sizeof(ConfigBootstrapFile_t));
-    if (LWM2MCORE_ERR_COMPLETED_OK == sid)
-    {
-        result = true;
-    }
-    LOG_ARG("Set BS configuration %d", result);
-    return result;
+    return SetBootstrapConfiguration(&BsConfig);
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Sets the lifetime in the server configuration and saves it to file system
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t omanager_SetLifetime
+(
+    uint32_t lifetime   ///< [IN] lifetime in seconds
+)
+{
+    bool result;
+    ConfigBootstrapFile_t config;
+
+    if (BS_CONFIG_VERSION == BsConfig.version)
+    {
+        /* set lifetime */
+        BsConfig.server.lifetime = lifetime;
+
+        /* save bs config to file system */
+        result = SetBootstrapConfiguration(&BsConfig);
+    }
+    else
+    {
+        /* load config */
+        GetBootstrapConfiguration(&config);
+
+        /* set lifetime */
+        config.server.lifetime = lifetime;
+
+        /* save config */
+        result = SetBootstrapConfiguration(&config);
+    }
+
+    if (true != result)
+    {
+        LOG("Failed to set config to le_fs");
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Retrieves the lifetime from the server configuration
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t omanager_GetLifetime
+(
+    uint32_t* lifetimePtr                 ///< [OUT] lifetime in seconds
+)
+{
+    lwm2mcore_Sid_t sid;
+    ConfigBootstrapFile_t config;
+    size_t len = sizeof(ConfigBootstrapFile_t);
+
+    if (BS_CONFIG_VERSION == BsConfig.version)
+    {
+        /* set lifetime to default (disabled) */
+        *lifetimePtr = BsConfig.server.lifetime;
+    }
+    else
+    {
+        GetBootstrapConfiguration(&config);
+        *lifetimePtr = config.server.lifetime;
+    }
+
+    LOG_ARG("Lifetime is %d seconds", *lifetimePtr);
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -966,6 +1080,7 @@ int omanager_WriteServerObj
 )
 {
     int sID;
+    uint32_t lifetime;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
@@ -993,11 +1108,8 @@ int omanager_WriteServerObj
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
-            BsConfig.server.lifetime = (uint64_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
-            sID = LWM2MCORE_ERR_COMPLETED_OK;
-
-            // Convert the polling timer from sec to min for Legato
-            lwm2mcore_SetPollingTimer(BsConfig.server.lifetime / 60);
+            lifetime = (uint32_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            sID = lwm2mcore_SetLifetime(lifetime);
             break;
 
         /* Resource 2: Server default minimum period */
@@ -1097,14 +1209,9 @@ int omanager_ReadServerObj
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
         {
-            // Attempt to read the polling timer value from the config tree
-            uint32_t pollingTimer = 0;
-            lwm2mcore_GetPollingTimer(&pollingTimer);
-
-            // Convert the polling timer from min in Legato to sec
-            pollingTimer = pollingTimer * 60;
-
-            BsConfig.server.lifetime = (pollingTimer == 0) ? LIFETIME_VALUE_DISABLED : pollingTimer;
+            BsConfig.server.lifetime = (BsConfig.server.lifetime == 0)
+                                       ? LIFETIME_VALUE_DISABLED
+                                       : BsConfig.server.lifetime;
 
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &BsConfig.server.lifetime,

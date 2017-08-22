@@ -736,6 +736,34 @@ bool omanager_SetBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Sets the lifetime in the server configuration and saves it to file system
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t omanager_SetLifetime
+(
+    uint32_t lifetime                               ///< [IN] lifetime in seconds
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Retrieves the lifetime from the server configuration
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t omanager_GetLifetime
+(
+    uint32_t* lifetimePtr                           ///< [OUT] lifetime in seconds
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to know if the connection is secured or not
  *
  * @return
