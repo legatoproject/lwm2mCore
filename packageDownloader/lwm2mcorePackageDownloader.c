@@ -1594,6 +1594,77 @@ static void PkgDwlGetUserAgreement
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Load saved resume data
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_DwlResult_t LoadResumeData
+(
+    lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
+)
+{
+    // Read the stored package downloader workspace
+    if ( (DWL_OK != ReadPkgDwlWorkspace(&PkgDwlWorkspace)) || (!PkgDwlWorkspace.offset) )
+    {
+        return DWL_FAULT;
+    }
+
+    // Check if the update process was ongoing
+    if (pkgDwlPtr->data.updateOffset)
+    {
+        // The update process might be late comparing to the package downloader:
+        // compute the update process gap to download again the unprocessed data
+        PkgDwlObj.updateGap = PkgDwlWorkspace.binarySize
+                              - PkgDwlWorkspace.remainingBinaryData
+                              - pkgDwlPtr->data.updateOffset;
+
+        LOG_ARG("Binary size = %llu", PkgDwlWorkspace.binarySize);
+        LOG_ARG("Remaining binary data = %llu", PkgDwlWorkspace.remainingBinaryData);
+        LOG_ARG("Update offset = %llu", pkgDwlPtr->data.updateOffset);
+        LOG_ARG("Update gap = %llu", PkgDwlObj.updateGap);
+        LOG_ARG("Stored offset = %llu", PkgDwlWorkspace.offset);
+
+        // Set start offset
+        PkgDwlWorkspace.offset -= PkgDwlObj.updateGap;
+        PkgDwlWorkspace.remainingBinaryData += PkgDwlObj.updateGap;
+        PkgDwlObj.offset = PkgDwlWorkspace.offset;
+
+        // Set DWL section
+        // It has to be binary data if the update is resumed, as it is the only
+        // section where the package downloader workspace is stored.
+        DwlParserObj.section = DWL_TYPE_BINA;
+        DwlParserObj.subsection = DWL_SUB_BINARY;
+    }
+    else
+    {
+        // Set start offset
+        PkgDwlObj.offset = PkgDwlWorkspace.offset;
+
+        // Set DWL parser
+        DwlParserObj.section = PkgDwlWorkspace.section;
+        DwlParserObj.subsection = PkgDwlWorkspace.subsection;
+    }
+
+    DwlParserObj.packageCRC = PkgDwlWorkspace.packageCRC;
+    DwlParserObj.computedCRC = PkgDwlWorkspace.computedCRC;
+    DwlParserObj.commentSize = PkgDwlWorkspace.commentSize;
+    DwlParserObj.binarySize = PkgDwlWorkspace.binarySize;
+    DwlParserObj.paddingSize = PkgDwlWorkspace.paddingSize;
+    DwlParserObj.remainingBinaryData = PkgDwlWorkspace.remainingBinaryData;
+    DwlParserObj.signatureSize = PkgDwlWorkspace.signatureSize;
+
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha1(PkgDwlWorkspace.sha1Ctx,
+                                                            SHA1_CTX_MAX_SIZE,
+                                                            &DwlParserObj.sha1CtxPtr))
+    {
+        LOG("Unable to restore SHA1 context");
+        return DWL_FAULT;
+    }
+
+    return DWL_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Download the package
  */
 //--------------------------------------------------------------------------------------------------
@@ -1633,59 +1704,11 @@ static void PkgDwlDownload
     // Be ready to parse downloaded data
     SetPkgDwlState(PKG_DWL_PARSE);
 
-    // Read the stored package downloader workspace and check if download should be resumed
-    if (   (DWL_OK == ReadPkgDwlWorkspace(&PkgDwlWorkspace))
-        && (PkgDwlWorkspace.offset)
-       )
+    if (PkgDwlPtr->data.isResume)
     {
-        // Check if the update process was ongoing
-        if (pkgDwlPtr->data.updateOffset)
+        if (DWL_OK != LoadResumeData(pkgDwlPtr))
         {
-            // The update process might be late comparing to the package downloader:
-            // compute the update process gap to download again the unprocessed data
-            PkgDwlObj.updateGap = PkgDwlWorkspace.binarySize
-                                  - PkgDwlWorkspace.remainingBinaryData
-                                  - pkgDwlPtr->data.updateOffset;
-
-            LOG_ARG("Binary size = %llu", PkgDwlWorkspace.binarySize);
-            LOG_ARG("Remaining binary data = %llu", PkgDwlWorkspace.remainingBinaryData);
-            LOG_ARG("Update offset = %llu", pkgDwlPtr->data.updateOffset);
-            LOG_ARG("Update gap = %llu", PkgDwlObj.updateGap);
-            LOG_ARG("Stored offset = %llu", PkgDwlWorkspace.offset);
-
-            // Set start offset
-            PkgDwlWorkspace.offset -= PkgDwlObj.updateGap;
-            PkgDwlWorkspace.remainingBinaryData += PkgDwlObj.updateGap;
-            PkgDwlObj.offset = PkgDwlWorkspace.offset;
-
-            // Set DWL section
-            // It has to be binary data if the update is resumed, as it is the only
-            // section where the package downloader workspace is stored.
-            DwlParserObj.section = DWL_TYPE_BINA;
-            DwlParserObj.subsection = DWL_SUB_BINARY;
-        }
-        else
-        {
-            // Set start offset
-            PkgDwlObj.offset = PkgDwlWorkspace.offset;
-
-            // Set DWL parser
-            DwlParserObj.section = PkgDwlWorkspace.section;
-            DwlParserObj.subsection = PkgDwlWorkspace.subsection;
-        }
-
-        DwlParserObj.packageCRC = PkgDwlWorkspace.packageCRC;
-        DwlParserObj.computedCRC = PkgDwlWorkspace.computedCRC;
-        DwlParserObj.commentSize = PkgDwlWorkspace.commentSize;
-        DwlParserObj.binarySize = PkgDwlWorkspace.binarySize;
-        DwlParserObj.paddingSize = PkgDwlWorkspace.paddingSize;
-        DwlParserObj.remainingBinaryData = PkgDwlWorkspace.remainingBinaryData;
-        DwlParserObj.signatureSize = PkgDwlWorkspace.signatureSize;
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha1(PkgDwlWorkspace.sha1Ctx,
-                                                                SHA1_CTX_MAX_SIZE,
-                                                                &DwlParserObj.sha1CtxPtr))
-        {
-            LOG("Unable to restore SHA1 context");
+            LOG("Unable to load resume data");
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
             SetPkgDwlState(PKG_DWL_ERROR);
             return;
@@ -2192,18 +2215,21 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
         // If storing is necessary, processing is not complete yet
         if (PKG_DWL_STORE != GetPkgDwlState())
         {
-            double downloadProgress;
+            uint32_t downloadProgress = 0;
 
             // Update offset
             PkgDwlObj.offset += PkgDwlObj.processedLen;
 
-            // Compute download progress
-            downloadProgress = (100 * PkgDwlObj.offset) / PkgDwlPtr->data.packageSize;
+            if (PkgDwlPtr->data.packageSize)
+            {
+                // Compute download progress
+                downloadProgress = (uint32_t)((100*PkgDwlObj.offset) / PkgDwlPtr->data.packageSize);
+            }
 
             if (downloadProgress != PkgDwlObj.downloadProgress)
             {
                 // Update overall download progress
-                PkgDwlObj.downloadProgress = (uint32_t)downloadProgress;
+                PkgDwlObj.downloadProgress = downloadProgress;
                 // Notify the application of the download progress if it changed since last time
                 // Note: the downloader has far more information about the progress (e.g. ETA) and
                 // a callback could be implemented to retrieve these data.
