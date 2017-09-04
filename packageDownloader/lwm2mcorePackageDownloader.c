@@ -344,18 +344,7 @@ static DwlParserObj_t DwlParserObj;
 //--------------------------------------------------------------------------------------------------
 static PackageDownloaderWorkspace_t PkgDwlWorkspace =
 {
-    .version             = 0,
-    .offset              = 0,
-    .section             = 0,
-    .subsection          = 0,
-    .packageCRC          = 0,
-    .commentSize         = 0,
-    .binarySize          = 0,
-    .paddingSize         = 0,
-    .remainingBinaryData = 0,
-    .signatureSize       = 0,
-    .computedCRC         = 0,
-    .sha1Ctx             = {0}
+    .version             = PKGDWL_WORKSPACE_VERSION,
 };
 
 //--------------------------------------------------------------------------------------------------
