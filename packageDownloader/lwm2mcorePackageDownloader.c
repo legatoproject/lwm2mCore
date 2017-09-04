@@ -1493,19 +1493,45 @@ static void PkgDwlInit
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
-    // Set update type and initialize update result
+    // Set update type: this should be the first step of the package downloader as the
+    // error management is based on the update package type.
     switch (pkgDwlPtr->data.updateType)
     {
         case LWM2MCORE_FW_UPDATE_TYPE:
             LOG("Receiving FW package");
             PkgDwlObj.packageType = LWM2MCORE_PKG_FW;
-            SetUpdateResult(PKG_DWL_NO_ERROR);
-            PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
             break;
 
         case LWM2MCORE_SW_UPDATE_TYPE:
             LOG("Receiving SW package");
             PkgDwlObj.packageType = LWM2MCORE_PKG_SW;
+            break;
+
+        default:
+            LOG_ARG("Unknown package type %d", pkgDwlPtr->data.updateType);
+            PkgDwlObj.packageType = LWM2MCORE_PKG_NONE;
+            break;
+    }
+
+    // Initialize download
+    PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
+    if (DWL_OK != PkgDwlObj.result)
+    {
+        LOG("Error during download initialization");
+        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+        SetPkgDwlState(PKG_DWL_ERROR);
+        return;
+    }
+
+    // Initialize update result
+    switch (pkgDwlPtr->data.updateType)
+    {
+        case LWM2MCORE_FW_UPDATE_TYPE:
+            SetUpdateResult(PKG_DWL_NO_ERROR);
+            PkgDwlObj.result = pkgDwlPtr->setFwUpdateResult(PkgDwlObj.updateResult.fw);
+            break;
+
+        case LWM2MCORE_SW_UPDATE_TYPE:
             SetUpdateResult(PKG_DWL_NO_ERROR);
             PkgDwlObj.result = pkgDwlPtr->setSwUpdateResult(PkgDwlObj.updateResult.sw);
             break;
@@ -1519,16 +1545,6 @@ static void PkgDwlInit
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
-        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        SetPkgDwlState(PKG_DWL_ERROR);
-        return;
-    }
-
-    // Initialize download
-    PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != PkgDwlObj.result)
-    {
-        LOG("Error during download initialization");
         SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
         SetPkgDwlState(PKG_DWL_ERROR);
         return;
