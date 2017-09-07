@@ -112,7 +112,7 @@ static lwm2mcore_Resource_t SecurityResources[] =
     },
     {
         LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID,   //.id
-        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
         1,                                          //.maxResInstCnt
         NULL,                                       //.read
         omanager_SmsDummy,                          //.write
@@ -573,7 +573,7 @@ static lwm2mcore_Resource_t SoftwareUpdateResources[] =
     },
     {
         LWM2MCORE_SW_UPDATE_UNINSTALL_RID,          //.id
-        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,            //.type
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
         1,                                          //.maxResInstCnt
         NULL,                                       //.read
         NULL,                                       //.write

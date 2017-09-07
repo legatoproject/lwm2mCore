@@ -574,6 +574,117 @@ static uint8_t ReadCb
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Generic function when a WRITE/EXECUTE command is treated to format the received data
+ *
+ * @return
+ *      - true on success
+ *      - false else
+ */
+//--------------------------------------------------------------------------------------------------
+static bool FormatDataWriteExecute
+(
+    lwm2mcore_ResourceType_t resourceFormatType,    ///< [IN] Resource format type
+    lwm2m_data_t dataArray,                         ///< [IN] Array of requested resources to be
+                                                    ///< written
+    char* bufferPtr,                                ///< [IN] Output buffer
+    size_t* bufferLenPtr                            ///< [IN] Output buffer length
+)
+{
+    bool result = false;
+
+    if ( (NULL == bufferPtr) || (NULL == bufferLenPtr))
+    {
+        return result;
+    }
+
+    // This indicates in which format the server sent a data
+    // According to Wakaama source code (see lwm2m_data_parse API)):
+    // - when a WRITE/EXECUTE command is received on a specific resoure in TEXT format, the type is
+    //   set to LWM2M_TYPE_STRING
+    // - when a WRITE/EXECUTE command is received on a specific resoure in TLV format, the type is
+    //   set to LWM2M_TYPE_OPAQUE
+    // - when a WRITE command is received on a specific object in TLV format, the type is set to
+    //   LWM2M_TYPE_OPAQUE
+    switch (dataArray.type)
+    {
+        case LWM2M_TYPE_STRING:
+        {
+            if (dataArray.value.asBuffer.length <= (*bufferLenPtr))
+            {
+                // Check the resource format
+                switch (resourceFormatType)
+                {
+                    case LWM2MCORE_RESOURCE_TYPE_INT:
+                    case LWM2MCORE_RESOURCE_TYPE_BOOL:
+                    {
+                        // The received data is the integer/boolean value in text
+                        // Example: value 123 is sent like 0x31 32 33
+                        // Change the string in value
+                        int64_t value = 0;
+
+                        // If the length is 0, immediately   return the right length value
+                        // else Wakaama utils_textToInt will return an error
+                        if(!(dataArray.value.asBuffer.length))
+                        {
+                            *bufferLenPtr = 0;
+                            return true;
+                        }
+
+                        if (utils_textToInt(dataArray.value.asBuffer.buffer,
+                                            dataArray.value.asBuffer.length,
+                                            &value))
+                        {
+                            // Treat it in buffer for generic handlers treament
+                            *bufferLenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
+                                                                        &value,
+                                                                        sizeof(value),
+                                                                        false);
+                            result = true;
+                        }
+                    }
+                    break;
+
+                    case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
+                    case LWM2MCORE_RESOURCE_TYPE_FLOAT:
+                    case LWM2MCORE_RESOURCE_TYPE_TIME:
+                    case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
+                    default:
+                        memcpy(bufferPtr,
+                               dataArray.value.asBuffer.buffer,
+                               dataArray.value.asBuffer.length);
+                        *bufferLenPtr = dataArray.value.asBuffer.length;
+                        result = true;
+                    break;
+                }
+            }
+        }
+        break;
+
+        case LWM2M_TYPE_OPAQUE:
+        {
+            if (dataArray.value.asBuffer.length <= (*bufferLenPtr))
+            {
+                memcpy(bufferPtr, dataArray.value.asBuffer.buffer, dataArray.value.asBuffer.length);
+                *bufferLenPtr = dataArray.value.asBuffer.length;
+                result = true;
+            }
+        }
+        break;
+
+        case LWM2M_TYPE_INTEGER:
+        case LWM2M_TYPE_FLOAT:
+        case LWM2M_TYPE_BOOLEAN:
+        default:
+            LOG_ARG("Unmanaged type format for WRITE/EXECUTE %d", dataArray.type);
+            *bufferLenPtr = 0;
+        break;
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Generic function when a WRITE command is treated for a specific object (Wakaama)
  *
  * @return
@@ -669,85 +780,24 @@ static uint8_t WriteCb
                 {
                     if (NULL != resourcePtr->write)
                     {
-                        LOG_ARG("data type %d", dataArrayPtr[i].type);
+                        LOG_ARG("data type %d resourcePtr->ptr %d",
+                                dataArrayPtr[i].type, resourcePtr->type);
 
-                        switch (dataArrayPtr[i].type)
-                        {
-                            case LWM2M_TYPE_STRING:
-                            {
-                                LOG("WriteCb string");
-                                if (dataArrayPtr[i].value.asBuffer.length <=
-                                                                        LWM2MCORE_BUFFER_MAX_LEN)
-                                {
-                                    memcpy(async_buf,
-                                           dataArrayPtr[i].value.asBuffer.buffer,
-                                           dataArrayPtr[i].value.asBuffer.length);
-                                    async_buf_len = dataArrayPtr[i].value.asBuffer.length;
-                                }
-                            }
-                            break;
-
-                            case LWM2M_TYPE_OPAQUE:
-                            {
-                                LOG("WriteCb opaque");
-                                if (dataArrayPtr[i].value.asBuffer.length <=
-                                                                        LWM2MCORE_BUFFER_MAX_LEN)
-                                {
-                                    memcpy(async_buf,
-                                           dataArrayPtr[i].value.asBuffer.buffer,
-                                           dataArrayPtr[i].value.asBuffer.length);
-                                    async_buf_len = dataArrayPtr[i].value.asBuffer.length;
-                                }
-                            }
-                            break;
-
-                            case LWM2M_TYPE_INTEGER:
-                            {
-                                int64_t value = 0;
-                                LOG("WriteCb integer");
-                                if (0 == lwm2m_data_decode_int(dataArrayPtr+i, &value))
-                                {
-                                    LOG("integer decode ERROR");
-                                }
-                                else
-                                {
-                                    LOG_ARG("WriteCb integer %d", value);
-                                    snprintf(async_buf, LWM2MCORE_BUFFER_MAX_LEN, "%d", value);
-                                }
-                            }
-                            break;
-
-                            case LWM2M_TYPE_FLOAT:
-                            {
-                                LOG("WriteCb float");
-                            }
-                            break;
-
-                            case LWM2M_TYPE_BOOLEAN:
-                            {
-                                bool value = false;
-                                LOG("WriteCb bool");
-                                if (0 == lwm2m_data_decode_bool(dataArrayPtr+i, &value))
-                                {
-                                    LOG("bool decode ERROR");
-                                }
-                                else
-                                {
-                                    LOG_ARG("WriteCb bool %d", value);
-                                }
-                            }
-                            break;
-
-                            default:
-                            break;
-                        }
-                        LOG_ARG("WRITE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                        sid  = resourcePtr->write(&uri,
+                       if (FormatDataWriteExecute(resourcePtr->type,
+                                                  dataArrayPtr[i],
                                                   async_buf,
-                                                  async_buf_len);
-                        LOG_ARG("WRITE sID %d", sid);
-                        /* Define the CoAP result */
-                        result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
+                                                  &async_buf_len))
+                        {
+                            LOG_ARG("WRITE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
+                            sid = resourcePtr->write(&uri, async_buf, async_buf_len);
+                            LOG_ARG("WRITE sID %d", sid);
+                            /* Define the CoAP result */
+                            result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
+                        }
+                        else
+                        {
+                            result = COAP_400_BAD_REQUEST;
+                        }
                     }
                     else
                     {
@@ -922,8 +972,7 @@ static uint8_t DeleteCb
      * If the device is connected to the bootstrap server, only accept DELETE command on
      * Security object (object 0)
      */
-    if (true == lwm2mcore_ConnectionGetType(objectPtr->userData,
-                                            &isDeviceManagement))
+    if (true == lwm2mcore_ConnectionGetType(objectPtr->userData, &isDeviceManagement))
     {
         if ((false == isDeviceManagement)
         && (LWM2MCORE_SECURITY_OID != objectPtr->objID))
@@ -959,8 +1008,7 @@ static uint8_t DeleteCb
         lwm2m_free(instancePtr);
 
         LOG_ARG("Remove oiid %d from SwApplicationListPtr", instanceId);
-        instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
-                                                     instanceId);
+        instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr, instanceId);
 
         if (NULL != instancePtr)
         {
@@ -1056,7 +1104,8 @@ static uint8_t ExecuteCb
         {
             int sid = 0;
             lwm2mcore_internalResource_t* resourcePtr = NULL;
-            size_t len = (size_t) length;
+            char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
+            size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
 
             /* Search the resource handler */
             resourcePtr = FindResource(objPtr, uri.rid);
@@ -1064,13 +1113,28 @@ static uint8_t ExecuteCb
             {
                 if (NULL != resourcePtr->exec)
                 {
-                    LOG_ARG("EXECUTE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                    sid  = resourcePtr->exec(&uri,
-                                            bufferPtr,
-                                            len);
-                    LOG_ARG("EXECUTE sID %d", sid);
-                    /* Define the CoAP result */
-                    result = SetCoapError(sid, LWM2MCORE_OP_EXECUTE);
+                    lwm2m_data_t dataArray;
+                    dataArray.type = LWM2M_TYPE_STRING;
+                    dataArray.value.asBuffer.length = (size_t)length;
+                    dataArray.value.asBuffer.buffer = bufferPtr;
+                    memset(async_buf, 0, async_buf_len);
+
+                    LOG_ARG("data type %d resourcePtr->type %d", dataArray.type, resourcePtr->type);
+                    if (FormatDataWriteExecute(resourcePtr->type,
+                                               dataArray,
+                                               async_buf,
+                                               &async_buf_len))
+                    {
+                        LOG_ARG("EXECUTE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
+                        sid  = resourcePtr->exec(&uri, async_buf, async_buf_len);
+                        LOG_ARG("EXECUTE sID %d", sid);
+                        /* Define the CoAP result */
+                        result = SetCoapError(sid, LWM2MCORE_OP_EXECUTE);
+                    }
+                    else
+                    {
+                        result = COAP_400_BAD_REQUEST;
+                    }
                 }
                 else
                 {
