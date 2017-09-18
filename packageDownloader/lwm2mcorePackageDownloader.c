@@ -1608,47 +1608,46 @@ static lwm2mcore_DwlResult_t LoadResumeData
 )
 {
     // Read the stored package downloader workspace
-    if ( (DWL_OK != ReadPkgDwlWorkspace(&PkgDwlWorkspace)) || (!PkgDwlWorkspace.offset) )
+    if ((DWL_OK != ReadPkgDwlWorkspace(&PkgDwlWorkspace)) || (!PkgDwlWorkspace.offset))
     {
         return DWL_FAULT;
     }
 
-    // Check if the update process was ongoing
-    if (pkgDwlPtr->data.updateOffset)
+    LOG_ARG("Binary size = %llu", PkgDwlWorkspace.binarySize);
+    LOG_ARG("Remaining binary data = %llu", PkgDwlWorkspace.remainingBinaryData);
+    LOG_ARG("Update offset = %llu", pkgDwlPtr->data.updateOffset);
+    LOG_ARG("Stored offset = %llu", PkgDwlWorkspace.offset);
+
+    // The update process might be late comparing to the package downloader:
+    // check that this is really the case
+    if ( (PkgDwlWorkspace.remainingBinaryData + pkgDwlPtr->data.updateOffset)
+        > PkgDwlWorkspace.binarySize )
     {
-        // The update process might be late comparing to the package downloader:
-        // compute the update process gap to download again the unprocessed data
-        PkgDwlObj.updateGap = PkgDwlWorkspace.binarySize
-                              - PkgDwlWorkspace.remainingBinaryData
-                              - pkgDwlPtr->data.updateOffset;
-
-        LOG_ARG("Binary size = %llu", PkgDwlWorkspace.binarySize);
-        LOG_ARG("Remaining binary data = %llu", PkgDwlWorkspace.remainingBinaryData);
-        LOG_ARG("Update offset = %llu", pkgDwlPtr->data.updateOffset);
-        LOG_ARG("Update gap = %llu", PkgDwlObj.updateGap);
-        LOG_ARG("Stored offset = %llu", PkgDwlWorkspace.offset);
-
-        // Set start offset
-        PkgDwlWorkspace.offset -= PkgDwlObj.updateGap;
-        PkgDwlWorkspace.remainingBinaryData += PkgDwlObj.updateGap;
-        PkgDwlObj.offset = PkgDwlWorkspace.offset;
-
-        // Set DWL section
-        // It has to be binary data if the update is resumed, as it is the only
-        // section where the package downloader workspace is stored.
-        DwlParserObj.section = DWL_TYPE_BINA;
-        DwlParserObj.subsection = DWL_SUB_BINARY;
-    }
-    else
-    {
-        // Set start offset
-        PkgDwlObj.offset = PkgDwlWorkspace.offset;
-
-        // Set DWL parser
-        DwlParserObj.section = PkgDwlWorkspace.section;
-        DwlParserObj.subsection = PkgDwlWorkspace.subsection;
+        LOG("Incoherence in stored data, unable to resume download");
+        return DWL_FAULT;
     }
 
+    // Compute the update process gap to download again the unprocessed data
+    PkgDwlObj.updateGap = PkgDwlWorkspace.binarySize
+                          - PkgDwlWorkspace.remainingBinaryData
+                          - pkgDwlPtr->data.updateOffset;
+    LOG_ARG("Update gap = %llu", PkgDwlObj.updateGap);
+
+    // Set start offset
+    if (PkgDwlObj.updateGap > PkgDwlWorkspace.offset)
+    {
+        LOG("Incoherent update gap, unable to resume download");
+        return DWL_FAULT;
+    }
+    PkgDwlWorkspace.offset -= PkgDwlObj.updateGap;
+    PkgDwlWorkspace.remainingBinaryData += PkgDwlObj.updateGap;
+    PkgDwlObj.offset = PkgDwlWorkspace.offset;
+
+    // Set DWL section
+    // It has to be binary data if the update is resumed, as it is the only
+    // section where the package downloader workspace is stored.
+    DwlParserObj.section = DWL_TYPE_BINA;
+    DwlParserObj.subsection = DWL_SUB_BINARY;
     DwlParserObj.packageCRC = PkgDwlWorkspace.packageCRC;
     DwlParserObj.computedCRC = PkgDwlWorkspace.computedCRC;
     DwlParserObj.commentSize = PkgDwlWorkspace.commentSize;
@@ -1709,7 +1708,9 @@ static void PkgDwlDownload
     // Be ready to parse downloaded data
     SetPkgDwlState(PKG_DWL_PARSE);
 
-    if (PkgDwlPtr->data.isResume)
+    // Check if the package downloader workspace should be used to compute the download offset.
+    // This is the case if it is a download resume and data was already stored.
+    if ((PkgDwlPtr->data.isResume) && (PkgDwlPtr->data.updateOffset))
     {
         if (DWL_OK != LoadResumeData(pkgDwlPtr))
         {
