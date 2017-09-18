@@ -2074,15 +2074,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
                 break;
 
             case PKG_DWL_START:
-                if (pkgDwlPtr->data.isResume)
-                {
-                    LOG("Skip user agreement for download resume");
-                    SetPkgDwlState(PKG_DWL_DOWNLOAD);
-                }
-                else
-                {
-                    PkgDwlGetUserAgreement(pkgDwlPtr);
-                }
+                PkgDwlGetUserAgreement(pkgDwlPtr);
                 break;
 
             case PKG_DWL_WAIT:
