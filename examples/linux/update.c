@@ -36,7 +36,7 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
 )
 {
     /* This function can be used to receive a package using CoAP
-     * This is not supported by LWM2MCore
+     * This is not supported by LwM2MCore
      */
     return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
 }

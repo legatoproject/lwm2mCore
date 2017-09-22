@@ -1,7 +1,7 @@
 /**
- * @file thread.h
+ * @file mutex.h
  *
- * Header file for adaptation layer for thread related api
+ * Header file for adaptation layer for mutex related api
  *
  * Copyright (C) Sierra Wireless Inc.
  *
@@ -10,6 +10,16 @@
 #ifndef __LWM2MCORE_THREAD_H__
 #define __LWM2MCORE_THREAD_H__
 
+/**
+  @defgroup lwm2mcore_platform_adaptor_mutex_IFS Mutex
+  @ingroup lwm2mcore_platform_adaptor_IFS
+  @brief Adaptation layer for Mutex
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_mutex_IFS
+  * @{
+  */
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -60,6 +70,10 @@ void lwm2mcore_MutexDelete
 (
     void* mutexPtr             ///< [IN] mutex
 );
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_THREAD_H__ */
 

@@ -13,6 +13,17 @@
 #include <lwm2mcore/socket.h>
 #include <platform/inet.h>
 
+/**
+  @defgroup lwm2mcore_platform_adaptor_udp_IFS UDP
+  @ingroup lwm2mcore_platform_adaptor_IFS
+  @brief Adaptation layer for UDP
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_udp_IFS
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  Maximum size of packet that can be received on UDP socket.
@@ -30,14 +41,14 @@ typedef void* (*lwm2mcore_UdpCb_t)
     uint8_t* bufferPtr,                     ///< [IN] Received data
     uint32_t len,                           ///< [IN] Received data length
     struct sockaddr_storage* addrPtr,       ///< [INOUT] source address
-    socklen_t addrlen,                      ///< @TODO
+    socklen_t addrlen,                      ///< [IN] addrPtr parameter length
     lwm2mcore_SocketConfig_t config         ///< [IN] Socket config
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Callback for data receipt
- * This function is defined in LWM2MCore
+ * This function is defined in LwM2MCore
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_UdpReceiveCb
@@ -45,14 +56,14 @@ void lwm2mcore_UdpReceiveCb
     uint8_t* bufferPtr,                     ///< [IN] Received data
     uint32_t len,                           ///< [IN] Received data length
     struct sockaddr_storage* addrPtr,       ///< [INOUT] source address
-    socklen_t addrlen,                      ///< @TODO
+    socklen_t addrlen,                      ///< [IN] addrPtr parameter length
     lwm2mcore_SocketConfig_t config         ///< [IN] Socket config
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Open a socket to the server
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to create a socket and fill the configPtr structure
  *
  * @return
@@ -71,7 +82,7 @@ bool lwm2mcore_UdpOpen
 //--------------------------------------------------------------------------------------------------
 /**
  * Connect to the server
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to connect
  *
  * @return
@@ -94,7 +105,7 @@ bool lwm2mcore_UdpConnect
 //--------------------------------------------------------------------------------------------------
 /**
  * Close the socket
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to close a socket
  *
  * @return
@@ -107,5 +118,9 @@ bool lwm2mcore_UdpClose
 (
     lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
 );
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_UDP_H__ */

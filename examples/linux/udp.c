@@ -15,7 +15,7 @@
 //--------------------------------------------------------------------------------------------------
 /**
  * Open a socket to the server
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to create a socket and fill the configPtr structure
  *
  * @return
@@ -40,7 +40,7 @@ bool lwm2mcore_UdpOpen
 //--------------------------------------------------------------------------------------------------
 /**
  * Close the socket
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to close a socket
  *
  * @return
@@ -62,7 +62,7 @@ bool lwm2mcore_UdpClose
 //--------------------------------------------------------------------------------------------------
 /**
  * Send data on a socket
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to send data on a socket
  *
  * @return
@@ -87,7 +87,7 @@ ssize_t lwm2mcore_UdpSend
 //--------------------------------------------------------------------------------------------------
 /**
  * Connect a socket
- * This function is called by the LWM2MCore and must be adapted to the platform
+ * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to send data on a socket
  *
  * @return

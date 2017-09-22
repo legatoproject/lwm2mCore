@@ -13,6 +13,17 @@
 #include <stdint.h>
 #include <platform/types.h>
 
+/**
+  @defgroup lwm2mcore_platform_adaptor_timer_IFS Timer
+  @ingroup lwm2mcore_platform_adaptor_IFS
+  @brief Adaptation layer for timer
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_timer_IFS
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Timer definitions
@@ -77,5 +88,9 @@ bool lwm2mcore_TimerIsRunning
 (
     lwm2mcore_TimerType_t timer    ///< [IN] Timer Id
 );
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_TIMER_H__ */

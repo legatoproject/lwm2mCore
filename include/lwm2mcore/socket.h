@@ -12,9 +12,20 @@
 
 #include <platform/inet.h>
 
+/**
+  @defgroup lwm2mcore_platform_adaptor_socket_IFS Socket
+  @ingroup lwm2mcore_platform_adaptor_IFS
+  @brief Adaptation layer for socket
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_socket_IFS
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for address family
+ * @brief Structure for address family
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -27,7 +38,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for socket type
+ * @brief Structure for socket type
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -39,7 +50,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for socket prototype
+ * @brief Structure for socket prototype
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -53,7 +64,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for socket configuration
+ * @brief Structure for socket configuration
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -64,5 +75,9 @@ typedef struct
     int sock;                           ///< Socket fd
     lwm2mcore_Ref_t instanceRef;        ///< Instance reference
 }lwm2mcore_SocketConfig_t;
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_SOCKET_H__ */

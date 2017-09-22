@@ -14,6 +14,11 @@
 #include <lwm2mcore/lwm2mcore.h>
 #include "liblwm2m.h"
 
+/**
+  * @addtogroup lwm2mcore_objects_int
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /** Define entry for the list inside user data structure for list element
  *
@@ -81,7 +86,7 @@
 //--------------------------------------------------------------------------------------------------
 /** Return next element from the list
  *
- * @param[in] pointer to the list element whose next element will be returned.
+ * @param[in] elem  pointer to the list element whose next element will be returned.
  * @param[in] field the field name of the user data structure used as link element.
  */
 //--------------------------------------------------------------------------------------------------
@@ -133,36 +138,33 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for LWM2M objects
+ * @brief   Enumeration for LwM2M objects
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_SECURITY_OID          = 0,        ///< Security
-    LWM2MCORE_SERVER_OID            = 1,        ///< Server
-    LWM2MCORE_ACL_OID               = 2,        ///< Access Control
-    LWM2MCORE_DEVICE_OID            = 3,        ///< Device
-    LWM2MCORE_CONN_MONITOR_OID      = 4,        ///< Connectivity monitoring
-    LWM2MCORE_FIRMWARE_UPDATE_OID   = 5,        ///< Firmware update
-    LWM2MCORE_LOCATION_OID          = 6,        ///< Location
-    LWM2MCORE_CONN_STATS_OID        = 7,        ///< Connectivity statistics
-    LWM2MCORE_SOFTWARE_UPDATE_OID   = 9,        ///< Application update
-    LWM2MCORE_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object ID:
-                                                ///< Subscription
-    LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object ID:
-                                                ///< Extended connectivity statistics
-    LWM2MCORE_SSL_CERTIFS_OID       = 10243     ///< Sierra Wireless proprietary object ID:
-                                                ///< SSL certificate
+    LWM2MCORE_SECURITY_OID          = 0,        ///< Security object Id
+    LWM2MCORE_SERVER_OID            = 1,        ///< Server object Id
+    LWM2MCORE_ACL_OID               = 2,        ///< Access Control object Id
+    LWM2MCORE_DEVICE_OID            = 3,        ///< Device object Id
+    LWM2MCORE_CONN_MONITOR_OID      = 4,        ///< Connectivity monitoring object Id
+    LWM2MCORE_FIRMWARE_UPDATE_OID   = 5,        ///< Firmware update object Id
+    LWM2MCORE_LOCATION_OID          = 6,        ///< Location object Id
+    LWM2MCORE_CONN_STATS_OID        = 7,        ///< Connectivity statistics object Id
+    LWM2MCORE_SOFTWARE_UPDATE_OID   = 9,        ///< Application update object Id
+    LWM2MCORE_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object Id: Subscription
+    LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object Id: Extended connectivity statistics
+    LWM2MCORE_SSL_CERTIFS_OID       = 10243     ///< Sierra Wireless proprietary object Id: SSL certificate
 } lwm2mcore_objectEnum_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for LWM2M object 0 (security) resources
+ * @brief Enumeration for LwM2M object 0 (security) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_SECURITY_SERVER_URI_RID = 0,          ///< LWM2M server URI
+    LWM2MCORE_SECURITY_SERVER_URI_RID = 0,          ///< LwM2M server URI
     LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID,        ///< Bootstrap server (true or false)
     LWM2MCORE_SECURITY_MODE_RID,                    ///< Security mode
     LWM2MCORE_SECURITY_PKID_RID,                    ///< Public key or identity
@@ -171,14 +173,14 @@ typedef enum
     LWM2MCORE_SECURITY_SMS_SECURITY_MODE_RID,       ///< SMS security mode
     LWM2MCORE_SECURITY_SMS_BINDING_KEY_PAR_RID,     ///< SMS binding key parameters
     LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID,     ///< SMS binding secret key(s)
-    LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID,       /// <LWM2M server SMS number
+    LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID,       ///< LwM2M server SMS number
     LWM2MCORE_SECURITY_SERVER_ID_RID,               ///< Short server ID
     LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID     ///< Client hold of time
 }lwm2mcore_securityResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for LWM2M object 1 (server) resources
+ * @brief Enumeration for LwM2M object 1 (server) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -197,7 +199,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 3 (device) resources
+* @brief Enumeration for LwM2M object 3 (device) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -223,7 +225,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 4 (connectivity monitoring) resources
+* @brief Enumeration for LwM2M object 4 (connectivity monitoring) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -243,12 +245,19 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for resource 0 (network bearer) of LWM2M object 4 (connectivity monitoring)
+ * @brief Enumeration for resource 0 (network bearer) of LwM2M object 4 (connectivity monitoring)
+ *
+ * 0-20 are cellular bearers@n
+ * 7-20 are reserved for other type cellular network@n
+ * 21-40 are Wireless Bearers@n
+ * 24-40 are reserved for other type local wireless network@n
+ * 41-50 are Wireline Bearers@n
+ * 44-50 are reserved for others type wireline networks@n
+ *
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    ///< 0-20 are cellular bearers
     LWM2MCORE_NETWORK_BEARER_GSM            = 0,    ///< GSM cellular network
     LWM2MCORE_NETWORK_BEARER_TD_SCDMA       = 1,    ///< TD-SCDMA cellular network
     LWM2MCORE_NETWORK_BEARER_WCDMA          = 2,    ///< WCDMA cellular network
@@ -256,22 +265,17 @@ typedef enum
     LWM2MCORE_NETWORK_BEARER_WIMAX          = 4,    ///< WiMAX cellular network
     LWM2MCORE_NETWORK_BEARER_LTE_TDD        = 5,    ///< LTE-TDD cellular network
     LWM2MCORE_NETWORK_BEARER_LTE_FDD        = 6,    ///< LTE-FDD cellular network
-    ///< 7-20 are reserved for other type cellular network
-    ///< 21-40 are Wireless Bearers
     LWM2MCORE_NETWORK_BEARER_WLAN           = 21,   ///< WLAN network
     LWM2MCORE_NETWORK_BEARER_BLUETOOTH      = 22,   ///< Bluetooth network
     LWM2MCORE_NETWORK_BEARER_IEEE_802_15_4  = 23,   ///< IEEE 802.15.4 network
-    ///< 24-40 are reserved for other type local wireless network
-    ///< 41-50 are Wireline Bearers
     LWM2MCORE_NETWORK_BEARER_ETHERNET       = 41,   ///< Ethernet
     LWM2MCORE_NETWORK_BEARER_DSL            = 42,   ///< DSL
     LWM2MCORE_NETWORK_BEARER_PLC            = 43    ///< PLC
-    ///< 44-50 are reserved for others type wireline networks.
 }lwm2mcore_networkBearer_enum_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 5 (firmware update) resources
+* @brief Enumeration for LwM2M object 5 (firmware update) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -290,7 +294,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 6 (location) resources
+* @brief Enumeration for LwM2M object 6 (location) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -306,7 +310,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 7 (connectivity statistics) resources
+* Enumeration for LwM2M object 7 (connectivity statistics) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -324,7 +328,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 9 (software update) resources
+* Enumeration for LwM2M object 9 (software update) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -352,7 +356,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 10241 (subscription) resources
+* Enumeration for LwM2M object 10241 (subscription) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -365,7 +369,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 10242 (extended connectivity statistics) resources
+* Enumeration for LwM2M object 10242 (extended connectivity statistics) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -385,7 +389,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LWM2M object 10243 (SSL certificates) resources
+* Enumeration for LwM2M object 10243 (SSL certificates) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -410,60 +414,55 @@ typedef struct
 }lwm2m_attribute_t;
 
 //--------------------------------------------------------------------------------------------------
-/*! \struct _lwm2m_resource
- *  \brief data structure represents a lwm2m resource.
+/*! \struct lwm2mcore_internalResource_t
+ *  \brief data structure represents a LwM2M resource.
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_internalResource
+typedef struct _lwm2mcore_internalResource          /// See lwm2mcore_internalResource_t
 {
     DLIST_ENTRY(_lwm2mcore_internalResource) list;  ///< list entry for resource linked list
-    uint16_t id;                        ///< resource id
-    uint16_t iid;                       ///< resource instance id
-    lwm2mcore_ResourceType_t type;      ///< resource data type
-    uint16_t maxInstCount;              ///< maximal number of instances for this resource
-    lwm2m_attribute_t attr;             ///< resource attributes
-
-    /* operation handler */
-    lwm2mcore_ReadCallback_t read;     ///< READ handler
-    lwm2mcore_WriteCallback_t write;   ///< WRITE handler
-    lwm2mcore_ExecuteCallback_t exec;  ///< EXECUTE handler
-
-    /* used by async notification*/
-    char *cache;                        ///< cache value for OBSERVE
+    uint16_t id;                                    ///< resource id
+    uint16_t iid;                                   ///< resource instance id
+    lwm2mcore_ResourceType_t type;                  ///< resource data type
+    uint16_t maxInstCount;                          ///< maximal number of instances for this resource
+    lwm2m_attribute_t attr;                         ///< resource attributes
+    lwm2mcore_ReadCallback_t read;                  ///< operation handler: read handler
+    lwm2mcore_WriteCallback_t write;                ///< operation handler: write handler
+    lwm2mcore_ExecuteCallback_t exec;               ///< operation handler: execute handler
+    char *cache;                                    ///< cache value for observer (asynchronous notification)
 }lwm2mcore_internalResource_t;
 
 //--------------------------------------------------------------------------------------------------
-/** LWM2M Core resource list data type
+/** LwM2M Core resource list data type
  */
 //--------------------------------------------------------------------------------------------------
 DLIST_HEAD(_lwm2m_resource_list, _lwm2mcore_internalResource);
 
 //--------------------------------------------------------------------------------------------------
-/*! \struct _lwm2m_object
- *  \brief data structure represents a lwm2m object.
+/*! \struct lwm2mcore_internalObject_t
+ *  \brief data structure represents a LwM2M object.
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct _lwm2mcore_internalObject
+typedef struct _lwm2mcore_internalObject            /// See lwm2mcore_internalObject_t
 {
-    DLIST_ENTRY(_lwm2mcore_internalObject) list;   ///< list entry for object linked list
+    DLIST_ENTRY(_lwm2mcore_internalObject) list;    ///< list entry for object linked list
     uint16_t id;                                    ///< object id
     uint16_t iid;                                   ///< object instance id
-    bool multiple;                                  ///< flag indicate if this is single or multiple
-                                                    ///< instances
+    bool multiple;                                  ///< flag indicate if this is single or multiple instances
     lwm2m_attribute_t attr;                         ///< object attributes
     struct _lwm2m_resource_list resource_list;      ///< resource linked list
 }lwm2mcore_internalObject_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * LWM2M Core object list data type
+ * LwM2M Core object list data type
  */
 //--------------------------------------------------------------------------------------------------
 DLIST_HEAD(_lwm2mcore_objectsList, _lwm2mcore_internalObject);
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LWM2MCore and Wakaama)
+ *  Free the registered objects and resources (LwM2MCore and Wakaama)
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_ObjectsFree
@@ -476,8 +475,8 @@ void omanager_ObjectsFree
  * Private function to send an update message to the Device Management server
  *
  * @return
- *      - true if the treatment is launched
- *      - else false
+ *      - @c true if the treatment is launched
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_UpdateRequest
@@ -490,11 +489,18 @@ bool omanager_UpdateRequest
 //--------------------------------------------------------------------------------------------------
 /**
  *  Get the registered objects and resources
+ *
+ * @return
+ *      - Registered handlers table
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Handler_t* omanager_GetHandlers
 (
      void
 );
+/**
+  * @}
+  */
+
 
 #endif /* __OBJECTS_H__ */

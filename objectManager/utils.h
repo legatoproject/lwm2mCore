@@ -11,9 +11,14 @@
 #ifndef __UTILS_H__
 #define __UTILS_H__
 
+/**
+  * @addtogroup lwm2mcore_utils_int
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert to unsigned 16 bits integer to network bytes stream
+ * @brief Convert to unsigned 16 bits integer to network bytes stream
  *
  * @return
  *  - converted size
@@ -27,7 +32,7 @@ size_t omanager_FormatUint16ToBytes
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert to unsigned 32 bits integer to network bytes stream
+ * @brief Convert to unsigned 32 bits integer to network bytes stream
  *
  * @return
  *  - converted size
@@ -41,7 +46,7 @@ size_t omanager_FormatUint32ToBytes
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert to unsigned 64 bits integer to network bytes stream
+ * @brief Convert to unsigned 64 bits integer to network bytes stream
  *
  * @return
  *  - converted size
@@ -55,7 +60,7 @@ size_t omanager_FormatUint64ToBytes
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function used by object resource API to write value in buffer
+ * @brief Function used by object resource API to write value in buffer
  *
  * @return
  *  - converted size
@@ -71,7 +76,7 @@ size_t omanager_FormatValueToBytes
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to convert bytes(in network byte order) to unsigned 16 bits integer
+ * @brief Function to convert bytes(in network byte order) to unsigned 16 bits integer
  *
  * @return
  *      - converted data
@@ -84,7 +89,7 @@ uint16_t omanager_BytesToUint16
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to convert bytes(in network byte order) to unsigned 32 bits integer
+ * @brief Function to convert bytes(in network byte order) to unsigned 32 bits integer
  *
  * @return
  *      - converted data
@@ -92,12 +97,12 @@ uint16_t omanager_BytesToUint16
 //--------------------------------------------------------------------------------------------------
 uint32_t omanager_BytesToUint32
 (
-    const uint8_t* bytesPtr
+    const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to convert bytes(in network byte order) to unsigned 64 bits integer
+ * @brief Function to convert bytes(in network byte order) to unsigned 64 bits integer
  *
  * @return
  *      - converted data
@@ -105,12 +110,12 @@ uint32_t omanager_BytesToUint32
 //--------------------------------------------------------------------------------------------------
 uint64_t omanager_BytesToUint64
 (
-    const uint8_t* bytesPtr
+    const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to convert bytes(in network byte order) to integer
+ * @brief Function to convert bytes(in network byte order) to integer
  *
  * @return
  *      - converted data
@@ -118,8 +123,11 @@ uint64_t omanager_BytesToUint64
 //--------------------------------------------------------------------------------------------------
 int64_t omanager_BytesToInt
 (
-    const uint8_t* bytesPtr,
-    size_t len
+    const uint8_t* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
+    size_t len                  ///< [IN] Bytes length
 );
+/**
+  * @}
+  */
 
 #endif /* __UTILS_H__ */

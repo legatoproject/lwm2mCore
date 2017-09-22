@@ -35,9 +35,9 @@ void lwm2m_printf(const char * format, ...)
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_Assert
 (
-    bool condition,         /// [IN] Condition to be checked
-    char* functionPtr,      /// [IN] Function name which calls the assert function
-    uint32_t line           /// [IN] Function line which calls the assert function
+    bool condition,         ///< [IN] Condition to be checked
+    char* functionPtr,      ///< [IN] Function name which calls the assert function
+    uint32_t line           ///< [IN] Function line which calls the assert function
 )
 {
     char func[32] = "none";

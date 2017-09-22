@@ -14,10 +14,15 @@
 #include "liblwm2m.h"
 #include "er-coap-13.h"
 
+/**
+  * @addtogroup lwm2mcore_coap_handler_IFS
+  * @{
+  */
+
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum length of the COAP path (URI).
+ * @brief Maximum length of the COAP path (URI).
  */
 //--------------------------------------------------------------------------------------------------
 #define COAP_PATH_MAX_LENGTH (256)
@@ -25,7 +30,7 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Coap response code.
+ * @brief CoAP response code.
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -43,7 +48,7 @@ lwm2mcore_CoapResponseCode_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Coap Response
+ * @brief CoAP Response
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -60,7 +65,7 @@ lwm2mcore_CoapResponse_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Coap request reference.
+ * @brief CoAP request reference.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -80,7 +85,7 @@ lwm2mcore_CoapRequest_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Reference to CoAP Request
+ * @brief Reference to CoAP Request
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct lwm2mcore_CoapRequest_t* lwm2mcore_CoapRequestRef_t;
@@ -88,7 +93,7 @@ typedef struct lwm2mcore_CoapRequest_t* lwm2mcore_CoapRequestRef_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function pointer of coap resource READ/WRITE/EXECUTE requests.
+ * @brief Function pointer of coap resource READ/WRITE/EXECUTE requests.
  */
 //--------------------------------------------------------------------------------------------------
 typedef void (*coap_request_handler_t)
@@ -99,7 +104,7 @@ typedef void (*coap_request_handler_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to register a handler for CoAP requests
+ * @brief Function to register a handler for CoAP requests
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_SetCoapEventHandler
@@ -110,7 +115,10 @@ void lwm2mcore_SetCoapEventHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get URI from request
+ * @brief Function to get URI from request
+ *
+ * @return
+ *      - URI from request
  */
 //--------------------------------------------------------------------------------------------------
 const char* lwm2mcore_GetRequestUri
@@ -121,7 +129,13 @@ const char* lwm2mcore_GetRequestUri
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get method from request
+ * @brief Function to get method from request
+ *
+ * @return
+ *      - COAP_GET
+ *      - COAP_POST
+ *      - COAP_PUT
+*       - COAP_DELETE
  */
 //--------------------------------------------------------------------------------------------------
 coap_method_t lwm2mcore_GetRequestMethod
@@ -132,7 +146,10 @@ coap_method_t lwm2mcore_GetRequestMethod
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get payload from request
+ * @brief Function to get payload from request
+ *
+ * @return
+ *      - payload from request
  */
 //--------------------------------------------------------------------------------------------------
 const uint8_t* lwm2mcore_GetRequestPayload
@@ -143,7 +160,10 @@ const uint8_t* lwm2mcore_GetRequestPayload
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get payload length from request
+ * @brief Function to get payload length from request
+ *
+ * @return
+ *      - payload length from request
  */
 //--------------------------------------------------------------------------------------------------
 size_t lwm2mcore_GetRequestPayloadLength
@@ -154,7 +174,10 @@ size_t lwm2mcore_GetRequestPayloadLength
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get token from request
+ * @brief Function to get token from request
+ *
+ * @return
+ *      - token from request
  */
 //--------------------------------------------------------------------------------------------------
 const uint8_t* lwm2mcore_getToken
@@ -165,7 +188,10 @@ const uint8_t* lwm2mcore_getToken
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get token length from request
+ * @brief Function to get token length from request
+ *
+ * @return
+ *      - token length from request
  */
 //--------------------------------------------------------------------------------------------------
 size_t lwm2mcore_getTokenLength
@@ -176,7 +202,11 @@ size_t lwm2mcore_getTokenLength
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get content type from request
+ * @brief Function to get content type from request
+ *
+ * @return
+ *      - @c true if an async response is initiated
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 const unsigned int lwm2mcore_getContentType
@@ -186,11 +216,11 @@ const unsigned int lwm2mcore_getContentType
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to send an async response to server.
+ * @brief Function to send an asynchronous response to server.
  *
  * @return
- *      - true if an async response is initiated
- *      - else false
+ *      - @c true if an asynchronous response is initiated
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_sendAsyncResponse
@@ -199,5 +229,9 @@ bool lwm2mcore_sendAsyncResponse
     lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference
     lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response
 );
+
+/**
+  * @}
+  */
 
 #endif /* LWM2MCORE_COAP_HANDLERS_H */

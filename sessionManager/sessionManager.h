@@ -15,10 +15,14 @@
 #include "objects.h"
 #include "dtlsConnection.h"
 
+/**
+  * @addtogroup lwm2mcore_sessionManager_int
+  * @{
+  */
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for LWM2M core context
+ * @brief Structure for LWM2M core context
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -29,7 +33,7 @@ typedef struct
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure to be used by the client
+ * @brief Structure to be used by the client
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -45,7 +49,7 @@ typedef struct
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Event status
+ * @brief Event status
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -58,7 +62,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Event types
+ * @brief Event types
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -68,16 +72,15 @@ typedef enum
     EVENT_TYPE_REG_UPDATE,      ///< Registration update event: started, succeeded or failed
     EVENT_TYPE_DEREG,           ///< Deregistration event: started, succeeded or failed
     EVENT_TYPE_AUTHENTICATION,  ///< Authentication event: started, succeeded or failed
-    EVENT_TYPE_RESUMING,        ///< DTLS resuming/re-authentication event: started, succeeded or
-                                ///< failed
+    EVENT_TYPE_RESUMING,        ///< DTLS resuming/re-authentication event: started, succeeded or failed
     EVENT_SESSION,              ///< Session event: started or done with success or failure
     EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
 }smanager_EventType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to send status event to the application, using the callback stored in the LWM2M core
- * session manager
+ * @brief Function to send status event to the application, using the callback stored in the
+ * Lwm2MCore session manager
  */
 //--------------------------------------------------------------------------------------------------
 void smanager_SendStatusEvent
@@ -87,7 +90,7 @@ void smanager_SendStatusEvent
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function for session events
+ * @brief Function for session events
  */
 //--------------------------------------------------------------------------------------------------
 void smanager_SendSessionEvent
@@ -95,6 +98,9 @@ void smanager_SendSessionEvent
     smanager_EventType_t eventId,     ///< [IN] Event Id
     smanager_EventStatus_t status     ///< [IN] Event status
 );
+/**
+  * @}
+  */
 
 #endif /* __SESSION_H__ */
 

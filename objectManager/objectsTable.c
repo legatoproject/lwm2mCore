@@ -898,6 +898,9 @@ static lwm2mcore_Handler_t Lwm2mcoreHandlers =
 //--------------------------------------------------------------------------------------------------
 /**
  *  Get the registered objects and resources
+ *
+ * @return
+ *      - Registered handlers table
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Handler_t* omanager_GetHandlers

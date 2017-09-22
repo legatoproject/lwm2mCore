@@ -5,7 +5,7 @@
 # --------------------------------------------------------------------------------------------------
 cmake_minimum_required (VERSION 3.0)
 
-# Set LWM2MCore source directory
+# Set LwM2MCore source directory
 set(LWM2MCORE_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/)
 
 # Set Wakaama source dir

@@ -354,7 +354,7 @@ static bool GetBootstrapConfiguration
 {
     lwm2mcore_Sid_t sid;
     size_t len = sizeof(ConfigBootstrapFile_t);
-    /* Check if the LWM2MCore configuration file is stored */
+    /* Check if the LwM2MCore configuration file is stored */
     sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, (uint8_t*)configPtr, &len);
     LOG_ARG("Read BS configuration: len %d result %d", len, sid);
 

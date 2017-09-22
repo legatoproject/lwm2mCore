@@ -10,6 +10,18 @@
 #ifndef __LWM2MCORE_SEM_H__
 #define __LWM2MCORE_SEM_H__
 
+/**
+  @defgroup lwm2mcore_platform_adaptor_semaphore_IFS Semaphore
+  @ingroup lwm2mcore_platform_adaptor_IFS
+  @brief Adaptation layer for semaphore
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_semaphore_IFS
+  * @{
+  */
+
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to initialize semaphores
@@ -52,5 +64,9 @@ void lwm2mcore_SemDelete
 (
     void* semaphorePtr              ///< [IN] Pointer to the semaphore.
 );
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_SEM_H__ */

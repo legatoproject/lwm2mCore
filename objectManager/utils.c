@@ -1,7 +1,7 @@
 /**
  * @file utils.c
  *
- * Tools for LWM2MCore
+ * Tools for LwM2MCore
  *
  * Copyright (C) Sierra Wireless Inc.
  *
@@ -248,7 +248,7 @@ uint16_t omanager_BytesToUint16
 //--------------------------------------------------------------------------------------------------
 uint32_t omanager_BytesToUint32
 (
-    const uint8_t* bytesPtr
+    const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 )
 {
     return ((bytesPtr[0] << 24) | (bytesPtr[1] << 16) | (bytesPtr[2] << 8) | bytesPtr[3]);
@@ -264,7 +264,7 @@ uint32_t omanager_BytesToUint32
 //--------------------------------------------------------------------------------------------------
 uint64_t omanager_BytesToUint64
 (
-    const uint8_t* bytesPtr
+    const uint8_t* bytesPtr     ///< [IN] bytes the buffer contains data to be converted
 )
 {
     return (((uint64_t)omanager_BytesToUint32(bytesPtr) << 32)
@@ -281,8 +281,8 @@ uint64_t omanager_BytesToUint64
 //--------------------------------------------------------------------------------------------------
 int64_t omanager_BytesToInt
 (
-    const uint8_t* bytesPtr,
-    size_t len
+    const uint8_t* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
+    size_t len                  ///< [IN] Bytes length
 )
 {
     int64_t value;

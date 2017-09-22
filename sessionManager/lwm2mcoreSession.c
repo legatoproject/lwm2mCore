@@ -71,10 +71,11 @@ static lwm2m_client_state_t PreviousState;
 //--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
-/** initialize the lwm2m context object
+/**
+ * Initialize the LwM2M context object
  *
  * @return
- *  - pointer to lwm2m context object
+ *  - pointer to LwM2M context object
  */
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_context_t* InitContext
@@ -221,7 +222,7 @@ static void UpdateBootstrapInfo
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  lwm2m client step that handles data transmit.
+ *  LwM2M client step that handles data transmit.
  */
 //--------------------------------------------------------------------------------------------------
 static void Lwm2mClientStepHandler
@@ -268,12 +269,12 @@ static void Lwm2mClientStepHandler
 
     UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mHPtr);
 
-    LOG("lwm2m step completed.");
+    LOG("LwM2M step completed.");
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Convert coap response code to lwm2m standard error codes
+ *  Convert coap response code to LwM2M standard error codes
  */
 //--------------------------------------------------------------------------------------------------
 static uint32_t ConvertToCoapCode
@@ -329,7 +330,7 @@ static uint32_t ConvertToCoapCode
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to send status event to the application, using the callback stored in the LWM2M core
+ * Function to send status event to the application, using the callback stored in the LwM2MCore
  * session manager
  */
 //--------------------------------------------------------------------------------------------------
@@ -641,7 +642,7 @@ void lwm2mcore_UdpReceiveCb
     uint8_t* bufferPtr,                 ///< [IN] Received data
     uint32_t len,                       ///< [IN] Received data length
     struct sockaddr_storage *addrPtr,   ///< [INOUT] source address
-    socklen_t addrLen,                  ///< @TODO
+    socklen_t addrLen,                  ///< [IN] addrPtr parameter length
     lwm2mcore_SocketConfig_t config     ///< [IN] Socket config
 )
 {
@@ -852,7 +853,7 @@ bool lwm2mcore_Connect
         dataPtr->sock = SocketConfig.sock;
         dataPtr->addressFamily = SocketConfig.af;
 
-        /* Initialize the lwm2m client step timer */
+        /* Initialize the LwM2M client step timer */
         DataCtxPtr = dataPtr;
         if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
         {
@@ -874,7 +875,8 @@ bool lwm2mcore_Connect
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to send an update message to the Device Management server
+ * Function to send an update message to the Device Management server.
+ *
  * This API can be used when the application wants to send a notification or during a firmware/app
  * update in order to be able to fully treat the scheduled update job
  *
@@ -947,7 +949,7 @@ bool lwm2mcore_Disconnect
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to know what is the current connection
+ * Function to retrieve the status and the type of the current connection
  *
  * @return
  *      - true if the device is connected to any DM server
@@ -1078,10 +1080,10 @@ lwm2mcore_PushResult_t lwm2mcore_Push
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to send an async response to server.
+ * Function to send an asynchronous response to server.
  *
  * @return
- *      - true if an async response is initiated
+ *      - true if an asynchronous response is initiated
  *      - else false
  */
 //--------------------------------------------------------------------------------------------------

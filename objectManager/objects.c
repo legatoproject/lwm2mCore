@@ -1185,7 +1185,7 @@ static struct _lwm2mcore_objectsList* GetObjectsList
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Initialize lwm2m object
+ * Initialize LwM2M object
  *
  * @return
  *      - object pointer
@@ -1337,7 +1337,7 @@ static void InitObjectsList
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LWM2MCore and Wakaama)
+ *  Free the registered objects and resources (LwM2MCore and Wakaama)
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -1356,7 +1356,7 @@ void omanager_ObjectsFree
        return;
     }
 
-    /* Free memory for objects and resources for LWM2MCore */
+    /* Free memory for objects and resources for LwM2MCore */
     while ((objPtr = DLIST_FIRST(objectsListPtr)) != NULL)
     {
         while ((resPtr = DLIST_FIRST(&(objPtr->resource_list))) != NULL)
@@ -1416,7 +1416,7 @@ static bool RegisterObjTable
 
     ObjNb = *registeredObjNbPtr;
 
-    /* Check if a DM server was provided: only for static LWM2MCore case */
+    /* Check if a DM server was provided: only for static LwM2MCore case */
     if ((clientTable == false)
      && ((omanager_IsSecuredMode()
       && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
@@ -1809,7 +1809,7 @@ static bool UpdateSwListWakaama
 /**
  * Register the object table and service API
  *
- * @note If handlerPtr parameter is NULL, LWM2MCore registers it's own "standard" object list
+ * @note If handlerPtr parameter is NULL, LwM2MCore registers it's own "standard" object list
  *
  * @return
  *      - number of registered objects
@@ -1838,7 +1838,7 @@ uint16_t lwm2mcore_ObjectRegister
     smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
     LOG_ARG("lwm2mcore_ObjectRegister RegisteredObjNb %d", RegisteredObjNb);
 
-    /* Read the LWM2MCore configuration file */
+    /* Read the LwM2MCore configuration file */
     if (false == omanager_GetBootstrapConfiguration())
     {
         /* If the file is not present:
@@ -1852,12 +1852,12 @@ uint16_t lwm2mcore_ObjectRegister
 
     lwm2mcoreHandlersPtr = omanager_GetHandlers();
 
-    /* Register static object tables managed by LWM2MCore */
+    /* Register static object tables managed by LwM2MCore */
     result = RegisterObjTable(instanceRef, lwm2mcoreHandlersPtr, &RegisteredObjNb, false);
     if (result == false)
     {
         RegisteredObjNb = 0;
-        LOG("ERROR on registering LWM2MCore object table");
+        LOG("ERROR on registering LwM2MCore object table");
         return RegisteredObjNb;
     }
 
@@ -1875,7 +1875,7 @@ uint16_t lwm2mcore_ObjectRegister
     }
     else
     {
-        LOG("Only register LWM2MCore object list");
+        LOG("Only register LwM2MCore object list");
     }
 
     if (true == result)
@@ -1894,12 +1894,12 @@ uint16_t lwm2mcore_ObjectRegister
                                ObjectArray);
         if (test != COAP_NO_ERROR)
         {
-            LOG_ARG("Failed to configure lwm2m client: test %d", test);
+            LOG_ARG("Failed to configure LwM2M client: test %d", test);
             RegisteredObjNb = 0;
         }
         else
         {
-            LOG("configure lwm2m client OK");
+            LOG("configure LwM2M client OK");
         }
 
         // Check if some software object instance exist
@@ -1911,7 +1911,7 @@ uint16_t lwm2mcore_ObjectRegister
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to notify LWM2MCore of supported object instance list for software and asset data
+ * Function to notify LwM2MCore of supported object instance list for software and asset data
  *
  * @return
  *      - true if the list was successfully treated

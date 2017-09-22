@@ -12,43 +12,79 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define value for object instance of object 0 for bootstrap server
+ * @brief Define value for object instance of object 0 for bootstrap server
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BS_SERVER_OIID 0
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define value for object instance of object 0 for Device Management server
+ * @brief Define value for object instance of object 0 for Device Management server
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_DM_SERVER_OIID 1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define default value for Pmin: Minimum period (resource 2 of object 1)
+ * @brief Define default value for Pmin: Minimum period (resource 2 of object 1)
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PMIN_DEFAULT_VALUE 30
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define default value for Pmax: Maximum period (resource 3 of object 1)
+ * @brief Define default value for Pmax: Maximum period (resource 3 of object 1)
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PMAX_DEFAULT_VALUE 60
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define possible values for binding mode (supported mode is UQ)
+ * @brief Define possible values for binding mode (supported mode is UQ)
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_STR_MAX_LEN    3
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: UDP
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP           "U"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: UDP with Queue Mode
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP_QUEUE     "UQ"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: SMS
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_SMS           "S"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: SMS with Queue Mode
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_SMS_QUEUE     "SQ"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: UDP and SMS
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP_SMS       "US"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Binding mode: UDP UDP with Queue Mode and SMS
+ */
+//--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP_QUEUE_SMS "UQS"
 
 //--------------------------------------------------------------------------------------------------
@@ -59,18 +95,19 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a resource of object 0
+ * @brief Function to write a resource of object 0
+ *
  * Object: 0 - Security
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -84,18 +121,19 @@ int omanager_WriteSecurityObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 0
+ * @brief Function to read a resource of object 0
+ *
  * Object: 0 - Security
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -111,18 +149,19 @@ int omanager_ReadSecurityObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function for the server SMS parameters
+ * @brief Function for the server SMS parameters
+ *
  * Object: 0 - Security
  * Resources: 6, 7, 8, 9
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -143,18 +182,19 @@ int omanager_SmsDummy
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a resource of object 1
+ * @brief Function to write a resource of object 1
+ *
  * Object: 1 - Server
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -168,18 +208,19 @@ int omanager_WriteServerObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 1
+ * @brief Function to read a resource of object 1
+ *
  * Object: 1 - Server
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -201,18 +242,19 @@ int omanager_ReadServerObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a resource of object 3
+ * @brief Function to write a resource of object 3
+ *
  * Object: 3 - Device
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -226,18 +268,19 @@ int omanager_WriteDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 3
+ * @brief Function to read a resource of object 3
+ *
  * Object: 3 - Device
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -253,18 +296,19 @@ int omanager_ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a resource of object 3
+ * @brief Function to execute a resource of object 3
+ *
  * Object: 3 - Device
  * Resource: All with execute operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -284,19 +328,20 @@ int omanager_ExecDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 4
+ * @brief Function to read a resource of object 4
+ *
  * Object: 4 - Connectivity monitoring
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -318,18 +363,19 @@ int omanager_ReadConnectivityMonitoringObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a resource of object 5
+ * @brief Function to write a resource of object 5
+ *
  * Object: 5 - Firmware update
  * Resource: all with write operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -343,18 +389,19 @@ int omanager_WriteFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 5
+ * @brief Function to read a resource of object 5
+ *
  * Object: 5 - Firmware update
  * Resource: all with read operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -370,18 +417,19 @@ int omanager_ReadFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a resource of object 5
+ * @brief Function to execute a resource of object 5
+ *
  * Object: 5 - Firwmare update
  * Resource: all
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -402,19 +450,20 @@ int omanager_ExecFwUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 6
+ * @brief Function to read a resource of object 6
+ *
  * Object: 6 - Location
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -436,19 +485,20 @@ int omanager_ReadLocationObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 7
+ * @brief Function to read a resource of object 7
+ *
  * Object: 7 - Connectivity statistics
  * Resource: All with read operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -464,18 +514,19 @@ int omanager_ReadConnectivityStatisticsObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a resource of object 7
+ * @brief Function to execute a resource of object 7
+ *
  * Object: 7 - Connectivity statistics
  * Resource: All with execute operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -495,18 +546,19 @@ int omanager_ExecConnectivityStatistics
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write a resource of object 9
+ * @brief Function to write a resource of object 9
+ *
  * Object: 9 - software update
  * Resource: all with write operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -520,18 +572,19 @@ int omanager_WriteSwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 9
+ * @brief Function to read a resource of object 9
+ *
  * Object: 9 - Software update
  * Resource: all with read operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -547,18 +600,19 @@ int omanager_ReadSwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a resource of object 9
+ * @brief Function to execute a resource of object 9
+ *
  * Object: 9 - Software update
  * Resource: all with execute operation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -578,19 +632,20 @@ int omanager_ExecSwUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 10241
+ * @brief Function to read a resource of object 10241
+ *
  * Object: 10241 - Subscription
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -612,19 +667,20 @@ int omanager_ReadSubscriptionObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read a resource of object 10242
+ * @brief Function to read a resource of object 10242
+ *
  * Object: 10242 - Extended connectivity statistics
  * Resource: All
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -646,17 +702,18 @@ int omanager_ReadExtConnectivityStatsObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to update the SSL certificates
+ * @brief Function to update the SSL certificates
+ *
  * Object: 10243 - SSL certificates
  * Resource: 0
  *
  * @note To delete the saved certificate, set the length to 0
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 int omanager_WriteSslCertif
@@ -669,16 +726,16 @@ int omanager_WriteSslCertif
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function for not registered objects
+ * @brief Function for not registered objects
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - positive value for asynchronous response
  */
 //--------------------------------------------------------------------------------------------------
@@ -694,11 +751,11 @@ int omanager_OnUnlistedObject
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to store credentials in non volatile memory
+ * @brief Function to store credentials in non volatile memory
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *      - @c true in case of success
+ *      - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_StoreCredentials
@@ -708,11 +765,11 @@ bool omanager_StoreCredentials
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read the bootstrap configuration from platform memory
+ * @brief Function to read the bootstrap configuration from platform memory
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *      - @c true in case of success
+ *      - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_GetBootstrapConfiguration
@@ -722,11 +779,11 @@ bool omanager_GetBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to save the bootstrap configuration in platform memory
+ * @brief Function to save the bootstrap configuration in platform memory
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *      - @c true in case of success
+ *      - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_SetBootstrapConfiguration
@@ -736,11 +793,11 @@ bool omanager_SetBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Sets the lifetime in the server configuration and saves it to file system
+ * @brief Sets the lifetime in the server configuration and saves it to file system
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *      - @c true in case of success
+ *      - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t omanager_SetLifetime
@@ -753,8 +810,8 @@ lwm2mcore_Sid_t omanager_SetLifetime
  * Retrieves the lifetime from the server configuration
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *      - @c true in case of success
+ *      - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t omanager_GetLifetime
@@ -764,11 +821,11 @@ lwm2mcore_Sid_t omanager_GetLifetime
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to know if the connection is secured or not
+ * @brief Function to know if the connection is secured or not
  *
  * @return
- *      - true in case of secured connection
- *      - false else
+ *      - @c true in case of secured connection
+ *      - @c false else
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_IsSecuredMode

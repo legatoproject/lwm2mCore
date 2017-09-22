@@ -26,9 +26,9 @@
 #include "internals.h"
 
 /* Set the bootstrap credentials with correct values
- * BS server address can be retrieved from LWM2MCore team
+ * BS server address can be retrieved from LwM2MCore team
  * BS PSK identity and PSK secret can be retrieved from the LWM2M server team (please ask to
- * LWM2MCore team for any support)
+ * LwM2MCore team for any support)
  */
 
 #define BS_SERVER_ADDR ""

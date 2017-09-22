@@ -121,7 +121,7 @@ lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
 /**
  * Function to check if one credential is provisioned
  *
- * @note This API is called by LWM2MCore
+ * @note This API is called by LwM2MCore
  *
  * @return
  *      - true if  a Device Management server was provided
@@ -137,7 +137,7 @@ bool lwm2mCore_CheckCredential
 /**
  * Function to delete one credential from platform memory
  *
- * @note This API is called by LWM2MCore
+ * @note This API is called by LwM2MCore
  *
  * @return
  *      - true if  a Device Management server was provided

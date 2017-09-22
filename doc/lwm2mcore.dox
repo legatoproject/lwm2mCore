@@ -1,0 +1,723 @@
+/*!@mainpage LwM2MCore porting guide
+ *
+ * @author Sierra Wireless
+ * @version 0.1
+ * @copyright Sierra Wireless Inc.
+ *
+ * Copyright (C) Sierra Wireless Inc.
+ *
+ * @tableofcontents
+ *
+ * @section s_description LwM2MCore description
+ *
+ * @subsection subs_abbreviaiton Abbreviations and acronyms
+ * Acronym  | Meaning
+ * :------- | :--------------------------------
+ * AOTA     | Application update Over The Air
+ * CoAP     | Constrained Application Protocol
+ * FOTA     | Firmware update Over The Air
+ * FW       | Firmware
+ * DTLS     | Datagram Transport Layer Security
+ * LwM2M    | Lightweight M2M
+ * M2M      | Machine To Machine
+ * OMA      | Open Mobile Alliance
+ * OS       | Operating System
+ * SOTA     | Software update Over The Air
+ * SW       | Software
+ *
+ * @subsection subs_definitions Definitions
+ * Term   | Meaning
+ * :------| :----------------------------------------------------------------
+ * Client | Entity which integrates LwM2MCore and calls LwM2MCore public APIs
+ *
+ * @subsection subs_description Description
+ * LwM2MCore is a LwM2M agent which integrates Wakaama open source code and provides essential
+ * LwM2M connectivity to any LwM2M server.@n
+ * It handles LwM2M / CoAP / DTLS protocols with the support of the platform dependent OS services.
+ * (DTLS ensures the security of LWM2M).@n
+ * The package downloader is a software component inside LwM2MCore that takes as inputs an URL of
+ * the FW/SW download image and its binary type (FW or SW) to trigger a contiguous process of
+ * downloading, storing and performing CRC/signature check of the image, all in one pass.
+ *
+ * @dot
+ *  digraph structs {
+ *   ranksep=.85;
+ *   compound=true
+ *   subgraph cluster_0 {
+ *    node [shape=box];
+ *    client [shape=record,color=red,label="<co>Client object table| <at>AT command set"];
+ *    label = "Client";
+ *    color=red;
+ *   }
+ *
+ *   subgraph cluster_1 {
+ *    node [shape=box];
+ *    lwm2mcore [shape=record,label="{Static table | } |{ {<om>Object Manager| <sm>Session Manager} | Wakaama API | LwM2M protocol | CoAP | DTLS}| {<pkg>Package Downloader | }"];
+ *    label = "LwM2MCore";
+ *    color=blue;
+ *   }
+ *
+ *   subgraph cluster_2 {
+ *    node [shape=box];
+ *    adaptationlayer [shape=record, label="Timer | Time | Memory | Socket | Log | <flash>Flash storage | Types | <http>HTTP(S))"]
+ *    label = "Adaptation layer";
+ *    color=green;
+ *   }
+ *
+ *   client -> lwm2mcore [ltail=cluster_0 lhead=cluster_1];
+ *  lwm2mcore -> adaptationlayer [ltail=cluster_1 lhead=cluster_2];
+ *
+ *  }
+ * @enddot
+ *
+ * @section s_documentation Documentation
+ *
+ * LwM2M specifications are available on OMA website:
+ * http://member.openmobilealliance.org/ftp/Public_documents/DM/LightweightM2M/Permanent_documents/
+ *
+ * Reference        | Document                      | Document name
+ * :--------------- | :---------------------------- | :------------------------------------
+ * @anchor R1 R1    | LwM2M technical specification | OMA-TS-LightweightM2M-V1_0-20170208-A
+ * @anchor R2 R2    | Software update Over-The-Air  | OMA-TS-LWM2M_SwMgmt-V1_0-20151201-C
+ *
+ * @section s_code_structure Code structure
+ *
+ * @subsection subs_code How to get the code?
+ * The LwM2MCore source code is available using git.\n
+ * Get LwM2MCore source code:
+ * @code
+ * git init
+ * git clone https://github.com/legatoproject/lwm2mCore.git
+ * cd lwm2mCore
+ * @endcode
+ *
+ * Get wakaama (master-swi) source code:
+ * @code
+ * git clone https://github.com/legatoproject/wakaama.git
+ * cd wakaama
+ * git checkout master-swi
+ * cd ..
+ * @endcode
+ *
+ * Get tinyDTLS (master-swi) source code:
+ * @code
+ * git clone https://github.com/legatoproject/tinydtls.git
+ * cd tinydtls/
+ * git checkout master-swi
+ * cd ..
+ * @endcode
+ *
+ * @subsection subs_code_structure Source code structure
+ * Folder               | Description
+ * :------------------- | :-----------------------------------------------------------------
+ * @c examples/linux    | Linux specific implementation that provides OS adaptation services
+ * @c include           | Public platform independent headers
+ * @c objectManager     | LwM2M object manager (client can register its own objects table)
+ * @c packageDownloader | Software component in charge of package download (FOTA/SOTA)
+ * @c security          | Credential management
+ * @c sessionManager    | LwM2MCore connectivity
+ * @c tests             | Tests
+ * @c tinydtls          | tinyDTLS source code to support DTLS
+ * @c wakaama           | Wakaama source code
+ *
+ * @subsection subs_compilation_flags Compilation flags
+ * The following flags need to be used to compile LwM2MCore:
+ * Flag                                         | Description
+ * :------------------------------------------- | :------------------------------------------------
+ * @c LWM2M_CLIENT_MODE                         | Enable LwM2M Client interfaces
+ * @c LWM2M_BOOTSTRAP                           | Enable LwM2M Bootstrap support in a LwM2M Client
+ * @c LWM2M_LITTLE_ENDIAN or @c LWM2M_BIG_ENDIAN| Choose according to your platform
+ * @c LWM2M_WITH_LOGS and @c WITH_LOGS          | Enable logs in Wakaama
+ * @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT          | Enable old content-type field value (IANA updates)
+ * @c WITH_TINYDTLS                             | Support DTLS
+ * @c SIERRA                                    | Include Sierra Wireless updates in Wakaama and tinyDTLS
+ * Other compilation flags which could be used but not tested
+ * Flag                                         | Description
+ * :------------------------------------------- | :------------------------------------------------
+ * @c LWM2M_SUPPORT_JSON                        | Enable JSON payload support
+ * @c LWM2M_DEREGISTER                          | Send a DEREGISTER message to the server when the device disconects from the server
+ *
+ * @subsection subs_compilation Compilation
+ * To compile the LwM2MCore Linux client: \n
+ * - Create @c build folder in @c examples/linux
+ * - Go to @c examples/linux/build folder
+ * - <tt>cmake ..</tt>
+ * - @c make
+ * - Launch the Linux client: <tt>./lwm2mcoreclient</tt>
+ *
+ * @subsection subs_unit_tests Tests (unitary/integration tests)
+ * Unitary tests are available. @n
+ * Please read the README.md file in @c tests folder for further information.
+ *
+ * @section s_LWM2M_specification LwM2M specification compliance
+ *
+ * @subsection subs_compliance High Level Standard Compliance
+ * LwM2MCore is compliant with LwM2M specification 1.0 version.@n
+ * The specification can be retrieved from OMA website:
+ * see @link s_documentation Documentation @endlink @n
+ * The table below summarizes the compliance to the standard.
+ * Feature                  | Support   | Comment
+ * :----------------------- | :-------- | :-------------------------------
+ * SMS transport            | No        | Not supported
+ * Bootstrap Interface      | Full      | Procedure defined in section 5.1.3 of \ref R1
+ * Multiple server support  | No        | Will be supported later
+ * Access Control List      | No        | Will be supported later
+ * SMS wakeup               | No        | To be managed by the client
+ * Data format: Plain text  | Yes       | Supported
+ * Data format: Opaque      | Yes       | Supported
+ * Data format: TLV         | Yes       | Supported
+ * Data format: JSON        | Yes       | Supported but not tested (needs to embed @c LWM2M_SUPPORT_JSON flag)
+ * Observe                  | TBD       | @todo TBD
+ *
+ * @subsection subs_supported_LwM2Mobjects Supported LwM2M objects
+ * Non-exhaustive list of the most common LwM2M objects:
+ * Object Id    | Description
+ * :----------- | :---------------------------------------
+ * 0            | Security
+ * 1            | Server
+ * 2            | Access control list (in case of multi servers)
+ * 3            | Device information
+ * 4            | Connectivity monitoring
+ * 5            | Firmware update (FOTA)
+ * 6            | Location
+ * 7            | Connectivity statistics
+ * 9            | Software management
+ *
+ * @subsection subs_restriction Restrictions
+ * @warning Only one device management server is supported for the moment.
+ * @warning Object 2 and multi-server will be supported later.
+ * @warning tinyDTLS does not support DTLS resume. When a registration update message is sent to the
+ * sever, a DTLS rehandshake is made.
+ *
+ * @page p_integration Integration
+ * @tableofcontents
+ *
+ * @section s_requirements Requirements
+ *
+ * @subsection subs_req_basic Basic OS services requirement
+ *
+ * - LWM2MCORE_BASIC_REQ_1: The integrator shall provide platform specific implementation of all the
+ *                          APIs declared in the following header files.
+ *  All header files are included in @c include/lwm2mcore
+ * OS service header file   | OS specific header file   | Description
+ * :----------------------- | :------------------------ | :-------------
+ * @c mutex.h               | No                        | Mutex service
+ * @c paramStorage.h        | No                        | Parametrer storage service
+ * @c sem.h                 | No                        | Semaphore service
+ * @c socket.h              | No                        | Socket service
+ * @c timer.h               | No                        | Timer service
+ * @c udp.h                 | No                        | UDP service
+ * @todo memory and str
+ *
+ * @page Schematics
+ *
+ * @tableofcontents
+ *
+ * @if plantuml
+ *
+ * @section s_lwm2mcore_init LwM2MCore Initialization
+ *
+ * @startuml{lwm2mcore_initialization.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore initialization
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_Init(eventCb)""
+ * lwm2mcore -> lwm2mcore: Context allocation
+ * lwm2mcore -> wakaama: Agent initialization
+ * lwm2mcore <-- wakaama: Return context allocation
+ * client <-- lwm2mcore: Return instance reference
+ * @enduml
+ *
+ * @section s_lwm2mcore_configuration LwM2MCore configuration
+ *
+ * @startuml{lwm2mcore_configuration.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore configuration
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_ObjectRegister(...)""
+ * lwm2mcore -> adaptationLayer: Read bootstrap configuration
+ * lwm2mcore <-- adaptationLayer: Return configuration presence
+ *
+ * group Configuration is not present
+ * lwm2mcore -> adaptationLayer: Erase DM credentials
+ * lwm2mcore <-- adaptationLayer: Result
+ * else Configuration is present
+ * end
+ *
+ * lwm2mcore -> lwm2mcore: Get static LWM2M objects table
+ * lwm2mcore -> lwm2mcore: Memory allocation for objects and\nresources for LwM2MCore and Wakaama
+ * lwm2mcore -> wakaama: ""lwm2m_configure""
+ * lwm2mcore <-- wakaama: Result
+ * lwm2mcore -> lwm2mcore: Update embedded application list (**TODO**: add ""lwm2mcore_UpdateSwList"")
+ * client <-- lwm2mcore: Return registered LWM2M object number
+ * @enduml
+ *
+ * @section s_lwm2mcore_connection LwM2MCore connection
+ *
+ * @startuml{lwm2mcore_connection.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore connection
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_Connect(...)""
+ * lwm2mcore -> adaptationLayer: Create the socket
+ * lwm2mcore -> adaptationLayer: Initialize the step timer (1 second)
+ *
+ * group Bootstrap connection because no DM credentials/no BS configuration
+ * wakaama -> tinyDTLS: Send bootstrap request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Bs: authentication
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_STARTED""
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START"" bootstrap
+ * tinyDTLS -> Bs: Send bootstrap request
+ * tinyDTLS <- Bs: CoAP CHANGED (2.04)
+ * wakaama <- tinyDTLS: CoAP CHANGED (2.04)
+ * wakaama <- Bs: DELETE /
+ * wakaama -> Bs: CoAP DELETED 2.02
+ * note left of Bs
+ * Bootstrap sends data about
+ * one Bootstrap server and one device Management server
+ * end note
+ * wakaama <- Bs: WRITE /0/0
+ * wakaama -> Bs: CoAP CHANGED 2.04
+ * wakaama <- Bs: CREATE /0/1
+ * wakaama -> Bs: CoAP CREATED 2.01
+ * wakaama <- Bs: CREATE /1/0
+ * wakaama -> Bs: CoAP CREATED 2.01
+ * wakaama <- Bs: Bootstrap finish
+ * wakaama -> Bs: CoAP CHANGED 2.04
+ * else Device Management connection
+ * wakaama -> tinyDTLS: Send registration request
+ * tinyDTLS <-> Dm: Authentication
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS -> Dm: Send register request
+ * tinyDTLS <- Dm: CoAP CREATED (2.01)
+ * wakaama <- tinyDTLS: CoAP CREATED (2.01)
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_STARTED""
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START"" Device Management
+ * lwm2mcore <-> Dm: Device Management session
+ * end
+ * loop
+ * lwm2mcore -> wakaama: ""lwm2m_step""
+ * lwm2mcore <-- wakaama: Result
+ * lwm2mcore -> adaptationLayer: Initialize the step timer
+ * end
+ * @enduml
+ *
+ * @section s_lwm2mcore_disconnection LwM2MCore disconnection
+ *
+ * @startuml{lwm2mcore_disconnection.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore disconnection
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_Disconnect(...)""
+ * lwm2mcore -> lwm2mcore: Suspend package download*
+ * lwm2mcore -> lwm2mcore: Stop cyclic timer
+ * lwm2mcore -> wakaama: ""lwm2m_close""
+ * group LWM2M_DEREGISTER flag is used
+ * wakaama -> Dm: Send a ""DEREGISTER"" message
+ * wakaama <- Dm: ""CoAP_DELETED""
+ * end
+ * wakaama -> wakaama: Free registered objects
+ * lwm2mcore -> tinyDTLS: Free context
+ * tinyDTLS -> Dm: ""DTLS_CLOSE""
+ * lwm2mcore -> lwm2mcore: Free DTLS connection list
+ *
+ * lwm2mcore -> adaptationLayer: ""lwm2mcore_UdpClose""
+ * adaptationLayer -> adaptationLayer: Close socket
+ * lwm2mcore <-- adaptationLayer: Result
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_FINISHED""
+ * @enduml
+ *
+ * Note: * -> To be defined later in package downloader documentation
+ *
+ * @section s_lwm2mcore_free LwM2MCore Free
+ *
+ * @startuml{lwm2mcore_free.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore free
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_Free(...)""
+ * lwm2mcore -> lwm2mcore: ""omanager_ObjectsFree"": free registered objects
+ * lwm2mcore -> lwm2mcore: Free contextes
+ * @enduml
+ *
+ * @section s_lwm2mcore_read Monitoring
+ *
+ * @startuml{lwm2mcore_read_resource.png}
+ * autonumber
+ * hide footbox
+ * title READ command on mono instancied resource
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: Platform is connected to the Device Management server
+ * wakaama <- Dm: ""READ"" command on a resource
+ * wakaama -> wakaama: Check if the object/resource is registered
+ * lwm2mcore <- wakaama: Forward
+ * client <- lwm2mcore: Handlers
+ * client --> lwm2mcore: Contents
+ * lwm2mcore --> wakaama: Contents
+ * wakaama --> Dm: Contents
+ * @enduml
+ *
+ * @startuml{lwm2mcore_read_object_single.png}
+ * autonumber
+ * hide footbox
+ * title READ command on mono instancied object
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: Platform is connected to the Device Management server
+ * wakaama <- Dm: ""READ"" command on an object with single instance
+ * wakaama -> wakaama: Check if the object/resource is registered
+ * lwm2mcore <- wakaama: Forward
+ * loop each resource which can be read in the object
+ * client <- lwm2mcore: Handlers
+ * client --> lwm2mcore: Contents
+ * end
+ * lwm2mcore --> wakaama: Contents
+ * wakaama -> wakaama: Format data in TLV/JSON
+ * wakaama --> Dm: Contents
+ * @enduml
+ *
+ * @startuml{lwm2mcore_read_object_multiple.png}
+ * autonumber
+ * hide footbox
+ * title READ command on multi instancied object
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: Platform is connected to the Device Management server
+ * wakaama <- Dm: ""READ"" command on an object with multiple instances
+ * wakaama -> wakaama: Check if the object/resource is registered
+ * loop each instance
+ * lwm2mcore <- wakaama: Forward
+ * loop each resource which can be read in the object
+ * client <- lwm2mcore: Handlers
+ * client --> lwm2mcore: Contents
+ * end
+ * lwm2mcore --> wakaama: Contents
+ * end
+ * wakaama -> wakaama: Format data in TLV/JSON
+ * wakaama --> Dm: Contents
+ * @enduml
+ *
+ * @section s_lwm2mcore_write Provisioning
+ *
+ * @startuml{lwm2mcore_write.png}
+ * autonumber
+ * hide footbox
+ * title WRITE command on mono instancied resource
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: Platform is connected to the Device Management server
+ * wakaama <- Dm: ""WRITE"" command on an object/resource
+ * wakaama -> wakaama: Check if the object/resource is registered
+ * lwm2mcore <- wakaama: Forward
+ * client <- lwm2mcore: Handlers
+ * client --> lwm2mcore: Response
+ * lwm2mcore --> wakaama: Response
+ * wakaama --> Dm: Response
+ * @enduml
+ *
+ * @section s_lwm2mcore_authentication_failure Authentication failure: rebootstrap
+ *
+ * @startuml{lwm2mcore_authentication_failure.png}
+ * autonumber
+ * hide footbox
+ * title Authentication failure
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: LwM2MCore was initialized and configured
+ *
+ * client -> lwm2mcore: ""lwm2mcore_Connect(...)""
+ * lwm2mcore -> adaptationLayer: Create the socket
+ * lwm2mcore -> adaptationLayer: Initialize the step timer (1 second)
+ *
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> wakaama: Timer 2 sec
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> wakaama: Timer 4 sec
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> wakaama: Timer 8 sec
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> wakaama: Timer 16 sec
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> wakaama: Timer 32 sec
+ * wakaama -> tinyDTLS: Send registration request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama <- tinyDTLS: Authentication failure
+ * lwm2mcore <- wakaama: Authentication failure
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_FAILED""
+ *
+ * wakaama -> tinyDTLS: Send bootstrap request
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS <-> Bs: Authentication
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_STARTED""
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START"" bootstrap
+ * tinyDTLS -> Bs: Send bootstrap request
+ * tinyDTLS <- Bs: CoAP CHANGED (2.04)
+ * wakaama <- tinyDTLS: CoAP CHANGED (2.04)
+ * wakaama <- Bs: DELETE /
+ * wakaama -> Bs: CoAP DELETED 2.02
+ * wakaama <- Bs: WRITE /0/0
+ * wakaama -> Bs: CoAP CHANGED 2.04
+ * wakaama <- Bs: CREATE /0/1
+ * wakaama -> Bs: CoAP CREATED 2.01
+ * wakaama <- Bs: CREATE /1/0
+ * wakaama -> Bs: CoAP CREATED 2.01
+ * wakaama <- Bs: Bootstrap finish
+ * wakaama -> Bs: CoAP CHANGED 2.04
+ *
+ * wakaama -> tinyDTLS: Send registration request to the Device Management server
+ * tinyDTLS <-> Dm: Authentication
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_AUTHENTICATION_STARTED""
+ * tinyDTLS -> Dm: Send register request
+ * tinyDTLS <- Dm: CoAP CREATED (2.01)
+ * wakaama <- tinyDTLS: CoAP CREATED (2.01)
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_STARTED""
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START"" Device Management
+ * lwm2mcore <-> Dm: Device Management session
+ *
+ * loop
+ * lwm2mcore -> wakaama: ""lwm2m_step""
+ * lwm2mcore <-- wakaama: Result
+ * lwm2mcore -> adaptationLayer: Initialize the step timer
+ * end
+ * @enduml
+ *
+ * @section s_lwm2mcore_update Registration update
+ *
+ * @startuml{lwm2mcore_registration_update.png}
+ * autonumber
+ * hide footbox
+ * title Registration update
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * note over lwm2mcore, Dm: Platform is connected to the Device Management server
+ * client -> lwm2mcore: ""lwm2mcore_Update(...)""
+ * lwm2mcore -> lwm2mcore: Check if agent is connected to the Device Management server
+ * lwm2mcore -> wakaama: ""lwm2m_update_registration""
+ * wakaama -> wakaama: Set internal state to "STATE_REG_UPDATE_NEEDED"
+ * lwm2mcore <-- wakaama: Result
+ *
+ * lwm2mcore -> lwm2mcore: Stop cyclic timer
+ * lwm2mcore -> lwm2mcore: Launch cyclic timer (1 sec)
+ * client <-- lwm2mcore: Result
+ *
+ * wakaama -> wakaama: ""prv_updateRegistration""
+ * wakaama -> tinyDTLS: ""dtls_connect""
+ * tinyDTLS <-> Dm: Authentication
+ * wakaama -> Dm: Registration update message
+ * wakaama <- Dm: CoAP CHANGED (2.04)
+ * @enduml
+ *
+ * @section s_lwm2mcore_fota FOTA: Firmware update Over-The-Air
+ *
+ * @todo Schematics for FOTA needs to be created
+ *
+ * @section s_lwm2mcore_sota SOTA: Software update Over-The-Air
+ *
+ * @todo Schematics for SOTA needs to be created
+ *
+ * @endif
+ *
+ *
+ *
+ * @defgroup lwm2mcore_public_IFS LwM2MCore public interface
+ * @brief LwM2MCore public interface
+ *
+ * @defgroup lwm2mcore_platform_adaptor_IFS Platform adaptor
+ * @brief Adaptation layer
+ *
+ * @defgroup lwm2mcore_init_IFS Initialization and free
+ * @ingroup lwm2mcore_public_IFS
+ * @brief LwM2MCore initialization and free
+ *
+ * @defgroup lwm2mcore_config_IFS Configuration
+ * @ingroup lwm2mcore_public_IFS
+ * @brief LwM2MCore configuration
+ *
+ * @defgroup lwm2mcore_cnx_IFS Connectivity
+ * @ingroup lwm2mcore_public_IFS
+ * @brief LwM2MCore connectivity
+ *
+ * @defgroup lwm2mcore_asset_IFS Asset Data
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Asset Data management
+ *
+ * @defgroup lwm2mcore_log_IFS Log
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Log
+ *
+ * @defgroup lwm2mcore_sota_IFS Application definition
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Embedded applications management
+ *
+ * @defgroup lwm2mcore_coap_handler_IFS CoAP handlers
+ * @ingroup lwm2mcore_public_IFS
+ * @brief CoAP handlers
+ *
+ * @defgroup lwm2mcore_internal_IFS LwM2MCore internal interface
+ * @brief LwM2MCore internal interface
+ *
+ * @defgroup lwm2mcore_objects_int Object internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore objects management
+ *
+ * @defgroup lwm2mcore_sessionManager_int Handlers internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore handlers management
+ *
+ * @defgroup lwm2mcore_coaphandler_int CoAP handler internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore CoAP handler management
+ *
+ * @defgroup lwm2mcore_utils_int Tool internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore tool APIs
+ *
+ * @defgroup lwm2mcore_dtlsconnection_int DTLS internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore DTLS internal APIs
+ *
+ */
+
+
