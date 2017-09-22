@@ -87,8 +87,8 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
         else
         {
             /* Package URI: LWM2MCORE_PACKAGE_URI_MAX_LEN+1 for null byte: string format */
-            uint8_t downloadUri[LWM2MCORE_PACKAGE_URI_MAX_LEN+1];
-            memset(downloadUri, 0, LWM2MCORE_PACKAGE_URI_MAX_LEN+1);
+            uint8_t downloadUri[LWM2MCORE_PACKAGE_URI_MAX_BYTES];
+            memset(downloadUri, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
             memcpy(downloadUri, bufferPtr, len);
 
             /* Call API to launch the package download

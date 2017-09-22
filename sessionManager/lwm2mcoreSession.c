@@ -426,18 +426,18 @@ void smanager_SendSessionEvent
                 {
                     LOG("REGISTER DONE");
 
-                    // Check if a download should be resumed
-                    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
-                    {
-                        LOG("Error while checking download resume");
-                    }
-
                     status.event = LWM2MCORE_EVENT_SESSION_STARTED;
                     smanager_SendStatusEvent(status);
 
                     status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                     status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
                     smanager_SendStatusEvent(status);
+
+                    // Check if a download should be resumed
+                    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
+                    {
+                        LOG("Error while checking download resume");
+                    }
                 }
                 break;
 

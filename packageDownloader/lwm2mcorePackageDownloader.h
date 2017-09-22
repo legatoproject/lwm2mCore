@@ -26,8 +26,9 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    DWL_OK    = 0,  ///< Successful
-    DWL_FAULT = -1  ///< Internal error
+    DWL_OK      =  0,   ///< Successful
+    DWL_FAULT   = -1,   ///< Internal error
+    DWL_SUSPEND = -2    ///< Download suspended
 }
 lwm2mcore_DwlResult_t;
 
@@ -38,11 +39,11 @@ lwm2mcore_DwlResult_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_LEN]; ///< URI of package to download
-    uint64_t packageSize;                               ///< Package size given by server
-    lwm2mcore_UpdateType_t updateType;                  ///< FW or SW update
-    bool     isResume;                                  ///< Is this a resume operation?
-    uint64_t updateOffset;                              ///< Update offset for download resume
+    char     packageUri[LWM2MCORE_PACKAGE_URI_MAX_BYTES];   ///< URI of package to download
+    uint64_t packageSize;                                   ///< Package size given by server
+    lwm2mcore_UpdateType_t updateType;                      ///< FW or SW update
+    bool     isResume;                                      ///< Is this a resume operation?
+    uint64_t updateOffset;                                  ///< Update offset for download resume
 }
 lwm2mcore_PackageDownloaderData_t;
 
@@ -223,21 +224,6 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 //--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
-/**
- * Callback for getting user agreement before starting a download
- *
- * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
- *
- * @warning This callback should be set to NULL if not implemented
- */
-//--------------------------------------------------------------------------------------------------
-typedef lwm2mcore_DwlResult_t (*lwm2mcore_DwlAgreement_t)
-(
-    uint32_t pkgSize         ///< Package size
-);
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -255,7 +241,6 @@ typedef struct
     lwm2mcore_SetFwUpdateResult_t     setFwUpdateResult;    ///< Set firmware update result
     lwm2mcore_SetSwUpdateState_t      setSwUpdateState;     ///< Set software update state
     lwm2mcore_SetSwUpdateResult_t     setSwUpdateResult;    ///< Set software update result
-    lwm2mcore_DwlAgreement_t          userAgreement;        ///< User agreement callback
     lwm2mcore_Download_t              download;             ///< Download callback
     lwm2mcore_StoreRange_t            storeRange;           ///< Storing callback
     lwm2mcore_EndDownload_t           endDownload;          ///< Ending callback
@@ -309,47 +294,6 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_PackageDownloaderInit
-(
-    void
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * One time initialization for package downloader
- */
-//--------------------------------------------------------------------------------------------------
-void lwm2mcore_PackageDownloaderGlobalInit
-(
-    void
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Received user agreement; proceed to download package.
- *
- * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
- * downloader thread. While the package downloader is waiting for user agreement, the avc thread
- * merely changes the state of the package downloader and allows the package downloader to proceed.
- * Care must be taken to protect 'PkgDwlObj' while modifying this function.
- */
-//--------------------------------------------------------------------------------------------------
-void lwm2mcore_PackageDownloaderAcceptDownload
-(
-    void
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Suspend the package downloader.
- *
- * This function is called to suspend the package downloader
- *
- * @note This function is accessed from the avc thread and shares 'PkgDwlObj' with the package
- * downloader thread. The avc thread merely changes the state of the package downloader to suspend
- * processing. Care must be taken to protect 'PkgDwlObj' while modifying this function.
- */
-//--------------------------------------------------------------------------------------------------
-void lwm2mcore_PackageDownloaderSuspend
 (
     void
 );
