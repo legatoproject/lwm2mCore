@@ -136,6 +136,10 @@
  * :------------------------------------------- | :------------------------------------------------
  * @c LWM2M_SUPPORT_JSON                        | Enable JSON payload support
  * @c LWM2M_DEREGISTER                          | Send a DEREGISTER message to the server when the device disconects from the server
+ * Extra compilation flags
+ * Flag                                         | Description
+ * :------------------------------------------- | :------------------------------------------------
+ * @c DELIMITER                                 | Change default COAP URI delimiter
  *
  * @subsection subs_compilation Compilation
  * To compile the LwM2MCore Linux client: \n

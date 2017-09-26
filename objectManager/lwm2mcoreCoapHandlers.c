@@ -7,6 +7,8 @@
  *
  */
 
+#include <string.h>
+#include <ctype.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <platform/types.h>
@@ -129,6 +131,63 @@ static uint8_t GetCoapErrorCode
     return result;
 }
 
+#ifdef DELIMITER
+//--------------------------------------------------------------------------------------------------
+/**
+ * Replace default CoAP URI delimiter character "/" in the string src by the character delim
+ *
+ * @return
+ *      - NULL if original string is NULL
+ *      - original string if the delimiter is outside of the range 0x20 - 0x7e
+ *      - modified string if it succeeds
+ */
+//--------------------------------------------------------------------------------------------------
+static char* Replace
+(
+    char*   srcPtr,     ///< [IN] original string
+    int     delim       ///< [IN] new delimiter
+)
+{
+    int count = 0;
+
+    if (!srcPtr)
+    {
+        LOG("Bad address");
+        return NULL;
+    }
+
+    if (!isprint(delim))
+    {
+        LOG("Operation not permitted");
+        return srcPtr;
+    }
+
+    if ('/' == *srcPtr)
+    {
+        while (*srcPtr)
+        {
+            *srcPtr = *(srcPtr+1);
+            srcPtr++;
+            count++;
+        }
+        srcPtr -= count;
+        count = 0;
+    }
+
+    while(*srcPtr)
+    {
+        if ('/' == *srcPtr)
+        {
+            *srcPtr = delim;
+        }
+        srcPtr++;
+        count++;
+    }
+    srcPtr -= count;
+
+    return srcPtr;
+}
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -173,18 +232,21 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     requestPtr = (lwm2mcore_CoapRequest_t*)lwm2m_malloc(sizeof(lwm2mcore_CoapRequest_t));
     if (!requestPtr)
     {
-       LOG("requestPtr is NULL");
-       return COAP_500_INTERNAL_SERVER_ERROR;
+        LOG("requestPtr is NULL");
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     requestPtr->uri = coap_get_multi_option_as_string(message->uri_path);
+#ifdef DELIMITER
+    requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
+#endif
     if (requestPtr->uri)
     {
-      requestPtr->uriLength = strlen(requestPtr->uri);
+        requestPtr->uriLength = strlen(requestPtr->uri);
     }
     else
     {
-      requestPtr->uriLength = 0;
+        requestPtr->uriLength = 0;
     }
     requestPtr->method = message->code;
     requestPtr->buffer = message->payload;

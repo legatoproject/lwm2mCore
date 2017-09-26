@@ -18,6 +18,10 @@ Debug flags: do not use in production !!
 ========================================
 `CREDENTIALS_DEBUG`: dump credentials logs.
 
+Extra compiler flags
+====================
+`DELIMITER`: Change default CoAP URI delimiter.<br />
+
 Some files manage default values for LWM2M resources.<br />
 For the moment, several files are available:<br />
 examples/linux/device.c: manage some device parameters which can be read by the LWM2M server.<br />
