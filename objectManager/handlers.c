@@ -31,16 +31,6 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Lifetime value to indicate that the lifetime is deactivated
- * This is compliant with the LWM2M specification and a 0-value has no sense
- * 630720000 = 20 years
- * This is used if the customer does not wan any "automatic" connection to the server
- */
-//--------------------------------------------------------------------------------------------------
-#define LIFETIME_VALUE_DISABLED       630720000
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Default value for disable timeout
  */
 //--------------------------------------------------------------------------------------------------
@@ -186,7 +176,7 @@ static ConfigBootstrapFile_t BootstrapDefaultConfig =
         },
     .server = {                             // DM server
         DEFAULT_DM_SERVER_ID,               // serverId
-        LIFETIME_VALUE_DISABLED,            // lifetime
+        LWM2MCORE_LIFETIME_VALUE_DISABLED,  // lifetime
         DEFAULT_P_MIN,                      // defaultPmin
         DEFAULT_P_MAX,                      // defaultPmax
         false,                              // isDisable
@@ -1210,7 +1200,7 @@ int omanager_ReadServerObj
         case LWM2MCORE_SERVER_LIFETIME_RID:
         {
             BsConfig.server.lifetime = (BsConfig.server.lifetime == 0)
-                                       ? LIFETIME_VALUE_DISABLED
+                                       ? LWM2MCORE_LIFETIME_VALUE_DISABLED
                                        : BsConfig.server.lifetime;
 
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,

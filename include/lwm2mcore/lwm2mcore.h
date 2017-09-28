@@ -91,6 +91,16 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Lifetime value to indicate that the lifetime is deactivated
+ * This is compliant with the LWM2M specification and a 0-value has no sense
+ * 630720000 = 20 years
+ * This is used if the customer does not wan any "automatic" connection to the server
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_LIFETIME_VALUE_DISABLED       630720000
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Specific defines for OMA FUMO (Firmware Update Management Object)
  * Values defined in ETSI 118 105 Table 5.4.2.1-1
  */
