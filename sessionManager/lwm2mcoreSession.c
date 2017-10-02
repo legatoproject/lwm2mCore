@@ -316,6 +316,21 @@ static uint32_t ConvertToCoapCode
             coapCode = METHOD_NOT_ALLOWED_4_05;
             break;
         }
+        case COAP_PRECONDITION_FAILED:
+        {
+            coapCode = PRECONDITION_FAILED_4_12;
+            break;
+        }
+        case COAP_REQUEST_ENTITY_TOO_LARGE:
+        {
+            coapCode = REQUEST_ENTITY_TOO_LARGE_4_13;
+            break;
+        }
+        case COAP_UNSUPPORTED_MEDIA_TYPE:
+        {
+            coapCode = UNSUPPORTED_MEDIA_TYPE_4_15;
+            break;
+        }
         case COAP_INTERNAL_ERROR:
         {
             coapCode = INTERNAL_SERVER_ERROR_5_00;

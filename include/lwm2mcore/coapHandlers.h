@@ -41,6 +41,9 @@ typedef enum
     COAP_METHOD_UNAUTHORIZED,       ///< Operation not allowed on this resource
     COAP_NOT_FOUND,                 ///< Not found
     COAP_METHOD_NOT_ALLOWED,        ///< Method not allowed
+    COAP_PRECONDITION_FAILED,       ///< Precondition Failed
+    COAP_REQUEST_ENTITY_TOO_LARGE,  ///< Request Entity Too Large
+    COAP_UNSUPPORTED_MEDIA_TYPE,    ///< Unsupported Content-Format
     COAP_INTERNAL_ERROR             ///< Internal error
 }
 lwm2mcore_CoapResponseCode_t;
