@@ -36,7 +36,7 @@
  * Callback for data receipt
  */
 //--------------------------------------------------------------------------------------------------
-typedef void* (*lwm2mcore_UdpCb_t)
+typedef void (*lwm2mcore_UdpCb_t)
 (
     uint8_t* bufferPtr,                     ///< [IN] Received data
     uint32_t len,                           ///< [IN] Received data length
@@ -117,6 +117,28 @@ bool lwm2mcore_UdpConnect
 bool lwm2mcore_UdpClose
 (
     lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Send data on a socket
+ * This function is called by the LwM2MCore and must be adapted to the platform
+ * The aim of this function is to send data on a socket
+ *
+ * @return
+ *      -
+ *      - false on error
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+ssize_t lwm2mcore_UdpSend
+(
+    int sockfd,                            ///< [IN] Socket Id
+    const void *bufferPtr,                 ///< [IN] Buffer to be sent
+    size_t length,                         ///< [IN] Buffer length to be sent
+    int flags,                             ///< [IN] Flags
+    const struct sockaddr *destAddrPtr,    ///< [IN] Destination address
+    socklen_t addrlen                      ///< [IN] destAddrPtr parameter length
 );
 
 /**

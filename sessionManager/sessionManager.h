@@ -12,6 +12,7 @@
 #define __SESSION_H__
 
 #include <lwm2mcore/lwm2mcore.h>
+#include <lwm2mcore/coapHandlers.h>
 #include "objects.h"
 #include "dtlsConnection.h"
 

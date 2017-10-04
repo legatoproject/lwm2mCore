@@ -49,6 +49,8 @@
 #include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
+#include <lwm2mcore/mutex.h>
+#include <lwm2mcore/sem.h>
 #include <internals.h>
 #include "lwm2mcorePackageDownloader.h"
 #include "workspace.h"

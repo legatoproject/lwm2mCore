@@ -38,11 +38,9 @@ void* lwm2mcore_MutexCreate
 /**
  * Function to lock a mutex
  *
- * @return:
- *   - 0 on success; error code otherwise
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_MutexLock
+void lwm2mcore_MutexLock
 (
     void* mutexPtr              ///< [IN] mutex
 );
@@ -51,11 +49,9 @@ int lwm2mcore_MutexLock
 /**
  * Function to unlock a mutex
  *
- * @return:
- *   - 0 on success; error code otherwise
  */
 //--------------------------------------------------------------------------------------------------
-int lwm2mcore_MutexUnlock
+void lwm2mcore_MutexUnlock
 (
     void* mutexPtr              ///< [IN] mutex
 

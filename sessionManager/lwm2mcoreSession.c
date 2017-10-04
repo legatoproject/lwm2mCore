@@ -14,11 +14,13 @@
 #include <lwm2mcore/coapHandlers.h>
 #include <lwm2mcore/timer.h>
 #include <lwm2mcore/udp.h>
+#include <lwm2mcore/update.h>
 #include "liblwm2m.h"
 #include "internals.h"
 #include "objects.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
+#include "handlers.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -227,7 +229,7 @@ static void UpdateBootstrapInfo
 //--------------------------------------------------------------------------------------------------
 static void Lwm2mClientStepHandler
 (
-    void* timerRef    ///< Timer that expired
+    void
 )
 {
     int result = 0;
@@ -798,7 +800,7 @@ lwm2mcore_Ref_t lwm2mcore_Init
     DataCtxPtr = dataPtr;
 
     LOG_ARG("Init done -> context %p", dataPtr);
-    return dataPtr;
+    return (lwm2mcore_Ref_t)dataPtr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -860,7 +862,8 @@ bool lwm2mcore_Connect
 
     /* Create the socket */
     memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
-    result = lwm2mcore_UdpOpen(instanceRef, lwm2mcore_UdpReceiveCb, &SocketConfig);
+    result = lwm2mcore_UdpOpen(instanceRef, lwm2mcore_UdpReceiveCb,
+                               &SocketConfig);
 
     if (true == result)
     {
@@ -870,7 +873,9 @@ bool lwm2mcore_Connect
 
         /* Initialize the LwM2M client step timer */
         DataCtxPtr = dataPtr;
-        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
+        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                        1,
+                                        Lwm2mClientStepHandler))
         {
             LOG("ERROR to launch the 1st step timer");
         }

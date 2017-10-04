@@ -183,7 +183,7 @@ size_t lwm2mcore_GetRequestPayloadLength
  *      - token from request
  */
 //--------------------------------------------------------------------------------------------------
-const uint8_t* lwm2mcore_getToken
+const uint8_t* lwm2mcore_GetToken
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
@@ -197,7 +197,7 @@ const uint8_t* lwm2mcore_getToken
  *      - token length from request
  */
 //--------------------------------------------------------------------------------------------------
-size_t lwm2mcore_getTokenLength
+size_t lwm2mcore_GetTokenLength
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
@@ -212,7 +212,7 @@ size_t lwm2mcore_getTokenLength
  *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
-const unsigned int lwm2mcore_getContentType
+const unsigned int lwm2mcore_GetContentType
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
@@ -226,7 +226,7 @@ const unsigned int lwm2mcore_getContentType
  *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_sendAsyncResponse
+bool lwm2mcore_SendAsyncResponse
 (
     lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
     lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference

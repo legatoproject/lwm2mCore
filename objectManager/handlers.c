@@ -16,10 +16,12 @@
 #include <lwm2mcore/security.h>
 #include <lwm2mcore/paramStorage.h>
 #include <lwm2mcore/update.h>
+#include <lwm2mcore/location.h>
 #include "handlers.h"
 #include "objects.h"
 #include "internals.h"
 #include "crypto.h"
+#include "utils.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -498,9 +500,7 @@ lwm2mcore_Sid_t omanager_GetLifetime
     uint32_t* lifetimePtr                 ///< [OUT] lifetime in seconds
 )
 {
-    lwm2mcore_Sid_t sid;
     ConfigBootstrapFile_t config;
-    size_t len = sizeof(ConfigBootstrapFile_t);
 
     if (BS_CONFIG_VERSION == BsConfig.version)
     {
@@ -549,7 +549,7 @@ int omanager_WriteSecurityObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
@@ -925,9 +925,11 @@ bool omanager_StoreCredentials
     bool result = false;
     int storageResult = LWM2MCORE_ERR_COMPLETED_OK;
 
-    LOG_ARG("BsPskIdLen %d BsPskLen %d strlen(BsAddr) %d", BsPskIdLen, BsPskLen, strlen(BsAddr));
-    LOG_ARG("DmPskIdLen %d DmPskLen %d strlen(DmAddr) %d", DmPskIdLen, DmPskLen, strlen(DmAddr));
-    if (BsPskIdLen && BsPskLen && (strlen(BsAddr)))
+    LOG_ARG("BsPskIdLen %d BsPskLen %d strlen(BsAddr) %d", BsPskIdLen,
+                                                           BsPskLen, strlen((const char *)BsAddr));
+    LOG_ARG("DmPskIdLen %d DmPskLen %d strlen(DmAddr) %d", DmPskIdLen,
+                                                           DmPskLen, strlen((const char *)DmAddr));
+    if (BsPskIdLen && BsPskLen && (strlen((const char *)BsAddr)))
     {
         storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
                                                 (char*)BsPskId,
@@ -941,7 +943,7 @@ bool omanager_StoreCredentials
 
         storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
                                                 (char*)BsAddr,
-                                                strlen(BsAddr));
+                                                strlen((const char *)BsAddr));
         LOG_ARG("Store BsAddr result %d", storageResult);
     }
 
@@ -962,11 +964,11 @@ bool omanager_StoreCredentials
         LOG_ARG("Store DmPsk result %d", storageResult);
     }
 
-    if ((strlen(DmAddr)) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
+    if ((strlen((const char *)DmAddr)) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
     {
         storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
                                                 (char*)DmAddr,
-                                                strlen(DmAddr));
+                                                strlen((const char *)DmAddr));
         LOG_ARG("Store DmAddr result %d", storageResult);
     }
 
@@ -1015,11 +1017,10 @@ int omanager_SmsDummy
     lwm2mcore_Uri_t* uriPtr,                ///< [IN] uriPtr represents the requested operation and
                                             ///< object/resource
     char* bufferPtr,                        ///< [INOUT] data buffer for information
-    size_t len,                             ///< [IN] length of input buffer
-    valueChangedCallback_t changedCb        ///< [IN] not used for READ operation but for WRITE one
+    size_t len                             ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL ==uriPtr) || (NULL == bufferPtr))
     {
@@ -1079,7 +1080,7 @@ int omanager_WriteServerObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     uint32_t lifetime;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
@@ -1102,25 +1103,25 @@ int omanager_WriteServerObj
     {
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
-            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
-            lifetime = (uint32_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            lifetime = (uint32_t)omanager_BytesToInt(bufferPtr, len);
             sID = lwm2mcore_SetLifetime(lifetime);
             break;
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1133,7 +1134,7 @@ int omanager_WriteServerObj
 
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt(bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1181,7 +1182,7 @@ int omanager_ReadServerObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
@@ -1264,7 +1265,7 @@ int omanager_ReadServerObj
 
         /* Resource 7: Binding */
         case LWM2MCORE_SERVER_BINDING_MODE_RID:
-            *lenPtr = snprintf(bufferPtr, *lenPtr, BsConfig.server.bindingMode);
+            *lenPtr = snprintf(bufferPtr, *lenPtr, "%s", BsConfig.server.bindingMode);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1307,7 +1308,7 @@ int omanager_WriteDeviceObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr))
     {
@@ -1375,7 +1376,7 @@ int omanager_ReadDeviceObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -1501,7 +1502,7 @@ int omanager_ExecDeviceObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL == uriPtr) || (len && (NULL == bufferPtr)))
     {
@@ -1569,7 +1570,7 @@ int omanager_ReadConnectivityMonitoringObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -1621,7 +1622,7 @@ int omanager_ReadConnectivityMonitoringObj
                     bearersNb = 0;
 
                     /* Retrieve the list */
-                    sID = lwm2mcore_GetAvailableNetworkBearers(&bearersList, &bearersNb);
+                    sID = lwm2mcore_GetAvailableNetworkBearers(bearersList, &bearersNb);
                 }
                 else
                 {
@@ -1909,7 +1910,7 @@ int omanager_WriteFwUpdateObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -1977,7 +1978,7 @@ int omanager_ReadFwUpdateObj
     valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2076,7 +2077,7 @@ int omanager_ExecFwUpdate
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     // bufferPtr can be null as per spec (OMA-TS-LightweightM2M-V1_0-20151214-C.pdf, appendix E.6)
     if (NULL == uriPtr)
@@ -2145,7 +2146,7 @@ int omanager_ReadLocationObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -2256,7 +2257,7 @@ int omanager_ReadConnectivityStatisticsObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -2370,7 +2371,7 @@ int omanager_ExecConnectivityStatistics
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL == uriPtr) || (len && (NULL == bufferPtr)))
     {
@@ -2440,7 +2441,7 @@ int omanager_WriteSwUpdateObj
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2480,7 +2481,7 @@ int omanager_WriteSwUpdateObj
             else
             {
                 sID = lwm2mcore_SetSwUpdateSupportedObjects(uriPtr->oiid,
-                                                        (bool)omanager_BytesToInt(bufferPtr, len));
+                                (bool)omanager_BytesToInt(bufferPtr, len));
             }
             break;
 
@@ -2518,7 +2519,7 @@ int omanager_ReadSwUpdateObj
     valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2648,7 +2649,7 @@ int omanager_ExecSwUpdate
     size_t len                          ///< [IN] length of input buffer
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((NULL == uriPtr) || ((NULL == bufferPtr) && len))
     {
@@ -2725,7 +2726,7 @@ int omanager_ReadSubscriptionObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -2824,7 +2825,7 @@ int omanager_ReadExtConnectivityStatsObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 )
 {
-    int sID;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {

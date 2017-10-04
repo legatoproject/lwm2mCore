@@ -61,7 +61,7 @@ lwm2mcore_DwlResult_t ReadPkgDwlWorkspace
     }
 
     // Check if the package downloader workspace is stored
-    sid = lwm2mcore_GetParam(LWM2MCORE_DWL_WORKSPACE_PARAM, pkgDwlWorkspacePtr, &len);
+    sid = lwm2mcore_GetParam(LWM2MCORE_DWL_WORKSPACE_PARAM, (uint8_t*)pkgDwlWorkspacePtr, &len);
     LOG_ARG("Read download workspace: len=%zu, result=%d", len, sid);
 
     if (   (LWM2MCORE_ERR_COMPLETED_OK == sid)

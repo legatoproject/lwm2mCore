@@ -279,8 +279,37 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
 (
-    unsigned char*  certPtr,    ///< [IN] Certificate
-    int             len         ///< [IN] Certificate len
+    char*  certPtr,    ///< [IN] Certificate
+    int    len         ///< [IN] Certificate len
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This function erases one credential from platform storage
+ *
+ * @return
+ *      - true if the credential is deleted
+ *      - false else
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_DeleteCredential
+(
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to check if one credential is present in platform storage
+ *
+ * @return
+ *      - true if the credential is present
+ *      - false else
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_CheckCredential
+(
+    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
 );
 
 #endif /* __LWM2MCORE_SECURITY_H__ */

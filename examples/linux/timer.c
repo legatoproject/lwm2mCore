@@ -59,7 +59,7 @@ static void TimerSigHandler
     (void)contextPtr;
     if (TimerTable[siPtr->si_value.sival_int].timerCb)
     {
-        TimerTable[siPtr->si_value.sival_int].timerCb(NULL);
+        TimerTable[siPtr->si_value.sival_int].timerCb();
     }
     else
     {

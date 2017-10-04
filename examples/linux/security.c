@@ -1090,8 +1090,8 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
 (
-    unsigned char*  certPtr,    ///< [IN] Certificate
-    int             len         ///< [IN] Certificate len
+    char*  certPtr,    ///< [IN] Certificate
+    int    len         ///< [IN] Certificate len
 )
 {
     (void)(len);

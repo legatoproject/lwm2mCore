@@ -40,9 +40,9 @@ typedef enum
  * Adaptation API for timer launch
  */
 //--------------------------------------------------------------------------------------------------
-typedef void* (*lwm2mcore_TimerCallback_t)
+typedef void (*lwm2mcore_TimerCallback_t)
 (
-    void* data
+    void
 );
 
 //--------------------------------------------------------------------------------------------------

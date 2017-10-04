@@ -281,7 +281,7 @@ uint64_t omanager_BytesToUint64
 //--------------------------------------------------------------------------------------------------
 int64_t omanager_BytesToInt
 (
-    const uint8_t* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
+    const char* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
     size_t len                  ///< [IN] Bytes length
 )
 {
@@ -297,19 +297,19 @@ int64_t omanager_BytesToInt
 
         case 2:
         {
-            value = (int16_t)omanager_BytesToUint16(bytesPtr);
+            value = (int16_t)omanager_BytesToUint16((const uint8_t*)bytesPtr);
         }
         break;
 
         case 4:
         {
-            value = (int32_t)omanager_BytesToUint32(bytesPtr);
+            value = (int32_t)omanager_BytesToUint32((const uint8_t*)bytesPtr);
         }
         break;
 
         case 8:
         {
-            value = (int64_t)omanager_BytesToUint64(bytesPtr);
+            value = (int64_t)omanager_BytesToUint64((const uint8_t*)bytesPtr);
         }
         break;
 

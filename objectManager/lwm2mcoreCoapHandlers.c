@@ -224,7 +224,6 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     coap_packet_t* message        ///< [IN] CoAP request
 )
 {
-    void* coapHandler;
     uint8_t coapErrorCode;
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
     lwm2mcore_CoapRequest_t* requestPtr;

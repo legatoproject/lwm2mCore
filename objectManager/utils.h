@@ -123,7 +123,7 @@ uint64_t omanager_BytesToUint64
 //--------------------------------------------------------------------------------------------------
 int64_t omanager_BytesToInt
 (
-    const uint8_t* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
+    const char* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
     size_t len                  ///< [IN] Bytes length
 );
 /**

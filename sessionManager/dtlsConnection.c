@@ -22,6 +22,7 @@
 #include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/socket.h>
+#include <lwm2mcore/udp.h>
 #include "objects.h"
 #include "dtlsConnection.h"
 #include "sessionManager.h"
@@ -331,7 +332,7 @@ static int GetPskInfo
     {
         case DTLS_PSK_IDENTITY:
         {
-            int idLen;
+            int idLen = 0;
             char* idPtr;
             idPtr = SecurityGetPublicId(cnxPtr->securityObjPtr, cnxPtr->securityInstId, &idLen);
 #ifdef CREDENTIALS_DEBUG
@@ -354,7 +355,7 @@ static int GetPskInfo
         }
         case DTLS_PSK_KEY:
         {
-            int keyLen;
+            int keyLen = 0;
             char* keyPtr;
             keyPtr = SecurityGetSecretKey(cnxPtr->securityObjPtr, cnxPtr->securityInstId, &keyLen);
 #ifdef CREDENTIALS_DEBUG
@@ -500,6 +501,8 @@ static int dtlsEventCb
         }
         break;
     }
+
+    return 0;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -731,7 +734,7 @@ dtls_Connection_t* dtls_CreateConnection
 {
     int s;
     struct sockaddr saPtr;
-    socklen_t sl;
+    socklen_t sl = 0;
     dtls_Connection_t* connPtr = NULL;
     char uriBuf[URI_LENGTH];
     char* uriPtr;

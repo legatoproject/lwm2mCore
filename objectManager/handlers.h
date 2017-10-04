@@ -170,8 +170,7 @@ int omanager_SmsDummy
     lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
     char *bufferPtr,                    ///< [INOUT] data buffer for information
-    size_t len,                         ///< [IN] length of input buffer
-    valueChangedCallback_t changedCb    ///< [IN] not used for READ operation but for WRITE one
+    size_t len                         ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------

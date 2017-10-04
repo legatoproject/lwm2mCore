@@ -17,6 +17,8 @@
 #include "sessionManager.h"
 #include "internals.h"
 #include <stdlib.h>
+#include "utils.h"
+#include "handlers.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -261,7 +263,7 @@ static lwm2mcore_internalResource_t* FindResource
 static uint8_t EncodeData
 (
     lwm2mcore_ResourceType_t type,  ///< [IN] LWM2M resource type
-    uint8_t* bufPtr,                ///< [IN] Data to encode
+    const char* bufPtr,             ///< [IN] Data to encode
     size_t bufSize,                 ///< [IN] Length of data to encode
     lwm2m_data_t* dataPtr           ///< [INOUT] Encoded LWM2M data
 )
@@ -289,7 +291,7 @@ static uint8_t EncodeData
 
         case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
         case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
-            lwm2m_data_encode_opaque(bufPtr, bufSize, dataPtr);
+            lwm2m_data_encode_opaque((uint8_t*)bufPtr, bufSize, dataPtr);
             break;
 
         case LWM2MCORE_RESOURCE_TYPE_FLOAT:
@@ -323,10 +325,10 @@ static uint8_t ReadResourceInstances
 )
 {
     int sid = 0;
-    int i = 0;
+    uint8_t i = 0;
     uint8_t result = COAP_404_NOT_FOUND;
-    char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
-    size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+    char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
+    size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
     lwm2m_data_t* instancesPtr = lwm2m_data_new(resourcePtr->maxInstCount);
 
     if (!instancesPtr)
@@ -336,13 +338,13 @@ static uint8_t ReadResourceInstances
 
     do
     {
-        async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
-        memset(async_buf, 0, async_buf_len);
+        asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+        memset(asyncBuf, 0, asyncBufLen);
         uriPtr->riid = i;
 
         /* Read the instance of the resource */
         LOG_ARG("Instance %d", uriPtr->riid);
-        sid  = resourcePtr->read(uriPtr, async_buf, &async_buf_len, NULL);
+        sid  = resourcePtr->read(uriPtr, asyncBuf, &asyncBufLen, NULL);
 
         /* Define the CoAP result */
         result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -350,13 +352,13 @@ static uint8_t ReadResourceInstances
         if (COAP_205_CONTENT == result)
         {
             /* Check if some data was returned */
-            if (async_buf_len)
+            if (asyncBufLen)
             {
                 /* Set resource id and encode as LWM2M data */
                 (instancesPtr + i)->id = uriPtr->riid;
                 result = EncodeData(resourcePtr->type,
-                                    async_buf,
-                                    async_buf_len,
+                                    asyncBuf,
+                                    asyncBufLen,
                                     instancesPtr + i);
             }
             else
@@ -415,8 +417,8 @@ static uint8_t ReadCb
     lwm2mcore_Uri_t uri = { 0 };
     lwm2mcore_internalObject_t* objPtr;
     lwm2mcore_internalResource_t* resourcePtr = NULL;
-    char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
-    size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+    char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
+    size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
 
     if ((NULL == objectPtr) || (NULL == dataArrayPtr))
     {
@@ -504,10 +506,10 @@ static uint8_t ReadCb
                 }
                 else
                 {
-                    async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
-                    memset(async_buf, 0, async_buf_len);
+                    asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+                    memset(asyncBuf, 0, asyncBufLen);
 
-                    sid  = resourcePtr->read(&uri, async_buf, &async_buf_len, NULL);
+                    sid  = resourcePtr->read(&uri, asyncBuf, &asyncBufLen, NULL);
 
                     /* Define the CoAP result */
                     result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -515,8 +517,8 @@ static uint8_t ReadCb
                     if (COAP_205_CONTENT == result)
                     {
                         result = EncodeData(resourcePtr->type,
-                                            async_buf,
-                                            async_buf_len,
+                                            asyncBuf,
+                                            asyncBufLen,
                                             (*dataArrayPtr) + i);
                     }
                 }
@@ -746,8 +748,8 @@ static uint8_t WriteCb
         {
             int sid = 0;
             lwm2mcore_internalResource_t* resourcePtr = NULL;
-            char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
-            size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+            char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
+            size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
 
             LOG_ARG("numData %d", numData);
             // is the server asking for the full object ?
@@ -783,8 +785,8 @@ static uint8_t WriteCb
             do
             {
                 uri.rid = dataArrayPtr[i].id;
-                memset(async_buf, 0, LWM2MCORE_BUFFER_MAX_LEN);
-                async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+                memset(asyncBuf, 0, LWM2MCORE_BUFFER_MAX_LEN);
+                asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
 
                 /* Search the resource handler */
                 resourcePtr = FindResource(objPtr, uri.rid);
@@ -797,11 +799,11 @@ static uint8_t WriteCb
 
                        if (FormatDataWriteExecute(resourcePtr->type,
                                                   dataArrayPtr[i],
-                                                  async_buf,
-                                                  &async_buf_len))
+                                                  asyncBuf,
+                                                  &asyncBufLen))
                         {
                             LOG_ARG("WRITE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                            sid = resourcePtr->write(&uri, async_buf, async_buf_len);
+                            sid = resourcePtr->write(&uri, asyncBuf, asyncBufLen);
                             LOG_ARG("WRITE sID %d", sid);
                             /* Define the CoAP result */
                             result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
@@ -1115,8 +1117,8 @@ static uint8_t ExecuteCb
         {
             int sid = 0;
             lwm2mcore_internalResource_t* resourcePtr = NULL;
-            char async_buf[LWM2MCORE_BUFFER_MAX_LEN];
-            size_t async_buf_len = LWM2MCORE_BUFFER_MAX_LEN;
+            char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
+            size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
 
             /* Search the resource handler */
             resourcePtr = FindResource(objPtr, uri.rid);
@@ -1128,16 +1130,16 @@ static uint8_t ExecuteCb
                     dataArray.type = LWM2M_TYPE_STRING;
                     dataArray.value.asBuffer.length = (size_t)length;
                     dataArray.value.asBuffer.buffer = bufferPtr;
-                    memset(async_buf, 0, async_buf_len);
+                    memset(asyncBuf, 0, asyncBufLen);
 
                     LOG_ARG("data type %d resourcePtr->type %d", dataArray.type, resourcePtr->type);
                     if (FormatDataWriteExecute(resourcePtr->type,
                                                dataArray,
-                                               async_buf,
-                                               &async_buf_len))
+                                               asyncBuf,
+                                               &asyncBufLen))
                     {
                         LOG_ARG("EXECUTE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                        sid  = resourcePtr->exec(&uri, async_buf, async_buf_len);
+                        sid  = resourcePtr->exec(&uri, asyncBuf, asyncBufLen);
                         LOG_ARG("EXECUTE sID %d", sid);
                         /* Define the CoAP result */
                         result = SetCoapError(sid, LWM2MCORE_OP_EXECUTE);
@@ -1586,7 +1588,6 @@ static bool UpdateSwListWakaama
 {
     char tempPath[LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN + 1];
     bool updatedList = false;
-    uint16_t LenToCopy = 0;
     uint16_t oid;
     uint16_t oiid;
     int numChars;
@@ -1653,7 +1654,6 @@ static bool UpdateSwListWakaama
                 aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
                 if (NULL != aData)
                 {
-                    int ListPos = 0;
                     oid = atoi(aData);
                     aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
                     /* check if aData is digit
@@ -1680,7 +1680,7 @@ static bool UpdateSwListWakaama
                         {
                             LOG("Obj 9 is registered");
 
-                            instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
+                            instancePtr = (SwApplicationList_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
                                                                          oiid);
                             if (NULL == instancePtr)
                             {
