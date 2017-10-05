@@ -45,7 +45,6 @@
  */
 
 #include <stdio.h>
-#include <semaphore.h>
 #include <liblwm2m.h>
 #include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
