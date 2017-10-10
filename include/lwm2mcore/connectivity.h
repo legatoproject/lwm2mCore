@@ -97,7 +97,7 @@ lwm2mcore_Sid_t lwm2mcore_GetSignalStrength
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLinkQuality
 (
-    uint16_t* valuePtr  ///< [INOUT] data buffer
+    int* valuePtr  ///< [INOUT] data buffer
 );
 
 //--------------------------------------------------------------------------------------------------

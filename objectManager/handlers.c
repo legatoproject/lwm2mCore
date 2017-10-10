@@ -1653,7 +1653,7 @@ int omanager_ReadConnectivityMonitoringObj
         /* Resource 3: Link quality */
         case LWM2MCORE_CONN_MONITOR_LINK_QUALITY_RID:
         {
-            uint16_t linkQuality;
+            int linkQuality;
             sID = lwm2mcore_GetLinkQuality(&linkQuality);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
