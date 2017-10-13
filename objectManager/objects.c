@@ -127,9 +127,13 @@ static uint8_t SetCoapError
         }
         break;
 
+        // LWM2MCORE_ERR_INVALID_STATE needs to be mapped to COAP_501_NOT_IMPLEMENTED and not
+        // COAP_503_SERVICE_UNAVAILABLE in order to have the required behavior:
+        // - Data is ignored on a READ command on an object
+        // - CoAP 4.04 is returned on command on an atomic resource
         case LWM2MCORE_ERR_INVALID_STATE:
         {
-            result = COAP_503_SERVICE_UNAVAILABLE;
+            result = COAP_501_NOT_IMPLEMENTED;
         }
         break;
 
