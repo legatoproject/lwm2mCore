@@ -521,7 +521,7 @@ static void PkgDwlEvent
             LOG("Package download start");
             status.event = LWM2MCORE_EVENT_DOWNLOAD_PROGRESS;
             status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
-            status.u.pkgStatus.numBytes = 0;
+            status.u.pkgStatus.numBytes = (uint32_t)pkgDwlPtr->data.packageSize;
             status.u.pkgStatus.progress = 0;
             status.u.pkgStatus.errorCode = 0;
             break;
