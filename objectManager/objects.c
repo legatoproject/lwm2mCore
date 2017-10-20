@@ -1,5 +1,5 @@
 /**
- * @file lwm2mcoreObjects.c
+ * @file objects.c
  *
  * Adaptation layer from the object table managed by the client and the Wakaama object management
  *

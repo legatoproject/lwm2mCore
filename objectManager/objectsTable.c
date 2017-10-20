@@ -133,6 +133,14 @@ static lwm2mcore_Resource_t SecurityResources[] =
         omanager_ReadSecurityObj,                    //.read
         omanager_WriteSecurityObj,                   //.write
         NULL,                                        //.exec
+    },
+    {
+        LWM2MCORE_SECURITY_BS_ACCOUNT_TIMEOUT_RID,   //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                 //.type
+        1,                                           //.maxResInstCnt
+        omanager_ReadSecurityObj,                    //.read
+        omanager_WriteSecurityObj,                   //.write
+        NULL,                                        //.exec
     }
 };
 
@@ -171,6 +179,14 @@ static lwm2mcore_Resource_t ServerResources[] =
     },
     {
         LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID,    //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadServerObj,                     //.read
+        omanager_WriteServerObj,                    //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID,       //.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
         1,                                          //.maxResInstCnt
         omanager_ReadServerObj,                     //.read

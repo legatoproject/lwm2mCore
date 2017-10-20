@@ -9,7 +9,7 @@
  *
  */
 
-#include "pthread.h"
+#include <stdio.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -24,7 +24,8 @@ void* lwm2mcore_MutexCreate
     const char* mutexNamePtr         ///< mutex name
 )
 {
-    // To be implemented later
+    (void)mutexNamePtr;
+    printf("Mutex to be implemented later\n");
     return NULL;
 }
 
@@ -38,8 +39,8 @@ void lwm2mcore_MutexLock
     void* mutexPtr              ///< [IN] mutex
 )
 {
-    // To be implemented later
-    return;
+    (void)mutexPtr;
+    printf("Mutex to be implemented later\n");
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -53,8 +54,8 @@ void lwm2mcore_MutexUnlock
     void* mutexPtr              ///< [IN] mutex
 )
 {
-    // To be implemented later
-    return;
+    (void)mutexPtr;
+    printf("Mutex to be implemented later\n");
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -67,8 +68,8 @@ void lwm2mcore_MutexDelete
     void* mutexPtr              ///< [IN] mutex
 )
 {
-    // To be implemented later
-    return;
+    (void)mutexPtr;
+    printf("Mutex to be implemented later\n");
 }
 
 

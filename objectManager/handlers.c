@@ -711,6 +711,11 @@ int omanager_WriteSecurityObj
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
+        /* Resource 12: Bootstrap-Server Account Timeout */
+        case LWM2MCORE_SECURITY_BS_ACCOUNT_TIMEOUT_RID:
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+            break;
+
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             break;
@@ -889,6 +894,11 @@ int omanager_ReadSecurityObj
                                          sizeof(BsConfig.security[uriPtr->oiid].clientHoldOffTime),
                                         false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
+            break;
+
+        /* Resource 12: Bootstrap-Server Account Timeout */
+        case LWM2MCORE_SECURITY_BS_ACCOUNT_TIMEOUT_RID:
+            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
 
         default:
@@ -1118,7 +1128,7 @@ int omanager_WriteServerObj
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
             BsConfig.server.disableTimeout =
                 (uint32_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
-            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 6: Notification storing when disabled or offline */

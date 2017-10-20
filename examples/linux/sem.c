@@ -8,8 +8,9 @@
  * Copyright (C) Sierra Wireless Inc.
  *
  */
-#include <stdlib.h>
-#include <semaphore.h>
+
+#include <stdio.h>
+#include <stdint.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -21,11 +22,13 @@
 //--------------------------------------------------------------------------------------------------
 void* lwm2mcore_SemCreate
 (
-    const char* name,               ///< [IN] Name of the semaphore
+    const char* namePtr,            ///< [IN] Name of the semaphore
     int32_t initialCount            ///< [IN] initial number of semaphore
 )
 {
-    // To be implemented later
+    (void)namePtr;
+    (void)initialCount;
+    printf("Semaphore to be implemented later\n");
     return NULL;
 }
 
@@ -39,7 +42,8 @@ void lwm2mcore_SemPost
     void* semaphorePtr              ///< [IN] Pointer to the semaphore.
 )
 {
-    // To be implemented later
+    (void)semaphorePtr;
+    printf("Semaphore to be implemented later\n");
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -52,7 +56,8 @@ void lwm2mcore_SemWait
     void* semaphorePtr              ///< [IN] Pointer to the semaphore.
 )
 {
-    // To be implemented later
+    (void)semaphorePtr;
+    printf("Semaphore to be implemented later\n");
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -65,7 +70,6 @@ void lwm2mcore_SemDelete
     void* semaphorePtr              ///< [IN] Pointer to the semaphore.
 )
 {
-    // To be implemented later
+    (void)semaphorePtr;
+    printf("Semaphore to be implemented later\n");
 }
-
-

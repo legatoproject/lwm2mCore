@@ -145,12 +145,12 @@ typedef enum
     LWM2MCORE_EVENT_AUTHENTICATION_FAILED          = 5,     ///< The OTA update client failed to authenticate with the server.
     LWM2MCORE_EVENT_SESSION_STARTED                = 6,     ///< The OTA update client succeeded in authenticating with the server and has started the session.
     LWM2MCORE_EVENT_SESSION_FAILED                 = 7,     ///< The session with the server failed.
-    LWM2MCORE_EVENT_SESSION_FINISHED               = 8,     ///< The with the server finished successfully.
+    LWM2MCORE_EVENT_SESSION_FINISHED               = 8,     ///< The session with the server finished successfully.
     LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS       = 9,     ///< A descriptor was downloaded with the package size.
     LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED      = 10,    ///< The OTA update package downloaded successfully.
     LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED        = 11,    ///< The OTA update package downloaded successfully, but could not be stored in flash.
-    LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_OK       = 12,    ///< The OTA update package was certified to have come from right server.
-    LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_NOT_OK   = 13,    ///< The OTA update package was not certified to have come from right server.
+    LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_OK       = 12,    ///< The OTA update package was certified to have been sent by a trusted server.
+    LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_NOT_OK   = 13,    ///< The OTA update package was not certified to have been sent by a trusted server.
     LWM2MCORE_EVENT_UPDATE_STARTED                 = 14,    ///< An update package is being applied.
     LWM2MCORE_EVENT_UPDATE_FAILED                  = 15,    ///< The update failed.
     LWM2MCORE_EVENT_UPDATE_FINISHED                = 16,    ///< The update succeeded.
@@ -786,7 +786,7 @@ void lwm2mcore_Assert
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_DataDump
 (
-    char* descPtr,              ///< [IN] data description
+    const char* descPtr,        ///< [IN] data description
     void* addrPtr,              ///< [IN] Data address to be dumped
     int len                     ///< [IN] Data length
 );

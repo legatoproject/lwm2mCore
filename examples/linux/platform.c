@@ -13,43 +13,88 @@
 #include <liblwm2m.h>
 
 #ifndef LWM2M_MEMORY_TRACE
-
-void *lwm2m_malloc(size_t size)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Memory allocation with trace
+ *
+ * @return
+ *  - memory address
+ */
+//--------------------------------------------------------------------------------------------------
+void* lwm2m_malloc
+(
+    size_t size     ///< [IN] Memory size to be allocated
+)
 {
     void *mem;
 
     mem = malloc(size);
-    if (!mem) {
+    if (!mem)
+    {
 #ifdef LWM2M_WITH_LOGS
-    lwm2m_printf("out of memory\n");
+        lwm2m_printf("out of memory\n");
 #endif
-    return NULL;
-}
+        return NULL;
+    }
     return mem;
 }
 
-void lwm2m_free(void *p)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Memory free
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2m_free
+(
+    void* ptr   ///< [IN] Memory address to release
+)
 {
-    free(p);
+    free(ptr);
 }
 
-char *lwm2m_strdup(const char *str)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Duplicate a string
+ *
+ * @return
+ *  - Duplicated string address
+ */
+//--------------------------------------------------------------------------------------------------
+char* lwm2m_strdup
+(
+    const char* strPtr  ///< [IN] String to be duplicated
+)
 {
-    char *dstr;
+    char* dstrPtr;
 
-    dstr = strdup(str);
-    if (!dstr) {
+    dstrPtr = strdup(strPtr);
+    if (!dstrPtr)
+    {
 #ifdef LWM2M_WITH_LOGS
-    lwm2m_printf("failed to duplicate %s: %m\n", str);
+        lwm2m_printf("failed to duplicate %s: %m\n", strPtr);
 #endif
-    return NULL;
-}
-    return dstr;
+        return NULL;
+    }
+    return dstrPtr;
 }
 
 #endif
 
-int lwm2m_strncmp(const char *s1, const char *s2, size_t n)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Compare strings
+ *
+ * @return
+ *  - integer less than, equal to, or greater than zero if s1Ptr (or the first n bytes thereof) is
+ *    found, respectively, to be less than, to  match,  or  begreater than s2Ptr.
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2m_strncmp
+(
+    const char* s1Ptr,  ///< [IN] First string to be compared
+    const char* s2Ptr,  ///< [IN] Second string to be compared
+    size_t n            ///< [IN] Comparison length
+)
 {
-    return strncmp(s1, s2, n);
+    return strncmp(s1Ptr, s2Ptr, n);
 }

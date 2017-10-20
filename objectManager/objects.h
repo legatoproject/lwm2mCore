@@ -175,7 +175,8 @@ typedef enum
     LWM2MCORE_SECURITY_SMS_BINDING_SEC_KEY_RID,     ///< SMS binding secret key(s)
     LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID,       ///< LwM2M server SMS number
     LWM2MCORE_SECURITY_SERVER_ID_RID,               ///< Short server ID
-    LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID     ///< Client hold of time
+    LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID,    ///< Client hold of time
+    LWM2MCORE_SECURITY_BS_ACCOUNT_TIMEOUT_RID       ///< Bootstrap-Server Account Timeout
 }lwm2mcore_securityResource_t;
 
 //--------------------------------------------------------------------------------------------------

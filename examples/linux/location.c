@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 #include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/location.h>
@@ -20,12 +21,7 @@
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
@@ -61,12 +57,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLatitude
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
@@ -102,12 +93,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLongitude
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
@@ -143,13 +129,7 @@ lwm2mcore_Sid_t lwm2mcore_GetAltitude
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDirection
@@ -174,13 +154,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDirection
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
@@ -206,13 +180,7 @@ lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
@@ -238,12 +206,7 @@ lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLocationTimestamp

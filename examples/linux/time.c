@@ -21,14 +21,7 @@
 //--------------------------------------------------------------------------------------------------
 time_t lwm2m_gettime(void)
 {
-    struct timeval tv;
-
-    if (0 != gettimeofday(&tv, NULL))
-    {
-        return -1;
-    }
-
-    return tv.tv_sec;
+    return time(NULL);
 }
 
 

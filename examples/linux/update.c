@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/update.h>
@@ -18,13 +19,8 @@
  * The server pushes a package to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
@@ -35,10 +31,18 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
     size_t len                      ///< [IN] length of input buffer
 )
 {
-    /* This function can be used to receive a package using CoAP
-     * This is not supported by LwM2MCore
-     */
-    return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    if ((NULL == bufferPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 
@@ -47,13 +51,8 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
  * The server sends a package URI to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
@@ -64,40 +63,18 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
     size_t len                      ///< [IN] length of input buffer
 )
 {
-    lwm2mcore_Sid_t sid;
-
-    if (0 == len)
+    if ((NULL == bufferPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
-        /* If len is 0, then :
-         * the Update State shall be set to default value: LWM2MCORE_FW_UPDATE_STATE_IDLE
-         * the package URI is deleted from storage file
-         * any active download is suspended
-         */
-        sid = LWM2MCORE_ERR_COMPLETED_OK;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        /* Parameter check */
-        if ((!bufferPtr)
-         || (LWM2MCORE_PACKAGE_URI_MAX_LEN < len)
-         || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
-        {
-            sid = LWM2MCORE_ERR_INVALID_ARG;
-        }
-        else
-        {
-            /* Package URI: LWM2MCORE_PACKAGE_URI_MAX_LEN+1 for null byte: string format */
-            uint8_t downloadUri[LWM2MCORE_PACKAGE_URI_MAX_BYTES];
-            memset(downloadUri, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
-            memcpy(downloadUri, bufferPtr, len);
 
-            /* Call API to launch the package download
-             * Advice: the package download needs to be made in a dedicated thread/task.
-             */
-            sid = LWM2MCORE_ERR_COMPLETED_OK;
-        }
-    }
-    return sid;
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -105,13 +82,8 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
  * The server requires the current package URI stored in the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
@@ -123,17 +95,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
                                     ///< data
 )
 {
-    lwm2mcore_Sid_t sid;
-
     if ((NULL == bufferPtr) || (NULL == lenPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
-        sid = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        sid = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-    }
-    return sid;
+
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)lenPtr;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -141,13 +114,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
  * The server requests to launch an update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
@@ -158,19 +126,18 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
     size_t len                      ///< [IN] length of input buffer
 )
 {
-    lwm2mcore_Sid_t sid;
-    if (LWM2MCORE_MAX_UPDATE_TYPE <= type)
+    if ((NULL == bufferPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
-        sid = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        /* Call API to launch the update process
-         * Set the update state to LWM2MCORE_FW_UPDATE_STATE_UPDATING
-         */
-        sid = LWM2MCORE_ERR_COMPLETED_OK;
-    }
-    return sid;
+
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -178,13 +145,8 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
  * The server requires the update state
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateState
@@ -194,32 +156,17 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateState
     uint8_t* updateStatePtr         ///< [OUT] Firmware update state
 )
 {
-    lwm2mcore_Sid_t sid;
     if ((NULL == updateStatePtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
-        sid = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        /* Call API to get the update state
-         * Default value is LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL.
-         * When the update process succeeds, the update result needs to be set to
-         * LWM2MCORE_FW_UPDATE_RESULT_INSTALLED_SUCCESSFUL
-         * Others values (see lwm2mcore_fw_update_result_t) are related to update process error.
-         */
-        if (LWM2MCORE_FW_UPDATE_TYPE == type)
-        {
-            /* Firmware update */
-            *updateStatePtr = LWM2MCORE_FW_UPDATE_STATE_IDLE;
-            sid = LWM2MCORE_ERR_COMPLETED_OK;
-        }
-        else
-        {
-            /* Software update */
-            sid = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-    }
-    return sid;
+
+    (void)type;
+    (void)instanceId;
+    (void)updateStatePtr;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -227,13 +174,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateState
  * The server requires the update result
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
@@ -243,29 +185,17 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
     uint8_t* updateResultPtr        ///< [OUT] Firmware update result
 )
 {
-    lwm2mcore_Sid_t sid;
     if ((NULL == updateResultPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
-        sid = LWM2MCORE_ERR_INVALID_ARG;
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        /* Call API to get the update result
-         * For the moment, hard-coded to LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL
-         */
-         if (LWM2MCORE_FW_UPDATE_TYPE == type)
-        {
-            /* Firmware update */
-            *updateResultPtr = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
-            sid = LWM2MCORE_ERR_COMPLETED_OK;
-        }
-        else
-        {
-            /* Software update */
-            sid = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-        }
-    }
-    return sid;
+
+    (void)type;
+    (void)instanceId;
+    (void)updateResultPtr;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -273,13 +203,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
  * The server requires the package name
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
@@ -290,7 +215,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
     uint32_t len                    ///< [IN] length of input buffer
 )
 {
-    return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    if ((NULL == bufferPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -298,13 +234,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
  * The server requires the package version
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
@@ -315,7 +246,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
     uint32_t len                    ///< [IN] length of input buffer
 )
 {
-    return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    if ((NULL == bufferPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    (void)type;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -323,13 +265,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
  * The server sets the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
@@ -338,7 +275,11 @@ lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
     bool value                      ///< [IN] Update supported objects field value
 )
 {
-    return LWM2MCORE_ERR_COMPLETED_OK;
+    (void)instanceId;
+    (void)value;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -346,13 +287,8 @@ lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
  * The server requires the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
@@ -365,11 +301,12 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        *valuePtr = true;
-        return LWM2MCORE_ERR_COMPLETED_OK;
-    }
+
+    (void)instanceId;
+    (void)valuePtr;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 
@@ -378,13 +315,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
  * The server requires the activation state for one embedded application
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
@@ -397,11 +329,12 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        *valuePtr = true;
-        return LWM2MCORE_ERR_COMPLETED_OK;
-    }
+
+    (void)instanceId;
+    (void)valuePtr;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -409,13 +342,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
  * The server requires an embedded application to be uninstalled (only for software update)
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
@@ -425,6 +353,16 @@ lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
     size_t len                      ///< [IN] length of input buffer
 )
 {
+    if (NULL == bufferPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
@@ -434,13 +372,8 @@ lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
  * update)
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handlerler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
@@ -451,14 +384,17 @@ lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
     size_t len              ///< [IN] length of input buffer
 )
 {
-    if ((NULL == bufferPtr) && len)
+    if (NULL == bufferPtr)
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
-    else
-    {
-        return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
-    }
+    (void)activation;
+    (void)instanceId;
+    (void)bufferPtr;
+    (void)len;
+
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -466,13 +402,7 @@ lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
  * The server request to create or delete an object instance of object 9
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
@@ -481,6 +411,9 @@ lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
     uint16_t instanceId         ///<[IN] Object instance Id to create or delete
 )
 {
+    (void)create;
+    (void)instanceId;
+    printf("update.c to be implemented\n");
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
@@ -489,13 +422,7 @@ lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
  * Resume a package download if necessary
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
  *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
@@ -503,7 +430,8 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
     void
 )
 {
-    return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -511,8 +439,7 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
  * Suspend a package download if necessary
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
@@ -520,5 +447,6 @@ lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
     void
 )
 {
-    return LWM2MCORE_ERR_COMPLETED_OK;
+    printf("update.c to be implemented\n");
+    return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }

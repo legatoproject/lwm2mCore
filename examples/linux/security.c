@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <string.h>
 #include <platform/types.h>
 #include <ctype.h>
 #include <zlib.h>
@@ -23,38 +24,131 @@
 #include <openssl/x509.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
-#include "internals.h"
+#include <sys/stat.h>
+#include "clientConfig.h"
+#include "handlers.h"
 
-/* Set the bootstrap credentials with correct values
- * BS server address can be retrieved from LwM2MCore team
- * BS PSK identity and PSK secret can be retrieved from the LWM2M server team (please ask to
- * LwM2MCore team for any support)
+//--------------------------------------------------------------------------------------------------
+/**
+ * Convert a numeric value into a uppercase character representing the hexidecimal value of the
+ * input.
+ *
+ * @return
+ *  - Hexidecimal character in the range [0-9A-F]
+ *  - 0 if the input value was too large
  */
+//--------------------------------------------------------------------------------------------------
+static char DecToHex
+(
+    uint8_t hex     ///< [IN] Value to convert
+)
+{
+    if (hex < 10)
+    {
+        return (char)('0'+hex);  // for number
+    }
+    else if (hex < 16)
+    {
+        return (char)('A'+hex-10);  // for A,B,C,D,E,F
+    }
+    else
+    {
+        printf("value %u cannot be converted in HEX string\n", hex);
+        return 0;
+    }
+}
 
-#define BS_SERVER_ADDR ""
-#define BS_PSK_ID ""
-#define BS_PSK ""
-
-/* These values does not need to be filled.
- * When the client connects to the bootstrap server, the bootstrap server sends Device
- * Management credentials to the client.
- * These credentials are filled in these parameters.
- * By default, these parameters are saved in RAM and the credentials storage is not managed
- * by this source code.
- * This implies that a each connection to the LWM2M server, a connection to the bootstrap server
- * will be firstly initiated, followed by a connection to the Device Management server.
+//--------------------------------------------------------------------------------------------------
+/**
+ * Convert a byte array into a string of uppercase hexadecimal characters.
+ *
+ * @return
+ *  - number of characters written to stringPtr
+ *  - -1 if stringSize is too small for binarySize
+ *
+ * @note the string written to stringPtr will be NULL terminated.
  */
-static uint8_t DmPskId[LWM2MCORE_PSKID_LEN+1] = {'\0'};
-static uint8_t DmPskSecret[LWM2MCORE_PSK_LEN + 1] = {'\0'};
-static uint8_t DmServerAddr[LWM2MCORE_SERVERADDR_LEN] = {'\0'};
+//--------------------------------------------------------------------------------------------------
+static int32_t BinaryToString
+(
+    uint8_t*    binaryPtr,      ///< [IN] Binary array to convert
+    uint32_t    binarySize,     ///< [IN] Size of binary array
+    char*       stringPtr,      ///< [OUT] Hexadecimal string array, terminated with '\0'.
+    uint32_t    stringSize      ///< [IN] Size of string array.  Must be >= (2 * binarySize) + 1
+)
+{
+    uint32_t idxString;
+    uint32_t idxBinary;
 
+    if (stringSize < (2 * binarySize) + 1)
+    {
+        printf("Hex string array (%u) is too small to convert (%u) bytes\n",
+               stringSize,
+               binarySize);
+        return -1;
+    }
+
+    for (idxBinary=0 , idxString=0;
+         idxBinary < binarySize;
+         idxBinary++, idxString = (idxString + 2) )
+    {
+        stringPtr[idxString]   = DecToHex( (binaryPtr[idxBinary]>>4) & 0x0F);
+        stringPtr[idxString+1] = DecToHex(  binaryPtr[idxBinary]     & 0x0F);
+    }
+    stringPtr[idxString] = '\0';
+
+    return (int32_t)idxString;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Convert a string into a byte array
+ *
+ * @return
+ *  - number of bytes written to binaryPtr
+ *  - -1 if binaryPtr is too small for stringPtr
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+static int32_t StringToBinary
+(
+    char*       stringPtr,      ///< [IN] Hexadecimal string array, terminated with '\0'.
+    uint32_t    stringSize,     ///< [IN] Size of string array.
+    uint8_t*    binaryPtr,      ///< [IN] Binary array to convert
+    uint32_t    binarySize      ///< [IN] Size of binary array. Must be >= stringSize / 2
+)
+{
+    if (binarySize < (stringSize / 2))
+    {
+        return -1;
+    }
+
+    // Hex string to binary
+    char* hPtr = (char*)stringPtr;
+    char* bPtr = binaryPtr;
+    char xlate[] = "0123456789ABCDEF";
+
+    for ( ; *hPtr; hPtr += 2, ++bPtr)
+    {
+        char* lPtr = strchr(xlate, toupper(*hPtr));
+        char* rPtr = strchr(xlate, toupper(*(hPtr+1)));
+
+        if (!rPtr || !lPtr)
+        {
+            printf("Failed to parse hexadecimal string\n");
+            return -1;
+        }
+
+        *bPtr = ((lPtr - xlate) << 4) + (rPtr - xlate);
+    }
+    return stringSize / 2;
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
  *                  OBJECT 0: SECURITY
  */
 //--------------------------------------------------------------------------------------------------
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -64,11 +158,7 @@ static uint8_t DmServerAddr[LWM2MCORE_SERVERADDR_LEN] = {'\0'};
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
@@ -80,25 +170,40 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
                                             ///< returned data
 )
 {
-    lwm2mcore_Sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    lwm2mcore_Sid_t result = LWM2MCORE_ERR_GENERAL_ERROR;
+    clientConfig_t* config = clientConfigGet();
 
     if ((bufferPtr == NULL) || (lenPtr == NULL) || (credId >= LWM2MCORE_CREDENTIAL_MAX))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
+    if (!config)
+    {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
     memset(bufferPtr, 0, *lenPtr);
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
-            if (*lenPtr < strlen ((char*)BS_PSK_ID))
+            if (*lenPtr < strlen (config->security[LWM2MCORE_BS_SERVER_OIID].devicePKID))
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
 
-            memcpy(bufferPtr, BS_PSK_ID, strlen ((char*)BS_PSK_ID));
-            *lenPtr = strlen((char*)BS_PSK_ID);
-            result = LWM2MCORE_ERR_COMPLETED_OK;
+            if (strlen(config->security[LWM2MCORE_BS_SERVER_OIID].devicePKID))
+            {
+                memcpy(bufferPtr,
+                       config->security[LWM2MCORE_BS_SERVER_OIID].devicePKID,
+                       strlen(config->security[LWM2MCORE_BS_SERVER_OIID].devicePKID));
+                *lenPtr = strlen(config->security[LWM2MCORE_BS_SERVER_OIID].devicePKID);
+                result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             break;
 
         case LWM2MCORE_CREDENTIAL_BS_SERVER_PUBLIC_KEY:
@@ -107,49 +212,50 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
 
         case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
         {
-            uint16_t pskLen = strlen((char*)BS_PSK) / 2;
-
-            // Hex string to binary
-            char *h = BS_PSK;
-            char *b = bufferPtr;
-            char xlate[] = "0123456789ABCDEF";
-
-            for ( ; *h; h += 2, ++b)
+            uint16_t pskLen = strlen((char*)config->security[LWM2MCORE_BS_SERVER_OIID].secretKey) / 2;
+            if( 0 > StringToBinary((char*)(config->security[LWM2MCORE_BS_SERVER_OIID].secretKey),
+                                    pskLen,
+                                    bufferPtr,
+                                    *lenPtr))
             {
-                char *l = strchr(xlate, toupper(*h));
-                char *r = strchr(xlate, toupper(*(h+1)));
-
-                if (!r || !l)
-                {
-                    LOG("Failed to parse Pre-Shared-Key HEXSTRING");
-                    return -1;
-                }
-
-                *b = ((l - xlate) << 4) + (r - xlate);
+                return LWM2MCORE_ERR_INVALID_ARG;
             }
+
             *lenPtr = pskLen;
             result = LWM2MCORE_ERR_COMPLETED_OK;
         }
         break;
 
         case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
-            if (*lenPtr > strlen ((char*)BS_SERVER_ADDR))
+            if (*lenPtr < strlen (config->security[LWM2MCORE_BS_SERVER_OIID].serverURI))
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(bufferPtr, BS_SERVER_ADDR, strlen((char*)BS_SERVER_ADDR));
-            *lenPtr = strlen((char*)BS_SERVER_ADDR);
+            memcpy(bufferPtr,
+                   config->security[LWM2MCORE_BS_SERVER_OIID].serverURI,
+                   strlen(config->security[LWM2MCORE_BS_SERVER_OIID].serverURI));
+            *lenPtr = strlen(config->security[LWM2MCORE_BS_SERVER_OIID].serverURI);
             result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            if (*lenPtr > strlen ((char*)DmPskId))
+            if (*lenPtr < strlen (config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID))
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(bufferPtr, DmPskId, strlen((char*)DmPskId));
-            *lenPtr = strlen((char*)DmPskId);
-            result = LWM2MCORE_ERR_COMPLETED_OK;
+
+            if (strlen(config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID))
+            {
+                memcpy(bufferPtr,
+                       config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID,
+                       strlen(config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID));
+                *lenPtr = strlen(config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID);
+                result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY:
@@ -157,18 +263,30 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            memcpy(bufferPtr, DmPskSecret, LWM2MCORE_PSK_LEN);
-            *lenPtr = LWM2MCORE_PSK_LEN;
+        {
+            uint16_t pskLen = strlen((char*)config->security[LWM2MCORE_DM_SERVER_OIID].secretKey) / 2;
+
+            if( 0 > StringToBinary((char*)(config->security[LWM2MCORE_DM_SERVER_OIID].secretKey),
+                                    pskLen,
+                                    bufferPtr,
+                                    *lenPtr))
+            {
+                return LWM2MCORE_ERR_INVALID_ARG;
+            }
+            *lenPtr = pskLen;
             result = LWM2MCORE_ERR_COMPLETED_OK;
-            break;
+        }
+        break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            if (*lenPtr > strlen ((char*)DmServerAddr))
+            if (*lenPtr < strlen (config->security[LWM2MCORE_DM_SERVER_OIID].serverURI))
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(bufferPtr, DmServerAddr, strlen((char*)DmServerAddr));
-            *lenPtr = strlen((char*)DmServerAddr);
+            memcpy(bufferPtr,
+                   config->security[LWM2MCORE_DM_SERVER_OIID].serverURI,
+                   strlen(config->security[LWM2MCORE_DM_SERVER_OIID].serverURI));
+            *lenPtr = strlen(config->security[LWM2MCORE_DM_SERVER_OIID].serverURI);
             result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -270,11 +388,7 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetCredential
@@ -284,19 +398,38 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
     size_t len                              ///< [IN] length of input buffer
 )
 {
-    lwm2mcore_Sid_t result = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    lwm2mcore_Sid_t result = LWM2MCORE_ERR_INCORRECT_RANGE;
+    clientConfig_t* config = clientConfigGet();
 
     if ((NULL == bufferPtr) || (!len) || (LWM2MCORE_CREDENTIAL_MAX <= credId))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
+    if (!config)
+    {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
-            /* Do not copy just to not overwrite the credential: for test only
-             * Need to keep in memory the new credential
-             */
+            if (LWM2MCORE_PSKID_LEN < len)
+            {
+                return LWM2MCORE_ERR_OVERFLOW;
+            }
+
+            if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_BS_SERVER_SECTION_NAME,
+                                             CLIENT_CONFIG_SERVER_PSKID,
+                                             bufferPtr,
+                                             config))
+            {
+               result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -305,26 +438,77 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
-            /* Do not copy just to not overwrite the credential: for test only
-             * Need to keep in memory the new credential
-             */
-            result = LWM2MCORE_ERR_COMPLETED_OK;
-            break;
+        {
+            uint16_t pskLen = (2*LWM2MCORE_PSK_LEN)+1;
+            char hexaBuffer[(2*LWM2MCORE_PSK_LEN)+1];
+
+            if (LWM2MCORE_PSK_LEN < len)
+            {
+                return LWM2MCORE_ERR_OVERFLOW;
+            }
+
+
+            if (BinaryToString( (uint8_t*)bufferPtr,
+                                (uint32_t)len,
+                                hexaBuffer,
+                                pskLen) > 0)
+            {
+                if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_BS_SERVER_SECTION_NAME,
+                                                 CLIENT_CONFIG_SERVER_PSK,
+                                                 hexaBuffer,
+                                                 config))
+                {
+                    result = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else
+                {
+                    result = LWM2MCORE_ERR_GENERAL_ERROR;
+                }
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+        }
+        break;
 
         case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
-            /* Do not copy just to not overwrite the credential: for test only
-             * Need to keep in memory the new credential
-             */
+            if (LWM2MCORE_SERVERADDR_LEN < len)
+            {
+                return LWM2MCORE_ERR_OVERFLOW;
+            }
+
+            if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_BS_SERVER_SECTION_NAME,
+                                             CLIENT_CONFIG_SERVER_URL,
+                                             bufferPtr,
+                                             config))
+            {
+                result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            if (len > strlen ((char*)DmPskId))
+            if (LWM2MCORE_PSKID_LEN < len)
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(DmPskId, bufferPtr, len);
-            result = LWM2MCORE_ERR_COMPLETED_OK;
+
+            if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                             CLIENT_CONFIG_SERVER_PSKID,
+                                             bufferPtr,
+                                             config))
+            {
+               result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY:
@@ -332,21 +516,57 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            if (len > strlen ((char*)DmPskSecret))
+        {
+            uint16_t pskLen = (2*LWM2MCORE_PSK_LEN)+1;
+            char hexaBuffer[(2*LWM2MCORE_PSK_LEN)+1];
+
+            if (LWM2MCORE_PSK_LEN < len)
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(DmPskSecret, bufferPtr, len);
-            result = LWM2MCORE_ERR_COMPLETED_OK;
-            break;
+
+
+            if (BinaryToString( (uint8_t*)bufferPtr,
+                                (uint32_t)len,
+                                hexaBuffer,
+                                pskLen) > 0)
+            {
+                if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                                 CLIENT_CONFIG_SERVER_PSK,
+                                                 hexaBuffer,
+                                                 config))
+                {
+                    result = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else
+                {
+                    result = LWM2MCORE_ERR_GENERAL_ERROR;
+                }
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+        }
+        break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            if (len > strlen ((char*)DmServerAddr))
+            if (LWM2MCORE_SERVERADDR_LEN < len)
             {
                 return LWM2MCORE_ERR_OVERFLOW;
             }
-            memcpy(DmServerAddr, bufferPtr, len);
-            result = LWM2MCORE_ERR_COMPLETED_OK;
+
+            if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                             CLIENT_CONFIG_SERVER_URL,
+                                             bufferPtr,
+                                             config))
+            {
+                result = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                result = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
             break;
 
         default:
@@ -371,25 +591,30 @@ bool lwm2mcore_CheckCredential
 )
 {
     bool result = false;
+    clientConfig_t* config = clientConfigGet();
+    if (!config)
+    {
+        return false;
+    }
 
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            if (strlen((char*)DmPskId))
+            if (strlen(config->security[LWM2MCORE_DM_SERVER_OIID].devicePKID))
             {
                 result = true;
             }
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            if (strlen((char*)DmPskSecret))
+            if (strlen((char*)config->security[LWM2MCORE_DM_SERVER_OIID].secretKey))
             {
                 result = true;
             }
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            if (strlen((char*)DmServerAddr))
+            if (strlen(config->security[LWM2MCORE_DM_SERVER_OIID].serverURI))
             {
                 result = true;
             }
@@ -399,7 +624,7 @@ bool lwm2mcore_CheckCredential
             break;
     }
 
-    LOG_ARG("Credential presence: credId %d result %d", credId, result);
+    printf("Credential presence: credId %d result %d\n", credId, result);
     return result;
 }
 
@@ -418,19 +643,34 @@ bool lwm2mcore_DeleteCredential
 )
 {
     bool result = true;
+    clientConfig_t* config = clientConfigGet();
+
+    if (!config)
+    {
+        return false;
+    }
 
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            memset(DmPskId, 0, LWM2MCORE_PSK_LEN + 1);
+            clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                     CLIENT_CONFIG_SERVER_PSKID,
+                                     "",
+                                     config);
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            memset(DmPskSecret, 0, LWM2MCORE_PSK_LEN + 1);
+            clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                     CLIENT_CONFIG_SERVER_PSK,
+                                     "",
+                                     config);
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            memset(DmServerAddr, 0, LWM2MCORE_SERVERADDR_LEN);
+            clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
+                                     CLIENT_CONFIG_SERVER_URL,
+                                     "",
+                                     config);
             break;
 
         default:
@@ -438,7 +678,7 @@ bool lwm2mcore_DeleteCredential
             break;
     }
 
-    LOG_ARG("Credential presence: credId %d result %d", credId, result);
+    printf("Credential delete: credId %d result %d\n", credId, result);
     return result;
 }
 
@@ -484,7 +724,7 @@ static void PrintOpenSSLErrors
     {
         // Convert the error code to a human-readable string and print it
         ERR_error_string_n(error, errorString, sizeof(errorString));
-        LOG_ARG("%s", errorString);
+        printf("%s\n", errorString);
 
         // Retrieve the next error and remove it from the queue
         error = ERR_get_error();
@@ -511,7 +751,7 @@ lwm2mcore_Sid_t lwm2mcore_StartSha1
     // Check if SHA1 context pointer is set
     if (!sha1CtxPtr)
     {
-        LOG("No SHA1 context pointer");
+        printf("No SHA1 context pointer\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -522,7 +762,7 @@ lwm2mcore_Sid_t lwm2mcore_StartSha1
     // SHA1_Init function returns 1 for success, 0 otherwise
     if (1 != SHA1_Init(&shaCtx))
     {
-        LOG("SHA1_Init failed");
+        printf("SHA1_Init failed\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -553,7 +793,7 @@ lwm2mcore_Sid_t lwm2mcore_ProcessSha1
     // Check if pointers are set
     if ((!sha1CtxPtr) || (!bufPtr))
     {
-        LOG("NULL pointer provided");
+        printf("NULL pointer provided\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -561,14 +801,12 @@ lwm2mcore_Sid_t lwm2mcore_ProcessSha1
     // SHA1_Update function returns 1 for success, 0 otherwise
     if (1 != SHA1_Update((SHA_CTX*)sha1CtxPtr, bufPtr, len))
     {
-        LOG("SHA1_Update failed");
+        printf("SHA1_Update failed\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
-    else
-    {
-        return LWM2MCORE_ERR_COMPLETED_OK;
-    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -601,7 +839,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
     // Check if pointers are set
     if ((!sha1CtxPtr) || (!signaturePtr))
     {
-        LOG("NULL pointer provided");
+        printf("NULL pointer provided\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -609,7 +847,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
     // SHA1_Final function returns 1 for success, 0 otherwise
     if (1 != SHA1_Final(sha1Digest, (SHA_CTX*)sha1CtxPtr))
     {
-        LOG("SHA1_Final failed");
+        printf("SHA1_Final failed\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -626,7 +864,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
             break;
 
         default:
-            LOG_ARG("Unknown or unsupported package type %d", packageType);
+            printf("Unknown or unsupported package type %d\n", packageType);
             return LWM2MCORE_ERR_GENERAL_ERROR;
             break;
     }
@@ -636,7 +874,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
                                                               publicKey,
                                                               &publicKeyLen))
     {
-        LOG_ARG("Error while retrieving credentials %d", credId);
+        printf("Error while retrieving credentials %d\n", credId);
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
@@ -649,7 +887,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
     bufioPtr = BIO_new_mem_buf((void*)publicKey, publicKeyLen);
     if (!bufioPtr)
     {
-        LOG("Unable to create a memory BIO");
+        printf("Unable to create a memory BIO\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -662,7 +900,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
         bufioPtr = BIO_new_mem_buf((void*)publicKey, publicKeyLen);
         if (!bufioPtr)
         {
-            LOG("Unable to create a memory BIO");
+            printf("Unable to create a memory BIO\n");
             PrintOpenSSLErrors();
             return LWM2MCORE_ERR_GENERAL_ERROR;
         }
@@ -673,21 +911,21 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
     BIO_free(bufioPtr);
     if (!rsaKeyPtr)
     {
-        LOG("Unable to retrieve public key");
+        printf("Unable to retrieve public key\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
     evpPkeyPtr = EVP_PKEY_new();
     if (!evpPkeyPtr)
     {
-        LOG("Unable to create EVP_PKEY structure");
+        printf("Unable to create EVP_PKEY structure\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
     // EVP_PKEY_assign_RSA returns 1 for success and 0 for failure
     if (1 != EVP_PKEY_assign_RSA(evpPkeyPtr, rsaKeyPtr))
     {
-        LOG("Unable to assign public key");
+        printf("Unable to assign public key\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -698,7 +936,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
         || (1 != EVP_PKEY_verify_init(evpPkeyCtxPtr))
        )
     {
-        LOG("Unable to create and initialize EVP PKEY context");
+        printf("Unable to create and initialize EVP PKEY context\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -712,7 +950,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
         || (EVP_PKEY_CTX_set_signature_md(evpPkeyCtxPtr, EVP_sha1()) <= 0)
        )
     {
-        LOG("Error during EVP PKEY context initialization");
+        printf("Error during EVP PKEY context initialization\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -725,7 +963,7 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
                              sha1Digest,
                              sizeof(sha1Digest)))
     {
-        LOG("Signature verification failed");
+        printf("Signature verification failed\n");
         PrintOpenSSLErrors();
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
@@ -753,14 +991,14 @@ lwm2mcore_Sid_t lwm2mcore_CopySha1
     // Check if pointers are set
     if ((!sha1CtxPtr) || (!bufPtr))
     {
-        LOG("Null pointer provided");
+        printf("Null pointer provided\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
     // Check buffer length
     if (bufSize < sizeof(SHA_CTX))
     {
-        LOG_ARG("Buffer is too short (%zu < %d)", bufSize, sizeof(SHA_CTX));
+        printf("Buffer is too short (%zu < %lu)\n", bufSize, sizeof(SHA_CTX));
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -790,21 +1028,21 @@ lwm2mcore_Sid_t lwm2mcore_RestoreSha1
     // Check if pointers are set
     if ((!sha1CtxPtr) || (!bufPtr))
     {
-        LOG("Null pointer provided");
+        printf("Null pointer provided\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
     // Check buffer length
     if (bufSize < sizeof(SHA_CTX))
     {
-        LOG_ARG("Buffer is too short (%zu < %d)", bufSize, sizeof(SHA_CTX));
+        printf("Buffer is too short (%zu < %lu)\n", bufSize, sizeof(SHA_CTX));
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
     // Initialize SHA1 context
     if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha1(sha1CtxPtr))
     {
-        LOG("Unable to initialize SHA1 context");
+        printf("Unable to initialize SHA1 context\n");
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
@@ -831,7 +1069,7 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
     // Check if SHA1 context pointer is set
     if (!sha1CtxPtr)
     {
-        LOG("No SHA1 context pointer");
+        printf("No SHA1 context pointer\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -856,9 +1094,10 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
     int             len         ///< [IN] Certificate len
 )
 {
+    (void)(len);
     if (!certPtr)
     {
-        LOG("NULL certificate");
+        printf("NULL certificate\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 

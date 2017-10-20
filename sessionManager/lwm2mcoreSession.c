@@ -261,8 +261,8 @@ static void Lwm2mClientStepHandler
 #endif
     }
 
-    /* Maunch timer step */
-    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, tv.tv_sec, NULL))
+    /* Launch timer step */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, tv.tv_sec, Lwm2mClientStepHandler))
     {
         LOG("ERROR to launch the step timer");
     }

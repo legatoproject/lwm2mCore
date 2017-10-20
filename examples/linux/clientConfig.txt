@@ -1,0 +1,22 @@
+#-- Configuration file for Linux LwM2MCore Client
+#-- File format:
+#-- This is a comment
+#-- [SECTION]
+#-- PARAMETER = value ;comment if needed
+
+[GENERAL]
+ENDPOINT = 11111111
+SN = LWM2MCORE12345
+
+#-- If security mode wants to be used, please set
+#-- DEVICE PKID = <pskid>
+#-- SECRET KEY = <psksecret>
+#-- Without security, remove these fields from this file
+
+[BOOTSTRAP SECURITY]
+SERVER URI = coaps://leshan.eclipse.org:5784
+DEVICE PKID = 11111
+SECRET KEY = 3232323232
+
+[LWM2M SECURITY]
+#-- This section can be updated by the bootstrap server

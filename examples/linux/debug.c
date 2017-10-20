@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include <platform/types.h>
 #include <stdint.h>
 
@@ -20,11 +21,8 @@
 void lwm2m_printf(const char * format, ...)
 {
     va_list ap;
-
     va_start(ap, format);
-
     vprintf(format, ap);
-
     va_end(ap);
 }
 
@@ -42,13 +40,15 @@ void lwm2mcore_Assert
 {
     char func[32] = "none";
 
-    if (functionPtr) {
+    if (functionPtr)
+    {
         memset(func, 0, 32);
         snprintf(func, 31, "%s", functionPtr);
     }
 
-    if (!condition) {
-        fprintf(stderr, "%s - %zu: Assertion failed\n", func, line);
+    if (!condition)
+    {
+        fprintf(stderr, "%s - %d: Assertion failed\n", func, line);
     }
 }
 
@@ -70,22 +70,28 @@ void lwm2mcore_DataDump
 
     // Output description if given.
     if (descPtr != NULL)
+    {
         printf("%s:\n", descPtr);
+    }
 
-    if (len == 0) {
+    if (len == 0)
+    {
         printf("  ZERO LENGTH\n");
         return;
     }
-    if (len < 0) {
+    if (len < 0)
+    {
         printf("  NEGATIVE LENGTH: %i\n",len);
         return;
     }
 
     // Process every byte in the data.
-    for (i = 0; i < len; i++) {
+    for (i = 0; i < len; i++)
+    {
         // Multiple of 16 means new line (with line offset).
 
-        if ((i % 16) == 0) {
+        if ((i % 16) == 0)
+        {
             // Just don't print ASCII for the zeroth line.
             if (i != 0)
                 printf("  %s\n", buff);
@@ -99,14 +105,19 @@ void lwm2mcore_DataDump
 
         // And store a printable ASCII character for later.
         if ((pc[i] < 0x20) || (pc[i] > 0x7e))
+        {
             buff[i % 16] = '.';
+        }
         else
+        {
             buff[i % 16] = pc[i];
+        }
         buff[(i % 16) + 1] = '\0';
     }
 
     // Pad out last line if not exactly 16 characters.
-    while ((i % 16) != 0) {
+    while ((i % 16) != 0)
+    {
         printf("   ");
         i++;
     }
