@@ -30,6 +30,7 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/json.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
     ${WAKAAMA_SOURCES_DIR}/block1.c
+    ${WAKAAMA_SOURCES_DIR}/acl.c
     ${EXT_SOURCES})
 
 # Automatically determine endianess. This can be overwritten by setting LWM2M_LITTLE_ENDIAN
