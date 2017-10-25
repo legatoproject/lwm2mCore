@@ -28,7 +28,8 @@ typedef enum
 {
     DWL_OK      =  0,   ///< Successful
     DWL_FAULT   = -1,   ///< Internal error
-    DWL_SUSPEND = -2    ///< Download suspended
+    DWL_SUSPEND = -2,   ///< Download suspended
+    DWL_ABORTED = -3    ///< Download aborted
 }
 lwm2mcore_DwlResult_t;
 

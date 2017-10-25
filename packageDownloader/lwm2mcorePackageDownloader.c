@@ -1434,12 +1434,22 @@ static void PkgDwlInit
 
     // Initialize download
     PkgDwlObj.result = pkgDwlPtr->initDownload(pkgDwlPtr->data.packageUri, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != PkgDwlObj.result)
+    switch (PkgDwlObj.result)
     {
-        LOG("Error during download initialization");
-        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
-        return;
+        case DWL_OK:
+            break;
+
+        case DWL_ABORTED:
+            // Download is aborted, just stop the package downloader without returning an error
+            PkgDwlObj.result = DWL_OK;
+            PkgDwlObj.state = PKG_DWL_END;
+            return;
+
+        default:
+            LOG("Error during download initialization");
+            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return;
     }
 
     // Initialize update result
@@ -1485,12 +1495,22 @@ static void PkgDwlGetInfo
 {
     // Get information about the package
     PkgDwlObj.result = pkgDwlPtr->getInfo(&pkgDwlPtr->data, pkgDwlPtr->ctxPtr);
-    if (DWL_OK != PkgDwlObj.result)
+    switch (PkgDwlObj.result)
     {
-        LOG("Error while getting the package information");
-        SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
-        PkgDwlObj.state = PKG_DWL_ERROR;
-        return;
+        case DWL_OK:
+            break;
+
+        case DWL_ABORTED:
+            // Download is aborted, just stop the package downloader without returning an error
+            PkgDwlObj.result = DWL_OK;
+            PkgDwlObj.state = PKG_DWL_END;
+            return;
+
+        default:
+            LOG("Error while getting the package information");
+            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            return;
     }
 
     // Notify the application of the package size
@@ -1610,9 +1630,6 @@ static void PkgDwlDownload
         return;
     }
 
-    // Notify the application of the download start
-    PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
-
     // Be ready to parse downloaded data
     PkgDwlObj.state = PKG_DWL_PARSE;
 
@@ -1629,12 +1646,21 @@ static void PkgDwlDownload
         }
     }
 
+    // Notify the application of the download start
+    PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
+
     // Start downloading
     LOG_ARG("Download starting at offset %llu", PkgDwlObj.offset);
     PkgDwlObj.result = pkgDwlPtr->download(PkgDwlObj.offset, pkgDwlPtr->ctxPtr);
     switch (PkgDwlObj.result)
     {
         case DWL_OK:
+            PkgDwlObj.state = PKG_DWL_END;
+            break;
+
+        case DWL_ABORTED:
+            // Download is aborted, just stop the package downloader without returning an error
+            PkgDwlObj.result = DWL_OK;
             PkgDwlObj.state = PKG_DWL_END;
             break;
 
