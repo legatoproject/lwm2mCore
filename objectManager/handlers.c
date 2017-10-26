@@ -1147,6 +1147,10 @@ int omanager_WriteServerObj
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             break;
     }
+
+    /* Write server object to disk */
+    omanager_SetBootstrapConfiguration();
+
     return sID;
 }
 
