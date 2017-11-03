@@ -564,7 +564,7 @@ static uint8_t ReadCb
             else
             {
                 LOG("READ callback NULL");
-                result = COAP_404_NOT_FOUND;
+                result = COAP_405_METHOD_NOT_ALLOWED;
                 i++;
             }
         }
@@ -814,7 +814,7 @@ static uint8_t WriteCb
                     else
                     {
                         LOG("WRITE callback NULL");
-                        result = COAP_404_NOT_FOUND;
+                        result = COAP_405_METHOD_NOT_ALLOWED;
                     }
                 }
                 else
@@ -1150,7 +1150,7 @@ static uint8_t ExecuteCb
                 else
                 {
                     LOG("EXECUTE callback NULL");
-                    result = COAP_404_NOT_FOUND;
+                    result = COAP_405_METHOD_NOT_ALLOWED;
                 }
             }
             else
