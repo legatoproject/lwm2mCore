@@ -20,7 +20,8 @@ add_definitions(-g
                 -Wcast-align
                 -Wwrite-strings
                 -Waggregate-return
-                -Wswitch-default)
+                -Wswitch-default
+                -DLWM2M_LOCATION_FLOAT)
 
 include_directories (${LWM2MCORE_SOURCES_DIR} ${WAKAAMA_SOURCES_DIR} ${TINYDTLS_SOURCES_DIR})
 

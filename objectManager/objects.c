@@ -16,6 +16,7 @@
 #include "objects.h"
 #include "sessionManager.h"
 #include "internals.h"
+#include <stdlib.h>
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -44,7 +45,7 @@ uint16_t RegisteredObjNb = 0;
  * objects
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2m_object_t * ObjectArray[OBJ_COUNT];
+static lwm2m_object_t* ObjectArray[OBJ_COUNT];
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -74,9 +75,9 @@ typedef struct _SwApplicationList_ SwApplicationList_t;
 //--------------------------------------------------------------------------------------------------
 struct _SwApplicationList_
 {
-    SwApplicationList_t * nextPtr;  ///< matches lwm2m_list_t::next
+    SwApplicationList_t*  nextPtr;  ///< matches lwm2m_list_t::next
     uint16_t              oiid;     ///< object instance Id, matches lwm2m_list_t::id
-    bool                  check     ///< boolean for list update
+    bool                  check;    ///< boolean for list update
 };
 
 //--------------------------------------------------------------------------------------------------
@@ -208,7 +209,9 @@ static lwm2mcore_internalObject_t* FindObject
     for (objPtr = DLIST_FIRST(&(ctxPtr->objects_list)); objPtr; objPtr = DLIST_NEXT(objPtr, list))
     {
         if (objPtr->id == oid)
+        {
             break;
+        }
     }
 
     return objPtr;
@@ -238,7 +241,9 @@ static lwm2mcore_internalResource_t* FindResource
          resourcePtr = DLIST_NEXT(resourcePtr, list))
     {
         if (resourcePtr->id == rid)
-           break;
+        {
+            break;
+        }
     }
 
     return resourcePtr;
@@ -288,6 +293,9 @@ static uint8_t EncodeData
             break;
 
         case LWM2MCORE_RESOURCE_TYPE_FLOAT:
+            lwm2m_data_encode_float(atof(bufPtr), dataPtr);
+            break;
+
         default:
             result = COAP_500_INTERNAL_SERVER_ERROR;
             break;
@@ -883,7 +891,6 @@ static uint8_t CreateCb
 )
 {
     uint8_t result;
-    bool instanceCreated = false;
 
     if ((NULL == objectPtr) || (NULL == dataArrayPtr))
     {
@@ -908,7 +915,6 @@ static uint8_t CreateCb
         if (NULL != objectPtr->instanceList)
         {
             memset(objectPtr->instanceList, 0, sizeof(lwm2m_list_t));
-            instanceCreated = true;
         }
     }
     /* Search if the object was registered */
@@ -1421,7 +1427,7 @@ static bool RegisterObjTable
     ObjNb = *registeredObjNbPtr;
 
     /* Check if a DM server was provided: only for static LwM2MCore case */
-    if ((clientTable == false)
+    if ((false == clientTable)
      && ((omanager_IsSecuredMode()
       && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
       && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY))
@@ -1439,7 +1445,7 @@ static bool RegisterObjTable
     }
 
     /* Initialize all objects for Wakaama: handlerPtr */
-    for (i = 0; i < handlerPtr->objCnt; i++)
+    for (i = 0; i < (handlerPtr->objCnt); i++)
     {
         /* Memory allocation for one object */
         ObjectArray[ObjNb]  = (lwm2m_object_t *)lwm2m_malloc(sizeof(lwm2m_object_t));
@@ -1505,7 +1511,7 @@ static bool RegisterObjTable
                     }
                 }
             }
-            else if (objInstanceNb == 1)
+            else if (1 == objInstanceNb)
             {
                 /* Allocate the unique object instance */
                 ObjectArray[ObjNb]->instanceList =
@@ -1858,7 +1864,7 @@ uint16_t lwm2mcore_ObjectRegister
 
     /* Register static object tables managed by LwM2MCore */
     result = RegisterObjTable(instanceRef, lwm2mcoreHandlersPtr, &RegisteredObjNb, false);
-    if (result == false)
+    if (false == result)
     {
         RegisteredObjNb = 0;
         LOG("ERROR on registering LwM2MCore object table");

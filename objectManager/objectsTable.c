@@ -447,7 +447,11 @@ static lwm2mcore_Resource_t LocationResources[] =
 {
     {
         LWM2MCORE_LOCATION_LATITUDE_RID,            //.id
+#ifdef LWM2M_LOCATION_FLOAT
+        LWM2MCORE_RESOURCE_TYPE_FLOAT,              //.type
+#else
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+#endif
         1,                                          //.maxResInstCnt
         omanager_ReadLocationObj,                   //.read
         NULL,                                       //.write
@@ -455,7 +459,11 @@ static lwm2mcore_Resource_t LocationResources[] =
     },
     {
         LWM2MCORE_LOCATION_LONGITUDE_RID,           //.id
+#ifdef LWM2M_LOCATION_FLOAT
+        LWM2MCORE_RESOURCE_TYPE_FLOAT,              //.type
+#else
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+#endif
         1,                                          //.maxResInstCnt
         omanager_ReadLocationObj,                   //.read
         NULL,                                       //.write
@@ -463,7 +471,11 @@ static lwm2mcore_Resource_t LocationResources[] =
     },
     {
         LWM2MCORE_LOCATION_ALTITUDE_RID,            //.id
+#ifdef LWM2M_LOCATION_FLOAT
+        LWM2MCORE_RESOURCE_TYPE_FLOAT,              //.type
+#else
         LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+#endif
         1,                                          //.maxResInstCnt
         omanager_ReadLocationObj,                   //.read
         NULL,                                       //.write

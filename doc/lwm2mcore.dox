@@ -136,6 +136,7 @@
  * :------------------------------------------- | :------------------------------------------------
  * @c LWM2M_SUPPORT_JSON                        | Enable JSON payload support
  * @c LWM2M_DEREGISTER                          | Send a DEREGISTER message to the server when the device disconects from the server
+ * @c LWM2M_LOCATION_FLOAT                      | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
  * Extra compilation flags
  * Flag                                         | Description
  * :------------------------------------------- | :------------------------------------------------
@@ -186,6 +187,9 @@
  * 6            | Location
  * 7            | Connectivity statistics
  * 9            | Software management
+ *
+ * @subsection subs_lwm2m_version Remark on LwM2M specification version
+ * @note To be fully compliant with LwM2M 1.0 specification, the @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
  *
  * @subsection subs_restriction Restrictions
  * @warning Only one device management server is supported for the moment.
