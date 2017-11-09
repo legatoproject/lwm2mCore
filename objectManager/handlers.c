@@ -2476,7 +2476,7 @@ int omanager_WriteSwUpdateObj
             else
             {
                 sID = lwm2mcore_SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
-                                                    uriPtr->oid,
+                                                    uriPtr->oiid,
                                                     bufferPtr,
                                                     len);
             }
