@@ -211,6 +211,8 @@ static uint16_t DmPskIdLen = 0;
 static uint8_t  DmPsk[DTLS_PSK_MAX_KEY_LEN];
 static uint16_t DmPskLen = 0;
 static uint8_t  DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
+static uint8_t  TempAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
+static uint16_t TempAddrLen = 0;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -556,11 +558,6 @@ int omanager_WriteSecurityObj
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    /* Check that the server which tries to read/write is the bootstrap one
-     * The Device Management server can not access to this resource
-     */
-    //TODO
-
     if ((uriPtr->op & LWM2MCORE_OP_WRITE) == 0)
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -582,19 +579,13 @@ int omanager_WriteSecurityObj
             }
             else
             {
-                /* Write operation */
-                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
-                {
-                    /* Bootstrap server */
-                    memcpy(BsAddr, bufferPtr, len);
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
-                else
-                {
-                    /* Device Management server */
-                    memcpy(DmAddr, bufferPtr, len);
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
+                /* Copy the server address in a temporary parameter
+                 * Wait for write on /0/x/1 to know if it concerns a bootstrap server address
+                 * or a device management address
+                 */
+                memcpy(TempAddr, bufferPtr, len);
+                TempAddrLen = len;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
@@ -602,6 +593,24 @@ int omanager_WriteSecurityObj
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
             BsConfig.security[uriPtr->oiid].isBootstrapServer =
                 (bool)omanager_BytesToInt((const char*)bufferPtr, len);
+
+            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
+            {
+                /* Bootstrap server */
+                LOG("WRITE BS server address");
+                memcpy(BsAddr, TempAddr, TempAddrLen);
+            }
+            else
+            {
+                /* Device Management server */
+                LOG("WRITE DM server address");
+                memcpy(DmAddr, TempAddr, TempAddrLen);
+            }
+#ifdef CREDENTIALS_DEBUG
+            lwm2mcore_DataDump("server addr write", bufferPtr, len);
+#endif
+            memset(TempAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
+            TempAddrLen = 0;
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -624,7 +633,7 @@ int omanager_WriteSecurityObj
 #ifdef CREDENTIALS_DEBUG
                 lwm2mcore_DataDump("PSK ID write", bufferPtr, len);
 #endif
-                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
                 {
                     /* Bootstrap server */
                     memcpy(BsPskId, bufferPtr, len);
@@ -660,7 +669,7 @@ int omanager_WriteSecurityObj
 #ifdef CREDENTIALS_DEBUG
                 lwm2mcore_DataDump("PSK secret write", bufferPtr, len);
 #endif
-                if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+                if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
                 {
                     /* Bootstrap server */
                     memcpy(BsPsk, bufferPtr, len);
@@ -757,11 +766,6 @@ int omanager_ReadSecurityObj
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    /* Check that the server which tries to read/write is the bootstrap one
-     * The Device Management server can not access to this resource
-     */
-    //TODO
-
     if ((uriPtr->op & LWM2MCORE_OP_READ) == 0)
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
@@ -777,7 +781,7 @@ int omanager_ReadSecurityObj
     {
         /* Resource 0: LWM2M server URI */
         case LWM2MCORE_SECURITY_SERVER_URI_RID:
-            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
             {
                 /* Bootstrap server */
                 sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
@@ -813,7 +817,7 @@ int omanager_ReadSecurityObj
 
         /* Resource 3: Public key or identity */
         case LWM2MCORE_SECURITY_PKID_RID:
-            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
             {
                 /* Bootstrap server */
                 sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
@@ -839,7 +843,7 @@ int omanager_ReadSecurityObj
 
         /* Resource 5: Secret key */
         case LWM2MCORE_SECURITY_SECRET_KEY_RID:
-            if (LWM2MCORE_BS_SERVER_OIID == uriPtr->oiid)
+            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
             {
                 /* Bootstrap server */
                 sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
