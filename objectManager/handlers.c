@@ -601,14 +601,14 @@ int omanager_WriteSecurityObj
         /* Resource 1: Bootstrap server (true or false) */
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
             BsConfig.security[uriPtr->oiid].isBootstrapServer =
-                (bool)omanager_BytesToInt(bufferPtr, len);
+                (bool)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 2: Security mode */
         case LWM2MCORE_SECURITY_MODE_RID:
             BsConfig.security[uriPtr->oiid].securityMode =
-                (SecurityMode_t)omanager_BytesToInt(bufferPtr, len);
+                (SecurityMode_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -700,14 +700,14 @@ int omanager_WriteSecurityObj
         /* Resource 10: Short server ID */
         case LWM2MCORE_SECURITY_SERVER_ID_RID:
             BsConfig.security[uriPtr->oiid].serverId =
-                (uint16_t)omanager_BytesToInt(bufferPtr, len);
+                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 11: Client hold of time */
         case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
             BsConfig.security[uriPtr->oiid].clientHoldOffTime =
-                (uint16_t)omanager_BytesToInt(bufferPtr, len);
+                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1103,38 +1103,38 @@ int omanager_WriteServerObj
     {
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
-            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt(bufferPtr, len);
+            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
-            lifetime = (uint32_t)omanager_BytesToInt(bufferPtr, len);
+            lifetime = (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = lwm2mcore_SetLifetime(lifetime);
             break;
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt(bufferPtr, len);
+            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt(bufferPtr, len);
+            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 5: Disable timeout */
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
             BsConfig.server.disableTimeout =
-                (uint32_t)omanager_BytesToInt((uint8_t*)bufferPtr, len);
+                (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt(bufferPtr, len);
+            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1399,7 +1399,7 @@ int omanager_ReadDeviceObj
     {
         /* Resource 0: Manufacturer */
         case LWM2MCORE_DEVICE_MANUFACTURER_RID:
-            sID = lwm2mcore_GetDeviceManufacturer(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceManufacturer(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1408,7 +1408,7 @@ int omanager_ReadDeviceObj
 
         /* Resource 1: Device number */
         case LWM2MCORE_DEVICE_MODEL_NUMBER_RID:
-            sID = lwm2mcore_GetDeviceModelNumber(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceModelNumber(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1417,7 +1417,7 @@ int omanager_ReadDeviceObj
 
         /* Resource 2: Serial number */
         case LWM2MCORE_DEVICE_SERIAL_NUMBER_RID:
-            sID = lwm2mcore_GetDeviceSerialNumber(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceSerialNumber(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -1426,7 +1426,7 @@ int omanager_ReadDeviceObj
 
         /* Resource 3: Firmware */
         case LWM2MCORE_DEVICE_FIRMWARE_VERSION_RID:
-            sID = lwm2mcore_GetDeviceFirmwareVersion(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceFirmwareVersion(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2169,7 +2169,7 @@ int omanager_ReadLocationObj
     {
         /* Resource 0: Latitude */
         case LWM2MCORE_LOCATION_LATITUDE_RID:
-            sID = lwm2mcore_GetLatitude(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetLatitude(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2178,7 +2178,7 @@ int omanager_ReadLocationObj
 
         /* Resource 1: Longitude */
         case LWM2MCORE_LOCATION_LONGITUDE_RID:
-            sID = lwm2mcore_GetLongitude(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetLongitude(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2187,7 +2187,7 @@ int omanager_ReadLocationObj
 
         /* Resource 2: Altitude */
         case LWM2MCORE_LOCATION_ALTITUDE_RID:
-            sID = lwm2mcore_GetAltitude(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetAltitude(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2197,7 +2197,7 @@ int omanager_ReadLocationObj
         /* Resource 4: Velocity */
         case LWM2MCORE_LOCATION_VELOCITY_RID:
             /* Build the velocity with direction, horizontal and vertical speeds */
-            sID = BuildVelocity(bufferPtr, (uint32_t*)lenPtr);
+            sID = BuildVelocity(bufferPtr, lenPtr);
             break;
 
         /* Resource 5: Timestamp */
@@ -2481,7 +2481,7 @@ int omanager_WriteSwUpdateObj
             else
             {
                 sID = lwm2mcore_SetSwUpdateSupportedObjects(uriPtr->oiid,
-                                (bool)omanager_BytesToInt(bufferPtr, len));
+                                (bool)omanager_BytesToInt((const char*)bufferPtr, len));
             }
             break;
 
@@ -2749,7 +2749,7 @@ int omanager_ReadSubscriptionObj
     {
         /* Resource 0: Module identity */
         case LWM2MCORE_SUBSCRIPTION_IMEI_RID:
-            sID = lwm2mcore_GetDeviceImei(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetDeviceImei(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2758,7 +2758,7 @@ int omanager_ReadSubscriptionObj
 
         /* Resource 1: SIM card identifier */
         case LWM2MCORE_SUBSCRIPTION_ICCID_RID:
-            sID = lwm2mcore_GetIccid(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetIccid(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2767,7 +2767,7 @@ int omanager_ReadSubscriptionObj
 
         /* Resource 2: Subscription identity */
         case LWM2MCORE_SUBSCRIPTION_IDENTITY_RID:
-            sID = lwm2mcore_GetSubscriptionIdentity(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetSubscriptionIdentity(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2776,7 +2776,7 @@ int omanager_ReadSubscriptionObj
 
         /* Resource 3: Subscription phone number */
         case LWM2MCORE_SUBSCRIPTION_MSISDN_RID:
-            sID = lwm2mcore_GetMsisdn(bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetMsisdn(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen(bufferPtr);
@@ -2863,7 +2863,7 @@ int omanager_ReadExtConnectivityStatsObj
 
         /* Resource 1: Currently used cellular technology */
         case LWM2MCORE_EXT_CONN_STATS_CELLULAR_TECH_RID:
-            sID = lwm2mcore_GetCellularTechUsed((char*)bufferPtr, (uint32_t*)lenPtr);
+            sID = lwm2mcore_GetCellularTechUsed((char*)bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = strlen((char*)bufferPtr);
