@@ -335,6 +335,47 @@ static PackageDownloaderWorkspace_t PkgDwlWorkspace =
 // Static functions
 //--------------------------------------------------------------------------------------------------
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check if result has already been updated
+ *
+ * @return
+ *  - TRUE if result status has already been updated during download
+ *  - FALSE else
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+static bool IsStatusUpdated
+(
+    void
+)
+{
+    bool isUpdated = false;
+
+    switch (PkgDwlObj.packageType)
+    {
+        case LWM2MCORE_PKG_FW:
+            if (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL != PkgDwlObj.updateResult.fw)
+            {
+                isUpdated = true;
+            }
+            break;
+
+        case LWM2MCORE_PKG_SW:
+            if (LWM2MCORE_SW_UPDATE_RESULT_INITIAL != PkgDwlObj.updateResult.sw)
+            {
+                isUpdated = true;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return isUpdated;
+}
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to set the update result according to the package type
@@ -1672,7 +1713,10 @@ static void PkgDwlDownload
 
         default:
             LOG_ARG("Error during download, result %d", PkgDwlObj.result);
-            SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+            if (false == IsStatusUpdated())
+            {
+                SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
+            }
             PkgDwlObj.state = PKG_DWL_ERROR;
             break;
     }
