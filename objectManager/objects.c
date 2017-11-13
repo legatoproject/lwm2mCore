@@ -111,23 +111,25 @@ static uint8_t SetCoapError
 )
 {
     uint8_t result = COAP_503_SERVICE_UNAVAILABLE;
+
     switch (sid)
     {
         case LWM2MCORE_ERR_COMPLETED_OK:
-        {
-            if (LWM2MCORE_OP_READ == operation)
+            switch (operation)
             {
-                result = COAP_205_CONTENT;
+                case LWM2MCORE_OP_READ:
+                    result = COAP_205_CONTENT;
+                    break;
+
+                case LWM2MCORE_OP_WRITE:
+                case LWM2MCORE_OP_EXECUTE:
+                    result = COAP_204_CHANGED;
+                    break;
+
+                default:
+                    result = COAP_400_BAD_REQUEST;
+                    break;
             }
-            else if ((LWM2MCORE_OP_WRITE == operation) || (LWM2MCORE_OP_EXECUTE == operation))
-            {
-                result = COAP_204_CHANGED;
-            }
-            else
-            {
-                result = COAP_400_BAD_REQUEST;
-            }
-        }
         break;
 
         // LWM2MCORE_ERR_INVALID_STATE needs to be mapped to COAP_501_NOT_IMPLEMENTED and not
@@ -141,48 +143,27 @@ static uint8_t SetCoapError
         break;
 
         case LWM2MCORE_ERR_INVALID_ARG:
-        {
             result = COAP_400_BAD_REQUEST;
-        }
-        break;
+            break;
 
         case LWM2MCORE_ERR_OP_NOT_SUPPORTED:
-        {
             result = COAP_404_NOT_FOUND;
-        }
-        break;
+            break;
 
         case LWM2MCORE_ERR_NOT_YET_IMPLEMENTED:
-        {
             result = COAP_501_NOT_IMPLEMENTED;
-        }
         break;
 
         case LWM2MCORE_ERR_INCORRECT_RANGE:
-        {
-            result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        break;
-
         case LWM2MCORE_ERR_GENERAL_ERROR:
-        {
-            result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        break;
-
         case LWM2MCORE_ERR_OVERFLOW:
-        {
-            result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        break;
-
         default:
-        {
             result = COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        break;
+            break;
     }
+
     LOG_ARG("sID %d operation %d -> CoAP result %d", sid, operation, result);
+
     return result;
 }
 
@@ -871,6 +852,7 @@ static uint8_t DeleteObjInstance
 
     lwm2m_free(instancePtr);
 
+
     return COAP_202_DELETED;
 }
 
@@ -951,6 +933,7 @@ static uint8_t CreateCb
     }
 
     LOG_ARG("CreateCb result %d", result);
+
     return result;
 }
 
@@ -1995,4 +1978,3 @@ lwm2mcore_Sid_t lwm2mcore_SetLifetime
 {
     return omanager_SetLifetime(lifetime);
 }
-

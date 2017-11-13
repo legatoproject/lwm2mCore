@@ -285,6 +285,7 @@ static int SendData
                                    connPtr->addrLen);
         if (-1 == nbSent)
         {
+            lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_SEND_ERR);
             return -1;
         }
         offset += nbSent;
@@ -791,6 +792,7 @@ dtls_Connection_t* dtls_CreateConnection
     if (false == lwm2mcore_UdpConnect(uriPtr, hostPtr, portPtr, addressFamily, &saPtr, &sl, &s))
     {
         LOG("Connect failure");
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CONNECT_ERR);
         return NULL;
     }
 
@@ -799,7 +801,10 @@ dtls_Connection_t* dtls_CreateConnection
         lwm2mcore_SocketConfig_t config;
         connPtr = dtls_HandleNewIncoming(connListPtr, sock, &saPtr, sl);
         config.sock = s;
-        lwm2mcore_UdpClose(config);
+        if (!lwm2mcore_UdpClose(config))
+        {
+            lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
+        }
 
         // do we need to start tinydtls?
         if (NULL != connPtr)
@@ -933,7 +938,7 @@ int dtls_HandlePacket
                                          numBytes);
         if (0 != result)
         {
-             LOG_ARG("error dtls handling message %d",result);
+             LOG_ARG("error DTLS handling message %d",result);
         }
         return result;
     }
@@ -987,7 +992,7 @@ int dtls_Rehandshake
     result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
     if (0 != result)
     {
-         LOG_ARG("error dtls reconnection %d",result);
+         LOG_ARG("error DTLS reconnection %d",result);
     }
     return result;
 }
@@ -1045,4 +1050,3 @@ bool lwm2m_session_is_equal
 {
     return (session1Ptr == session2Ptr);
 }
-

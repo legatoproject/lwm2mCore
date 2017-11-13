@@ -402,8 +402,8 @@ typedef struct
     lwm2mcore_StatusType_t event;               ///< Event
     union
     {
-        lwm2mcore_SessionStatus_t session;      ///< Session information
-        lwm2mcore_PkgDwlStatus_t pkgStatus;     ///< Package download status
+        lwm2mcore_SessionStatus_t   session;    ///< Session information
+        lwm2mcore_PkgDwlStatus_t    pkgStatus;  ///< Package download status
     }u;                                         ///< Union
 }lwm2mcore_Status_t;
 
@@ -838,8 +838,24 @@ lwm2mcore_Sid_t lwm2mcore_SetLifetime
     uint32_t lifetime           ///< [IN] Lifetime in seconds
 );
 
+//--------------------------------------------------------------------------------------------------
 /**
-  * @}
-  */
+ * Function to report UDP error code.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_ReportUdpErrorCode
+(
+    int code    ///< [IN] UDP custom error code defined in udp.h
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to report CoAP response code.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_ReportCoapResponseCode
+(
+    int code    ///< [IN] CoAP error code as defined in RFC 7252 section 12.1.2
+);
 
 #endif /*  __LWM2MCORE_H__ */

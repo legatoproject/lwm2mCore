@@ -29,7 +29,19 @@
  *  Maximum size of packet that can be received on UDP socket.
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_UDP_MAX_PACKET_SIZE 1024
+#define LWM2MCORE_UDP_MAX_PACKET_SIZE   1024
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  UDP error codes
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_UDP_NO_ERR            0x00    ///< No error
+#define LWM2MCORE_UDP_OPEN_ERR          0x01    ///< Failed to open UDP connection
+#define LWM2MCORE_UDP_CLOSE_ERR         0x02    ///< Failed to close UDP connection
+#define LWM2MCORE_UDP_SEND_ERR          0x03    ///< Error occured during UDP send
+#define LWM2MCORE_UDP_RECV_ERR          0x04    ///< Error occured during UDP receive
+#define LWM2MCORE_UDP_CONNECT_ERR       0x05    ///< UDP connection failure
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -81,6 +93,23 @@ bool lwm2mcore_UdpOpen
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Close the socket
+ * This function is called by the LWM2MCore and must be adapted to the platform
+ * The aim of this function is to close a socket
+ *
+ * @return
+ *      - true on success
+ *      - false on error
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_UdpClose
+(
+    lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Connect to the server
  * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to connect
@@ -99,24 +128,29 @@ bool lwm2mcore_UdpConnect
     int addressFamily,                  ///< [IN] Address familly
     struct sockaddr* saPtr,             ///< [IN] Socket address pointer
     socklen_t* slPtr,                   ///< [IN] Socket address length
-    int* sockPtr                        ///< [IN] socket file descriptor
+    int* sockPtr                        ///< [IN] Socket file descriptor
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Close the socket
- * This function is called by the LwM2MCore and must be adapted to the platform
- * The aim of this function is to close a socket
+ * Send data on a socket
+ * This function is called by the LWM2MCore and must be adapted to the platform
+ * The aim of this function is to send data on a socket
  *
  * @return
- *      - true on success
+ *      -
  *      - false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mcore_UdpClose
+ssize_t lwm2mcore_UdpSend
 (
-    lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
+    int sockfd,                            ///< [IN] Socket file descriptor
+    const void* bufferPtr,                 ///< [IN] Data to send
+    size_t length,                         ///< [IN] Data size
+    int flags,                             ///< [IN] Flags argument. (see 'man send' for flags list)
+    const struct sockaddr *dest_addrPtr,   ///< [IN] Destination socket address pointer
+    socklen_t addrlen                      ///< [IN] Destination socket address length
 );
 
 //--------------------------------------------------------------------------------------------------

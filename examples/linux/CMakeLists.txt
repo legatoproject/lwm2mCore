@@ -5,7 +5,7 @@ cmake_minimum_required (VERSION 3.0)
 
 project (lwm2mcoreclient C CXX)
 
-set(LWM2MCORE_ROOT_DIR ${CMAKE_CURRENT_LIST_DIR}/../..)
+set(LWM2MCORE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 include(${LWM2MCORE_ROOT_DIR}/wakaama.cmake)
 include(${LWM2MCORE_ROOT_DIR}/tinydtls.cmake)
 include(${LWM2MCORE_ROOT_DIR}/lwm2mcore.cmake)
@@ -42,6 +42,7 @@ set(LINUX_CLIENT_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/timer.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/udp.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/update.c
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/comm.c
     main.c)
 
 add_executable(${PROJECT_NAME} ${LWM2MCORE_SOURCES} ${LINUX_CLIENT_SOURCES})
@@ -55,6 +56,3 @@ find_package(ZLIB REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES} -lrt)
 target_link_libraries(${PROJECT_NAME} ${ZLIB_LIBRARIES})
-
-
-

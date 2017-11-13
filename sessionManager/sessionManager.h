@@ -104,4 +104,3 @@ void smanager_SendSessionEvent
   */
 
 #endif /* __SESSION_H__ */
-

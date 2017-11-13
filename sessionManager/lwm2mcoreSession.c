@@ -9,6 +9,7 @@
  */
 
 /* include files */
+#include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
 #include <lwm2mcore/coapHandlers.h>
@@ -181,6 +182,33 @@ void lwm2m_close_connection
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Report CoAP status
+ */
+//--------------------------------------------------------------------------------------------------
+uint8_t lwm2m_report_coap_status
+(
+    const char* file,  ///< [IN] File path from where this function is called
+    const char* func,  ///< [IN] Name of the caller function
+    int code           ///< [IN] CoAP error code as defined in RFC 7252 section 12.1.2
+)
+{
+    // Extract file name from path
+    char* fileName = strrchr(file, '/');
+    if (NULL == fileName)
+    {
+        fileName = (char*)file;
+    }
+
+    LOG_ARG("[%s:%s] %d.%.2d\n", fileName, func, (code >> 5),
+        (code & 0x1f));
+
+    lwm2mcore_ReportCoapResponseCode(code);
+
+    return (uint8_t)code;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Update bootstrap state and backup security object if bootstrap succeeded.
  */
 //--------------------------------------------------------------------------------------------------
@@ -276,7 +304,7 @@ static void Lwm2mClientStepHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Convert coap response code to LwM2M standard error codes
+ *  Convert CoAP response code to LwM2M standard error codes
  */
 //--------------------------------------------------------------------------------------------------
 static uint32_t ConvertToCoapCode
@@ -663,28 +691,30 @@ void lwm2mcore_UdpReceiveCb
     lwm2mcore_SocketConfig_t config     ///< [IN] Socket config
 )
 {
-    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)config.instanceRef;
+    smanager_ClientData_t* dataPtr;
     dtls_Connection_t* connPtr;
-    LOG("avc_udpCb");
+    int rc;
 
-    dataPtr->sock = config.sock;
-    dataPtr->addressFamily = config.af;
+    LOG("avc UDP receive data callback");
+
+    dataPtr = (smanager_ClientData_t*)config.instanceRef;
 
     connPtr = dtls_FindConnection(dataPtr->connListPtr, addrPtr, addrLen);
-    if (NULL != connPtr)
+    if (!connPtr)
     {
-        // Let liblwm2m respond to the query depending on the context
-        int result;
-        LOG("Handle packet");
-        result = dtls_HandlePacket(connPtr, bufferPtr, (size_t)len);
-        if (0 != result)
-        {
-             LOG_ARG("Error handling message %d.",result);
-        }
+        LOG("Failed to find an available DTLS connection");
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_RECV_ERR);
+        return;
     }
-    else
+
+    // Let liblwm2m respond to the query depending on the context
+    LOG("Handling packet");
+    rc = dtls_HandlePacket(connPtr, bufferPtr, (size_t)len);
+    if (rc)
     {
-        LOG("Received bytes ignored.");
+        LOG_ARG("Failed to handle DTLS packet %d.", rc);
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_RECV_ERR);
+        return;
     }
 }
 
@@ -852,45 +882,38 @@ bool lwm2mcore_Connect
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    bool result = false;
-    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
-
-    if (NULL == instanceRef)
+    smanager_ClientData_t* dataPtr;
+    if (!instanceRef)
     {
-        return result;
+        LOG("Null instance reference");
+        return false;
     }
 
     /* Create the socket */
     memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
-    result = lwm2mcore_UdpOpen(instanceRef, lwm2mcore_UdpReceiveCb,
-                               &SocketConfig);
-
-    if (true == result)
+    if (!lwm2mcore_UdpOpen(instanceRef, lwm2mcore_UdpReceiveCb, &SocketConfig))
     {
-        LOG_ARG ("lwm2mcore_connect -> socket %d opened ", SocketConfig.sock);
-        dataPtr->sock = SocketConfig.sock;
-        dataPtr->addressFamily = SocketConfig.af;
-
-        /* Initialize the LwM2M client step timer */
-        DataCtxPtr = dataPtr;
-        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
-                                        1,
-                                        Lwm2mClientStepHandler))
-        {
-            LOG("ERROR to launch the 1st step timer");
-        }
-        else
-        {
-            LOG("LWM2M Client started");
-            result = true;
-        }
-    }
-    else
-    {
-        LOG("ERROR on socket create");
+        LOG("Failed to open UDP connection");
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_OPEN_ERR);
+        return false;
     }
 
-    return result;
+    LOG_ARG("lwm2mcore_connect -> socket %d opened ", SocketConfig.sock);
+
+    dataPtr = (smanager_ClientData_t*)instanceRef;
+    dataPtr->sock = SocketConfig.sock;
+    dataPtr->addressFamily = SocketConfig.af;
+
+    /* Initialize the lwm2m client step timer */
+    DataCtxPtr = dataPtr;
+    if (!lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
+    {
+        LOG("Failed to launch the 1st step timer");
+    }
+
+    LOG("LWM2M Client started");
+
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -928,11 +951,12 @@ bool lwm2mcore_Disconnect
 )
 {
     bool result = false;
-    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
+    smanager_ClientData_t* dataPtr;
 
-    if (NULL == instanceRef)
+    if (!instanceRef)
     {
-        return result;
+        LOG("Null instance reference");
+        return false;
     }
 
     /* Stop package download if one is on-going */
@@ -940,10 +964,12 @@ bool lwm2mcore_Disconnect
     lwm2mcore_SuspendPackageDownload();
 
     /* Stop the current timers */
-    if (false == lwm2mcore_TimerStop (LWM2MCORE_TIMER_STEP))
+    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
     {
-        LOG("Error to stop the step timer");
+        LOG("Failed to stop the step timer");
     }
+
+    dataPtr = (smanager_ClientData_t*) instanceRef;
 
     /* Stop the agent */
     lwm2m_close(dataPtr->lwm2mHPtr);
@@ -952,19 +978,19 @@ bool lwm2mcore_Disconnect
     dataPtr->connListPtr = NULL;
 
     /* Close the socket */
-    result = lwm2mcore_UdpClose(SocketConfig);
-    if (false == result)
+    if (!lwm2mcore_UdpClose(SocketConfig))
     {
-        LOG("ERROR in socket closure");
-    }
-    else
-    {
-        memset(&SocketConfig, 0, sizeof (lwm2mcore_SocketConfig_t));
-        /* Notify that the connection is stopped */
-        smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
+        LOG("Failed to close UDP connection");
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
     }
 
-    return result;
+    /* Zero-init the socket structure */
+    memset(&SocketConfig, 0, sizeof(lwm2mcore_SocketConfig_t));
+
+    /* Notify that the connection is stopped */
+    smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
+
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1110,8 +1136,8 @@ lwm2mcore_PushResult_t lwm2mcore_Push
 bool lwm2mcore_SendAsyncResponse
 (
     lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
-    lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] coap request refernce
-    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] coap response
+    lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] CoAP request refernce
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response
 )
 {
     bool registered = false;
