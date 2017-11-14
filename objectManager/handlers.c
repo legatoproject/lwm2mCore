@@ -14,6 +14,7 @@
 #include <lwm2mcore/connectivity.h>
 #include <lwm2mcore/device.h>
 #include <lwm2mcore/security.h>
+#include <lwm2mcore/server.h>
 #include <lwm2mcore/paramStorage.h>
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/location.h>
@@ -458,6 +459,11 @@ lwm2mcore_Sid_t omanager_SetLifetime
 {
     bool result;
     ConfigBootstrapFile_t config;
+
+    if (lwm2mcore_CheckLifetimeLimit(lifetime) != true)
+    {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
 
     if (BS_CONFIG_VERSION == BsConfig.version)
     {

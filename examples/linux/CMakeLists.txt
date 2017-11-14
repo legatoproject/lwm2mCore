@@ -36,6 +36,7 @@ set(LINUX_CLIENT_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/paramStorage.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/platform.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/security.c
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/server.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/sem.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/time.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/timer.c
