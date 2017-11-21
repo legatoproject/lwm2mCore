@@ -3,7 +3,7 @@
 #
 # Copyright (C) Sierra Wireless Inc.
 # --------------------------------------------------------------------------------------------------
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 2.8)
 
 # Set LwM2MCore source directory
 set(LWM2MCORE_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/)
