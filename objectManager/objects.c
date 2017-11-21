@@ -1621,7 +1621,15 @@ static bool UpdateSwListWakaama
     while (NULL != aData)
     {
         memset(aOnePath, 0, ONE_PATH_MAX_LEN);
-        strncpy(aOnePath, aData, strlen(aData));
+        if (strlen(aData) <= strlen(aOnePath))
+        {
+            strncpy(aOnePath, aData, strlen(aData));
+        }
+        else
+        {
+            LOG("String length of aData is greater than aOnePath!");
+            return false;
+        }
 
         /* Get the object instance string
          * The path format shall be
@@ -1634,7 +1642,16 @@ static bool UpdateSwListWakaama
             if (NULL != aData)
             {
                 memset(prefix, 0, LWM2MCORE_NAME_LEN + 1);
-                strncpy(prefix, aData, strlen(aData));
+                if (strlen(aData) <= strlen(prefix))
+                {
+                    strncpy(prefix, aData, strlen(aData));
+                }
+                else
+                {
+                    LOG("String length of aData is greater than prefix!");
+                    return false;
+                }
+
                 aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
                 if (NULL != aData)
                 {
