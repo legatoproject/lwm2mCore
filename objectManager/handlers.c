@@ -1609,9 +1609,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &networkBearer,
-                                             sizeof(networkBearer),
-                                             false);
+                                                      &networkBearer,
+                                                      sizeof(networkBearer),
+                                                      false);
             }
         }
         break;
@@ -1644,9 +1644,9 @@ int omanager_ReadConnectivityMonitoringObj
                     if (uriPtr->riid < bearersNb)
                     {
                         *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                                     &bearersList[uriPtr->riid],
-                                                     sizeof(bearersList[uriPtr->riid]),
-                                                     false);
+                                                              &bearersList[uriPtr->riid],
+                                                              sizeof(bearersList[uriPtr->riid]),
+                                                              false);
                     }
                     else
                     {
@@ -1668,9 +1668,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &signalStrength,
-                                             sizeof(signalStrength),
-                                             true);
+                                                      &signalStrength,
+                                                      sizeof(signalStrength),
+                                                      true);
             }
         }
         break;
@@ -1683,9 +1683,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &linkQuality,
-                                             sizeof(linkQuality),
-                                             false);
+                                                      &linkQuality,
+                                                      sizeof(linkQuality),
+                                                      true);
             }
         }
         break;
@@ -1786,9 +1786,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &linkUtilization,
-                                             sizeof(linkUtilization),
-                                             false);
+                                                      &linkUtilization,
+                                                      sizeof(linkUtilization),
+                                                      false);
             }
         }
         break;
@@ -1844,9 +1844,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &cellId,
-                                             sizeof(cellId),
-                                             false);
+                                                      &cellId,
+                                                      sizeof(cellId),
+                                                      false);
             }
         }
         break;
@@ -1859,9 +1859,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &mnc,
-                                             sizeof(mnc),
-                                             false);
+                                                      &mnc,
+                                                      sizeof(mnc),
+                                                      false);
             }
         }
         break;
@@ -1874,9 +1874,9 @@ int omanager_ReadConnectivityMonitoringObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &mcc,
-                                             sizeof(mcc),
-                                             false);
+                                                      &mcc,
+                                                      sizeof(mcc),
+                                                      false);
             }
         }
         break;
