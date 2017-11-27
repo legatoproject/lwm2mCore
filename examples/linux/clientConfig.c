@@ -559,7 +559,7 @@ static int ParseConfigFile
 )
 {
     char line[MAX_LINE];
-    char section[MAX_SECTION];
+    char section[MAX_SECTION] = {0};
     char* firstPtr = 0;
     char* lastPtr = 0;
     char* namePtr = 0;
@@ -592,7 +592,7 @@ static int ParseConfigFile
             {
                 *lastPtr = '\0';
                 assert(strlen(firstPtr + 1) < MAX_SECTION);
-                strncpy(section, firstPtr + 1, MAX_SECTION);
+                strncpy(section, firstPtr + 1, MAX_SECTION - 1);
             }
             else
             {
@@ -744,6 +744,7 @@ static int WriteConfigLine
     int lineSize = 0;
     int newLineSize = 0;
     int osize = bsize;      // Save original buffer size
+    int bufferSize = osize;
     char* tokenPtr = NULL;
     char* sectionPtr = NULL;
     char* namePtr = NULL;
@@ -806,8 +807,8 @@ static int WriteConfigLine
                         memmove(positionPtr + newLineSize, positionPtr, bsize + lineSize );
                         memcpy(positionPtr, line, newLineSize);
                         // We are done!
-                        return osize + newLineSize;
-
+                        bufferSize = osize + newLineSize;
+                        goto end_processing;
                     }
                     sMatch = false;
                 }
@@ -820,7 +821,8 @@ static int WriteConfigLine
             {
                 // Syntax error
                 printf("syntax error: expect ']' %s\n", line);
-                return -1;
+                bufferSize = -1;
+                goto end_processing;
             }
         }
         else if (*tokenPtr)
@@ -846,7 +848,8 @@ static int WriteConfigLine
             {
                 // Syntax error
                 printf("syntax error: expect '=' %s\n", line);
-                return -1;
+                bufferSize = -1;
+                goto end_processing;
             }
         }
 
@@ -858,7 +861,8 @@ static int WriteConfigLine
             memmove(positionPtr + newLineSize, bufferPtr, bsize );
             memcpy(positionPtr, line, newLineSize);
             // We are done !
-            return osize + newLineSize - lineSize;
+            bufferSize = osize + newLineSize - lineSize;
+            goto end_processing;
         }
     }
     // Scanned to the end of buffer
@@ -871,18 +875,20 @@ static int WriteConfigLine
             newLineSize = snprintf(bufferPtr, MAX_LINE,
                                    "\n[%s]\n%s = %s\n",
                                    nsectionPtr, nnamePtr, nvaluePtr);
-            return newLineSize + osize;
+            bufferSize = newLineSize + osize;
+            goto end_processing;
         }
         else
         {
             // Found matching section which is the last section, but didn't find the name.
             // Add the name/value pair to section end of buffer.
             newLineSize = snprintf(bufferPtr, MAX_LINE, "%s = %s\n", nnamePtr, nvaluePtr);
-            return newLineSize + osize;
+            bufferSize = newLineSize + osize;
+            goto end_processing;
         }
     }
-
-    return osize;
+end_processing:
+    return bufferSize;
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -484,13 +484,12 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
                                              bufferPtr,
                                              config))
             {
-               result = LWM2MCORE_ERR_COMPLETED_OK;
+                result = LWM2MCORE_ERR_COMPLETED_OK;
             }
             else
             {
                 result = LWM2MCORE_ERR_GENERAL_ERROR;
             }
-            result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         case LWM2MCORE_CREDENTIAL_BS_SERVER_PUBLIC_KEY:
@@ -549,7 +548,6 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
             {
                 result = LWM2MCORE_ERR_GENERAL_ERROR;
             }
-            result = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
