@@ -162,6 +162,7 @@ static uint8_t SetCoapError
             break;
     }
 
+    REPORT_COAP(result);
     LOG_ARG("sID %d operation %d -> CoAP result %d", sid, operation, result);
 
     return result;

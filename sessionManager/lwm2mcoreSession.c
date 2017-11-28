@@ -199,8 +199,7 @@ uint8_t lwm2m_report_coap_status
         fileName = (char*)file;
     }
 
-    LOG_ARG("[%s:%s] %d.%.2d\n", fileName, func, (code >> 5),
-        (code & 0x1f));
+    LOG_ARG("[%s:%s] %d.%.2d", fileName, func, (code >> 5), (code & 0x1f));
 
     lwm2mcore_ReportCoapResponseCode(code);
 
