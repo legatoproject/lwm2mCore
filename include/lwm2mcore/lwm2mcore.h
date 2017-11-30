@@ -16,20 +16,6 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Maximum LWM2M server supported, though only one used at any time
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_DM_SERVER_MAX_COUNT           1
-
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief Maximum LWM2M bootstrap server supported
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT     1
-
-//--------------------------------------------------------------------------------------------------
-/**
  * @brief Maximum length of a resource name
  */
 //--------------------------------------------------------------------------------------------------
@@ -231,21 +217,6 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Enumeration for device endpoint urn format: LWM2M TS v1.0 6.2.1
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    UUID_URN,       ///< UUID
-    OPS_URN,        ///< QPS
-    OS_URN,         ///< OS
-    IMEI_URN,       ///< IMEI
-    ESN_URN,        ///< ESN
-    MEID_URN        ///< MEID
-}lwm2mcore_EpnType_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
  * @brief Enumeration for session type
  */
 //--------------------------------------------------------------------------------------------------
@@ -422,8 +393,8 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef int (*valueChangedCallback_t)
 (
-    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the resource whose value is changed
-    char *buffer,                       ///< [INOUT] buffer of the notification data
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the resource whose value is changed
+    char* bufferPtr,                    ///< [INOUT] buffer of the notification data
     int len                             ///< [IN] llength of the notification data
 );
 
@@ -439,10 +410,10 @@ typedef int (*valueChangedCallback_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_ReadCallback_t)
 (
-    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *bufferPtr,                    ///< [INOUT] data buffer for information
-    size_t *lenPtr,                     ///< [INOUT] length of input buffer and length of the
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
     valueChangedCallback_t changedCb    ///< [IN] not used for READ operation
 );
@@ -459,9 +430,9 @@ typedef int (*lwm2mcore_ReadCallback_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_WriteCallback_t)
 (
-    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
     size_t len                          ///< [IN] length of input buffer
 );
 
@@ -477,9 +448,9 @@ typedef int (*lwm2mcore_WriteCallback_t)
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_ExecuteCallback_t)
 (
-    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *bufferPtr,                    ///< [INOUT] contain arguments
+    char* bufferPtr,                    ///< [INOUT] contain arguments
     size_t len                          ///< [IN] length of buffer
 );
 
@@ -508,7 +479,7 @@ typedef struct
     uint16_t id;                            ///< one of the defined object id
     uint16_t maxObjInstCnt;                 ///< maximum number of object instance count. 1 means single instance.
     uint16_t resCnt;                        ///< number of resource count under this object
-    lwm2mcore_Resource_t * resources;       ///< pointer to the list of resource under this object
+    lwm2mcore_Resource_t* resources;        ///< pointer to the list of resource under this object
 }lwm2mcore_Object_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -523,10 +494,10 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef int (*genericReadWriteApi_t)
 (
-    lwm2mcore_Uri_t *uri,               ///< [IN] uri represents the requested operation and
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
                                         ///< object/resource.
-    char *buffer,                       ///< [INOUT] data buffer for information
-    size_t *len,                        ///< [INOUT] length of input buffer and length of the
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
                                         ///< returned data
     valueChangedCallback_t changedCb    ///< [IN] callback function pointer for OBSERVE operation
 );
@@ -541,7 +512,8 @@ typedef struct
     uint16_t                objCnt;                 ///< Numbers of supported pre-defined objects
     lwm2mcore_Object_t*     objects;                ///< Actual supported pre-defined objects
     genericReadWriteApi_t   genericUOHandler;       ///< Generic handler for unidentified object
-}lwm2mcore_Handler_t;
+}
+lwm2mcore_Handler_t;
 
 /**
   * @}
@@ -826,7 +798,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLifetime
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Function to set the lifetime in the server object and save to disk.
+ * @brief Function to set the lifetime in the server object and save to platform storage.
  *
  * @return
  *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds

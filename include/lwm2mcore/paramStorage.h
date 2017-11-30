@@ -28,9 +28,10 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_BOOTSTRAP_PARAM,      ///< Bootstrap configuration parameters
-    LWM2MCORE_DWL_WORKSPACE_PARAM,  ///< Download workspace parameters
-    LWM2MCORE_MAX_PARAM             ///< Maximum parameter value (internal use)
+    LWM2MCORE_BOOTSTRAP_PARAM,              ///< Bootstrap configuration parameters
+    LWM2MCORE_DWL_WORKSPACE_PARAM,          ///< Download workspace parameters
+    LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM,    ///< Bootstrap configuration file size
+    LWM2MCORE_MAX_PARAM                     ///< Maximum parameter value (internal use)
 }lwm2mcore_Param_t;
 
 //--------------------------------------------------------------------------------------------------

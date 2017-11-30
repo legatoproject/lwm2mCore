@@ -13,6 +13,7 @@
 #include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
+#include "liblwm2m.h"
 #include "clientConfig.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -116,7 +117,7 @@ static ParameterTable_t GeneralConfig[] = {
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for the security and server sections of the configuration file
+ * Structure for the bootstrap and DM servers credentials of the configuration file
  */
 //--------------------------------------------------------------------------------------------------
 static ParameterTable_t SecurityConfig[] = {
@@ -163,11 +164,11 @@ static clientConfig_t   ClientConfig;
 //--------------------------------------------------------------------------------------------------
 typedef int (*HandlerFunc)
 (
-    void*       dataPtr,            ///< [IN] Client configuration pointer
-    const char* sectionPtr,         ///< [IN] Section the name of the section
-    const char* namePtr,            ///< [IN] Configuration name
-    const char* valuePtr,           ///< [IN] Configuration value
-    lwm2mcore_OpType_t operation    ///< [IN] Operation
+    uint8_t*            dataPtr,        ///< [IN] Client configuration pointer
+    const char*         sectionPtr,     ///< [IN] Section the name of the section
+    const char*         namePtr,        ///< [IN] Configuration name
+    const char*         valuePtr,       ///< [IN] Configuration value
+    lwm2mcore_OpType_t  operation       ///< [IN] Operation
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -227,7 +228,7 @@ static char* RemoveTrailingSpace
 static char* FindChar
 (
     const char* strPtr,     ///< [IN] String to check
-    const char c            ///< [IN] Character to be found
+    const char  c           ///< [IN] Character to be found
 )
 {
     while ( (strPtr) && (*strPtr) && (*strPtr != c))
@@ -278,10 +279,10 @@ static char* SkipLeadingSpace
 //--------------------------------------------------------------------------------------------------
 static int ReadWriteValue
 (
-    void* dataPtr,                          ///< [IN] Client configuration pointer
-    lwm2mcore_ResourceType_t dataType,      ///< [IN] Data type
-    char* valuePtr,                         ///< [IN] Buffer contains the input/output string
-    lwm2mcore_OpType_t operation            ///< [IN] Operation
+    void*                       dataPtr,    ///< [IN] Client configuration pointer
+    lwm2mcore_ResourceType_t    dataType,   ///< [IN] Data type
+    char*                       valuePtr,   ///< [IN] Buffer contains the input/output string
+    lwm2mcore_OpType_t          operation   ///< [IN] Operation
 )
 {
     if ((LWM2MCORE_OP_WRITE != operation) && (LWM2MCORE_OP_READ != operation))
@@ -334,9 +335,91 @@ static int ReadWriteValue
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to get security configuration for a specific server Id
+ *
+ * @return
+ *  - Pointer on security object instance on success
+ *  - NULL on failure
+ */
+//--------------------------------------------------------------------------------------------------
+clientSecurityConfig_t* GetDmServerConfigById
+(
+    uint16_t            serverId            ///< Server Id
+)
+{
+    clientSecurityConfig_t* securityConfigurationPtr;
+
+    securityConfigurationPtr = ClientConfig.securityPtr;
+    while (securityConfigurationPtr)
+    {
+        if ((false == securityConfigurationPtr->isBootstrapServer)
+         && (securityConfigurationPtr->serverId == serverId))
+        {
+            return securityConfigurationPtr;
+        }
+        securityConfigurationPtr = securityConfigurationPtr->nextPtr;
+    }
+    return securityConfigurationPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get security information for the bootstrap server
+ *
+ * @return
+ *  - Pointer on security object instance on success
+ *  - NULL on failure
+ */
+//--------------------------------------------------------------------------------------------------
+clientSecurityConfig_t* GetBootstrapInformation
+(
+    void
+)
+{
+    clientSecurityConfig_t* securityConfigurationPtr;
+
+    securityConfigurationPtr = ClientConfig.securityPtr;
+    while ((securityConfigurationPtr) && (false == securityConfigurationPtr->isBootstrapServer))
+    {
+        securityConfigurationPtr = securityConfigurationPtr->nextPtr;
+    }
+    return securityConfigurationPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to add an object instance of object 0 (security) in bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+static void AddSecurity
+(
+    clientConfig_t*         clientConfigPtr,            ///< [IN] Client  configuration
+    clientSecurityConfig_t* securityInformationPtr      ///< [IN] Security object
+)
+{
+    if (!clientConfigPtr->securityPtr)
+    {
+        clientConfigPtr->securityPtr = securityInformationPtr;
+        clientConfigPtr->securityPtr->nextPtr = NULL;
+    }
+    else
+    {
+        clientSecurityConfig_t* tempPtr = clientConfigPtr->securityPtr;
+
+        while (tempPtr->nextPtr)
+        {
+            tempPtr = tempPtr->nextPtr;
+        }
+        tempPtr->nextPtr = securityInformationPtr;
+        securityInformationPtr->nextPtr = NULL;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Callback function for configuration file parsing.
  *
- * The handler is called every time a a configuration name/value is found in config file.
+ * The handler is called every time a a configuration name/value is found in configuration file.
  *
  * @return
  *  - 0 on success
@@ -345,11 +428,11 @@ static int ReadWriteValue
 //--------------------------------------------------------------------------------------------------
 static int ConfigurationHandler
 (
-    void* dataPtr,                  ///< [IN] Client configuration pointer
-    const char* sectionPtr,         ///< [IN] Section the name of the section
-    const char* namePtr,            ///< [IN] Configuration name
-    const char* valuePtr,           ///< [IN] Configuration value
-    lwm2mcore_OpType_t operation    ///< [IN] Operation
+    uint8_t*            dataPtr,        ///< [IN] Client configuration pointer
+    const char*         sectionPtr,     ///< [IN] Section the name of the section
+    const char*         namePtr,        ///< [IN] Configuration name
+    const char*         valuePtr,       ///< [IN] Configuration value
+    lwm2mcore_OpType_t  operation       ///< [IN] Operation
 )
 {
     uint32_t sectionId = 0;
@@ -370,8 +453,7 @@ static int ConfigurationHandler
                         if (!strncmp(GeneralConfig[parameterId].namePtr, namePtr, strlen(namePtr)))
                         {
                             // Parameter was found
-                            return ReadWriteValue((void*)(dataPtr +
-                                                            GeneralConfig[parameterId].dataOffset),
+                            return ReadWriteValue(dataPtr + GeneralConfig[parameterId].dataOffset,
                                                   GeneralConfig[parameterId].dataType,
                                                   (char*)valuePtr,
                                                   operation);
@@ -387,9 +469,21 @@ static int ConfigurationHandler
                         if (!strncmp(SecurityConfig[parameterId].namePtr, namePtr, strlen(namePtr)))
                         {
                             // Parameter was found
-                            return ReadWriteValue((void*)(dataPtr +
-                                                        sizeof(clientGeneralConfig_t) +
-                                                        SecurityConfig[parameterId].dataOffset),
+
+                            uint8_t* ptr;
+                            clientSecurityConfig_t* securityConfigPtr = GetBootstrapInformation();
+                            if (!securityConfigPtr)
+                            {
+                                securityConfigPtr = (clientSecurityConfig_t*)
+                                                    lwm2m_malloc(sizeof(clientSecurityConfig_t));
+                                memset(securityConfigPtr, 0, sizeof(clientSecurityConfig_t));
+                                securityConfigPtr->isBootstrapServer = true;
+                                AddSecurity(&ClientConfig, securityConfigPtr);
+                            }
+
+                            ptr = (uint8_t*)(securityConfigPtr);
+                            return ReadWriteValue((uint8_t*)
+                                                  (ptr + SecurityConfig[parameterId].dataOffset),
                                                   SecurityConfig[parameterId].dataType,
                                                   (char*)valuePtr,
                                                   operation);
@@ -402,13 +496,35 @@ static int ConfigurationHandler
                          parameterId < (sizeof(SecurityConfig)/sizeof(ParameterTable_t));
                          parameterId++)
                     {
-                        if (!strncmp(SecurityConfig[parameterId].namePtr, namePtr, strlen(namePtr)))
+                        if (!strncmp(SecurityConfig[parameterId].namePtr,
+                                     namePtr,
+                                     strlen(SecurityConfig[parameterId].namePtr)))
                         {
                             // Parameter was found
-                            return ReadWriteValue((void*)(dataPtr +
-                                                        sizeof(clientGeneralConfig_t) +
-                                                        sizeof(clientSecurityConfig_t) +
-                                                        SecurityConfig[parameterId].dataOffset),
+
+                            // Get the server Id
+                            clientSecurityConfig_t* securityConfigPtr;
+                            char *aData;
+                            char* cSavePtr = NULL;
+                            uint8_t* ptr;
+                            uint16_t serverId;
+                            strtok_r((char*)namePtr, " ", &cSavePtr);
+                            aData = strtok_r(NULL, " ", &cSavePtr);
+                            serverId = atoi(aData);
+
+                            securityConfigPtr = GetDmServerConfigById(serverId);
+                            if (!securityConfigPtr)
+                            {
+                                securityConfigPtr = (clientSecurityConfig_t*)
+                                                     lwm2m_malloc(sizeof(clientSecurityConfig_t));
+                                memset(securityConfigPtr, 0, sizeof(clientSecurityConfig_t));
+                                securityConfigPtr->isBootstrapServer = false;
+                                securityConfigPtr->serverId = serverId;
+                                AddSecurity(&ClientConfig, securityConfigPtr);
+                            }
+                            ptr = (uint8_t*)(securityConfigPtr);
+                            return ReadWriteValue((uint8_t*)
+                                                  (ptr + SecurityConfig[parameterId].dataOffset),
                                                   SecurityConfig[parameterId].dataType,
                                                   (char*)valuePtr,
                                                   operation);
@@ -419,7 +535,6 @@ static int ConfigurationHandler
                 default:
                     printf("Invalid section Id %d\n", sectionId);
                     break;
-
             }
         }
     }
@@ -437,10 +552,10 @@ static int ConfigurationHandler
 //--------------------------------------------------------------------------------------------------
 static int ParseConfigFile
 (
-    FILE* fPtr,                     ///< [IN] Filename name of the configuration file
-    HandlerFunc handler,            ///< [IN] pointer to the handler function
-    void* dataPtr,                  ///< [IN] Client configuration pointer
-    lwm2mcore_OpType_t operation    ///< [IN] Operation
+    FILE*               fPtr,       ///< [IN] Filename name of the configuration file
+    HandlerFunc         handler,    ///< [IN] pointer to the handler function
+    void*               dataPtr,    ///< [IN] Client configuration pointer
+    lwm2mcore_OpType_t  operation   ///< [IN] Operation
 )
 {
     char line[MAX_LINE];
@@ -569,7 +684,7 @@ static int ReadFileToBuffer
 //--------------------------------------------------------------------------------------------------
 static int WriteBufferToFile
 (
-    char* bufferPtr,        ///< [IN] Data to be written in configuration file
+    char*  bufferPtr,       ///< [IN] Data to be written in configuration file
     size_t bsize            ///< [IN] Data length
 )
 {
@@ -615,8 +730,8 @@ static int WriteBufferToFile
 //--------------------------------------------------------------------------------------------------
 static int WriteConfigLine
 (
-    char* bufferPtr,            ///< [IN] Buffer containing the configuration file
-    int bsize,                  ///< [IN] Size of the buffer
+    char*       bufferPtr,      ///< [IN] Buffer containing the configuration file
+    int         bsize,          ///< [IN] Size of the buffer
     const char* nsectionPtr,    ///< [IN] Section name
     const char* nnamePtr,       ///< [IN] Configuration name
     const char* nvaluePtr       ///< [IN] Configuration value
@@ -822,16 +937,16 @@ int clientConfigRead
 //--------------------------------------------------------------------------------------------------
 int clientConfigWriteOneLine
 (
-    const char* sectionPtr,     ///< [IN] Section name
-    const char* namePtr,        ///< [IN] Parameter name
-    char* valuePtr,             ///< [IN] New value
-    clientConfig_t* configPtr   ///< [IN] Pointer on client configuration
+    const char*     sectionPtr,     ///< [IN] Section name
+    const char*     namePtr,        ///< [IN] Parameter name
+    char*           valuePtr,       ///< [IN] New value
+    clientConfig_t* configPtr       ///< [IN] Pointer on client configuration
 )
 {
     char* bufferPtr = NULL;
     int bsize = MAX_FILE_SIZE;
 
-    bufferPtr = malloc(bsize);
+    bufferPtr = lwm2m_malloc(bsize);
     assert(bufferPtr);
     memset(bufferPtr, 0, bsize);
 
@@ -867,10 +982,33 @@ int clientConfigWriteOneLine
  *  - NULL on failure
  */
 //--------------------------------------------------------------------------------------------------
-clientConfig_t* clientConfigGet
+clientConfig_t* ClientConfigGet
 (
     void
 )
 {
     return &ClientConfig;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Free the client configuration
+ */
+//--------------------------------------------------------------------------------------------------
+void ClientConfigFree
+(
+    void
+)
+{
+    clientSecurityConfig_t* securityPtr;
+    clientSecurityConfig_t* security2Ptr;
+
+    securityPtr = ClientConfig.securityPtr;
+    while (securityPtr)
+    {
+        security2Ptr = securityPtr->nextPtr;
+        lwm2m_free(securityPtr);
+        securityPtr = security2Ptr;
+    }
+    ClientConfig.securityPtr = NULL;
 }

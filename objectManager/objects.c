@@ -491,7 +491,7 @@ static uint8_t ReadCb
                     asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
                     memset(asyncBuf, 0, asyncBufLen);
 
-                    sid  = resourcePtr->read(&uri, asyncBuf, &asyncBufLen, NULL);
+                    sid = resourcePtr->read(&uri, asyncBuf, &asyncBufLen, NULL);
 
                     /* Define the CoAP result */
                     result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -822,7 +822,7 @@ static uint8_t WriteCb
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Delete an oject instance in the Wakaama format
+ * Delete an object instance in the Wakaama format
  *
  * @return
  *      - COAP_404_NOT_FOUND if the object instance does not exist
@@ -852,7 +852,6 @@ static uint8_t DeleteObjInstance
     }
 
     lwm2m_free(instancePtr);
-
 
     return COAP_202_DELETED;
 }
@@ -1042,6 +1041,9 @@ static uint8_t DiscoverCb
     lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
 )
 {
+    (void)instanceId;
+    (void)numDataPtr;
+
     if ((NULL == objectPtr) || (NULL == dataArrayPtr))
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -1260,8 +1262,7 @@ static lwm2mcore_internalObject_t* InitObject
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Initialize supported objects/resources based on AVCA handler data.
- *
+ * Initialize supported objects/resources based on handler data.
  */
 //--------------------------------------------------------------------------------------------------
 static void InitObjectsList
@@ -1285,7 +1286,7 @@ static void InitObjectsList
     {
         if (LWM2MCORE_ID_NONE == (clientHandlerPtr->objects + i)->maxObjInstCnt)
         {
-            /*Unknown object instance count is always assumed to be multiple */
+            /* Unknown object instance count is always assumed to be multiple */
             objPtr = InitObject(clientHandlerPtr->objects + i, LWM2MCORE_ID_NONE, true);
             if (!objPtr)
             {
@@ -1333,8 +1334,7 @@ static void InitObjectsList
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LwM2MCore and Wakaama)
- *
+ * Free the registered objects and resources (LwM2MCore and Wakaama)
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_ObjectsFree
@@ -1385,8 +1385,60 @@ void omanager_ObjectsFree
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Function to register an object table
- *
+ * Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeObjectById
+(
+    uint16_t    objectId        ///< [IN] Object Id to remove
+)
+{
+    uint32_t i = 0;
+
+    /* Free memory for objects and resources for Wakaama */
+    for (i = 0; i < RegisteredObjNb; i++)
+    {
+        if (ObjectArray[i] && (ObjectArray[i]->objID == objectId))
+        {
+            while (ObjectArray[i]->instanceList != NULL)
+            {
+                lwm2m_list_t *listPtr = ObjectArray[i]->instanceList;
+                ObjectArray[i]->instanceList = ObjectArray[i]->instanceList->next;
+                lwm2m_free(listPtr);
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id and
+ * object instance Id
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeObjectByInstanceId
+(
+    uint16_t    objectId,           ///< [IN] Object Id to remove
+    uint16_t    objectInstanceId    ///< [IN] Object instance Id to remove
+)
+{
+    uint32_t i = 0;
+
+    /* Free memory for objects and resources for Wakaama */
+    for (i = 0; i < RegisteredObjNb; i++)
+    {
+        if (ObjectArray[i] && (ObjectArray[i]->objID == objectId))
+        {
+            ObjectArray[i]->instanceList = lwm2m_list_remove(ObjectArray[i]->instanceList,
+                                                             objectInstanceId,
+                                                             NULL);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to register an object table
  */
 //--------------------------------------------------------------------------------------------------
 static bool RegisterObjTable
@@ -1403,6 +1455,8 @@ static bool RegisterObjTable
     uint16_t ObjNb = 0;
     uint16_t objInstanceNb = 0;
     bool dmServerPresence = false;
+    uint16_t securityObjectNumber;
+    uint16_t serverObjectNumber;
     struct _lwm2mcore_objectsList *objectsListPtr = NULL;
 
     if ((NULL == handlerPtr) || (NULL == registeredObjNbPtr))
@@ -1413,15 +1467,15 @@ static bool RegisterObjTable
     ObjNb = *registeredObjNbPtr;
 
     /* Check if a DM server was provided: only for static LwM2MCore case */
-    if ((false == clientTable)
-     && ((omanager_IsSecuredMode()
-      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY)
-      && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY))
-      || (false == omanager_IsSecuredMode()))
-     && lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS))
+    ConfigGetObjectsNumber(&securityObjectNumber, &serverObjectNumber);
+    LOG_ARG("securityObjectNumber %d, serverObjectNumber %d",
+            securityObjectNumber, serverObjectNumber);
+
+    if ((false == clientTable) && serverObjectNumber)
     {
         dmServerPresence = true;
     }
+
     LOG_ARG("dmServerPresence %d", dmServerPresence);
 
     /* Check if ObjectArray is large enough for all the objects */
@@ -1443,21 +1497,29 @@ static bool RegisterObjTable
             ObjectArray[ObjNb]->objID = (handlerPtr->objects + i)->id;
             objInstanceNb = (handlerPtr->objects + i)->maxObjInstCnt;
 
-            if ((LWM2M_SECURITY_OBJECT_ID == ObjectArray[ObjNb]->objID)
-                && (false == dmServerPresence))
+            /* Object 0: security */
+            if (LWM2M_SECURITY_OBJECT_ID == ObjectArray[ObjNb]->objID)
             {
-                /* Only consider one object instance for security */
-                objInstanceNb = 1;
+                objInstanceNb = securityObjectNumber;
             }
 
-            if ((LWM2M_SERVER_OBJECT_ID == ObjectArray[ObjNb]->objID)
-                && (false == dmServerPresence))
+            /* Object 1: server */
+            if (LWM2M_SERVER_OBJECT_ID == ObjectArray[ObjNb]->objID)
             {
-                /* Do not create object instance for server object (no provisioned DM server)
-                 * This means that a bootstrap connection will be initiated
-                 */
-                objInstanceNb = 0;
+                if (false == dmServerPresence)
+                {
+                    /* Do not create object instance for server object (no provisioned DM server)
+                     * This means that a bootstrap connection will be initiated
+                     */
+                    objInstanceNb = LWM2MCORE_ID_NONE;
+                }
+                else
+                {
+                    objInstanceNb = serverObjectNumber;
+                }
             }
+
+            LOG_ARG("Object Id %d, objInstanceNb %d", ObjectArray[ObjNb]->objID, objInstanceNb);
 
             if (LWM2MCORE_ID_NONE == objInstanceNb)
             {
@@ -1527,22 +1589,25 @@ static bool RegisterObjTable
                         ObjectArray[ObjNb]->objID);
             }
 
-             /*
-              * And the private function that will access the object.
-              * Those function will be called when a read/write/execute query is made by the
-              * server. In fact the library doesn't need to know the resources of the object,
-              * only the server does.
-              */
-            ObjectArray[ObjNb]->readFunc     = ReadCb;
-            ObjectArray[ObjNb]->discoverFunc = DiscoverCb;
-            ObjectArray[ObjNb]->writeFunc    = WriteCb;
-            ObjectArray[ObjNb]->executeFunc  = ExecuteCb;
-            ObjectArray[ObjNb]->createFunc   = CreateCb;
-            ObjectArray[ObjNb]->deleteFunc   = DeleteCb;
+            if (objInstanceNb)
+            {
+                /*
+                 * And the private function that will access the object.
+                 * Those function will be called when a read/write/execute query is made by the
+                 * server. In fact the library doesn't need to know the resources of the object,
+                 * only the server does.
+                 */
+                ObjectArray[ObjNb]->readFunc     = ReadCb;
+                ObjectArray[ObjNb]->discoverFunc = DiscoverCb;
+                ObjectArray[ObjNb]->writeFunc    = WriteCb;
+                ObjectArray[ObjNb]->executeFunc  = ExecuteCb;
+                ObjectArray[ObjNb]->createFunc   = CreateCb;
+                ObjectArray[ObjNb]->deleteFunc   = DeleteCb;
 
-            /* Store the context */
-            ObjectArray[ObjNb]->userData = instanceRef;
-            ObjNb++;
+                /* Store the context */
+                ObjectArray[ObjNb]->userData = instanceRef;
+                ObjNb++;
+            }
         }
     }
 
@@ -1840,6 +1905,7 @@ uint16_t lwm2mcore_ObjectRegister
     RegisteredObjNb = 0;
 
     /* For the moment, servicePtr can be NULL */
+    (void)servicePtr;
     if (NULL == endpointPtr)
     {
         LOG("param error");
@@ -1849,16 +1915,14 @@ uint16_t lwm2mcore_ObjectRegister
     smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
     LOG_ARG("lwm2mcore_ObjectRegister RegisteredObjNb %d", RegisteredObjNb);
 
-    /* Read the LwM2MCore configuration file */
+    /* Read the bootstrap configuration file */
     if (false == omanager_GetBootstrapConfiguration())
     {
         /* If the file is not present:
          * Delete DM credentials to force a connection to the bootstrap server
          * Then the configuration file will be created at the end of the bootstrap procedure
          */
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
+        omanager_DeleteDmCredentials();
     }
 
     lwm2mcoreHandlersPtr = omanager_GetHandlers();
@@ -1969,6 +2033,7 @@ bool lwm2mcore_UpdateSwList
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
@@ -1982,10 +2047,11 @@ lwm2mcore_Sid_t lwm2mcore_GetLifetime
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to set the lifetime in the server object and save to disk.
+ * Function to set the lifetime in the server object and save to platform storage.
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
@@ -1994,5 +2060,5 @@ lwm2mcore_Sid_t lwm2mcore_SetLifetime
     uint32_t lifetime               ///< [IN] Lifetime in seconds
 )
 {
-    return omanager_SetLifetime(lifetime);
+    return omanager_SetLifetime(lifetime, true);
 }

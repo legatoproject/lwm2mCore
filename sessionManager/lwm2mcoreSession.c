@@ -423,6 +423,7 @@ void smanager_SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("BOOTSTRAP DONE");
+                    BootstrapSession = false;
                     omanager_StoreCredentials();
                 }
                 break;
@@ -478,10 +479,7 @@ void smanager_SendSessionEvent
 
                     /* Delete DM credentials in order to force a connection to the BS server */
                     LOG("DELETE DM CREDENTIALS");
-                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY);
-                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY);
-                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY);
-                    lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS);
+                    omanager_DeleteDmCredentials();
                 }
                 break;
 
@@ -579,7 +577,6 @@ void smanager_SendSessionEvent
                         status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
                         smanager_SendStatusEvent(status);
-                        BootstrapSession = false;
                     }
                 }
                 break;
@@ -849,6 +846,7 @@ void lwm2mcore_Free
     {
         /* Free objects */
         omanager_ObjectsFree();
+        omanager_FreeBootstrapInformation();
 
         if (NULL != dataPtr->lwm2mcoreCtxPtr)
         {
@@ -858,11 +856,6 @@ void lwm2mcore_Free
         if (NULL != dataPtr)
         {
             lwm2m_free(dataPtr);
-            LOG("free dataPtr");
-        }
-        else
-        {
-            LOG("dataPtr NOT free");
         }
     }
 }
@@ -949,7 +942,6 @@ bool lwm2mcore_Disconnect
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
-    bool result = false;
     smanager_ClientData_t* dataPtr;
 
     if (!instanceRef)
@@ -1170,6 +1162,26 @@ bool lwm2mcore_SendAsyncResponse
                                         responsePtr->payloadLength);
         }
     }
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to check if the client is connected to a bootstrap server
+ *
+ * @return
+ *      - true if the client is connected to a bootstrap server
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool smanager_IsBootstrapConnection
+(
+    void
+)
+{
+    if (BootstrapSession)
+        return true;
 
     return false;
 }

@@ -1732,6 +1732,7 @@ static void PkgDwlParse
     lwm2mcore_PackageDownloader_t* pkgDwlPtr    ///< Package downloader
 )
 {
+    (void)pkgDwlPtr;
     // Parse downloaded data and determine next state
     PkgDwlObj.result = DwlParser();
     if (DWL_OK != PkgDwlObj.result)

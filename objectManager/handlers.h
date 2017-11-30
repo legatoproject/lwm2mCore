@@ -10,6 +10,8 @@
 #ifndef __HANDLERS_H__
 #define __HANDLERS_H__
 
+#include "crypto.h"
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Define value for object instance of object 0 for bootstrap server
@@ -86,6 +88,104 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP_QUEUE_SMS "UQS"
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enum for security mode for LWM2M connection (object 0 (security); resource 2)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    SEC_PSK,                ///< PSK
+    SEC_RAW_PK,             ///< Raw PSK
+    SEC_CERTIFICATE,        ///< Certificate
+    SEC_NONE,               ///< No security
+    SEC_MODE_MAX            ///< Internal use only
+}
+SecurityMode_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for bootstrap information: object 0 (security)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    uint16_t        securityObjectInstanceId;               ///< Object instance Id of object 0
+                                                            ///< (security)
+    bool            isBootstrapServer;                      ///< Is bootstrap server?
+    SecurityMode_t  securityMode;                           ///< Security mode
+    uint16_t        serverId;                               ///< Short server ID
+    uint16_t        clientHoldOffTime;                      ///< Client hold off time
+    uint32_t        bootstrapAccountTimeout;                ///< Bootstrap server account timeout
+}
+ConfigSecurityToStore_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for bootstrap information: object 1 (server)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    uint16_t    serverObjectInstanceId;                     ///< Object instance Id of object 1
+                                                            ///< (server)
+    uint16_t    serverId;                                   ///< Short server ID
+    uint32_t    lifetime;                                   ///< lifetime in seconds
+    uint32_t    defaultPmin;                                ///< Default minimum period in seconds
+    uint32_t    defaultPmax;                                ///< Default maximum period in seconds
+    bool        isDisable;                                  ///< Is device disabled?
+    uint32_t    disableTimeout;                             ///< Disable timeout in seconds
+    bool        isNotifStored;                              ///< Notification storing
+    uint8_t     bindingMode[LWM2MCORE_BINDING_STR_MAX_LEN]; ///< Binding mode
+}
+ConfigServerToStore_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for the security object (object 0)
+ * Serveur URI and credentials (PSKID, PSK) are managed as credentials
+ * SMS parameters are not supported
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _ConfigSecurityObject_t
+{
+    ConfigSecurityToStore_t data;                                   ///< Security data
+    uint8_t         devicePKID[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];   ///< PSK identity
+    uint16_t        pskIdLen;                                       ///< PSK identity length
+    uint8_t         secretKey[DTLS_PSK_MAX_KEY_LEN];                ///< PSK secret
+    uint16_t        pskLen;                                         ///< PSK secret length
+    uint8_t         serverURI[LWM2MCORE_SERVER_URI_MAX_LEN];        ///< Server address
+    struct _ConfigSecurityObject_t* nextPtr;                        ///< Next entry in the list
+}
+ConfigSecurityObject_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for the server object (object 1)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _ConfigServerObject_t
+{
+    ConfigServerToStore_t           data;                   ///< Server data
+    struct _ConfigServerObject_t*   nextPtr;                ///< Next entry in the list
+}
+ConfigServerObject_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Structure for bootstrap configuration to be stored in platform storage
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    uint32_t                    version;                    ///< Configuration version
+    uint16_t                    securityObjectNumber;       ///< Security objects number
+    uint16_t                    serverObjectNumber;         ///< Server objects number
+    ConfigSecurityObject_t*     securityPtr;                ///< DM + BS server: security resources
+    ConfigServerObject_t*       serverPtr;                  ///< DM servers resources
+}
+ConfigBootstrapFile_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -822,13 +922,15 @@ bool omanager_SetBootstrapConfiguration
  * @brief Sets the lifetime in the server configuration and saves it to file system
  *
  * @return
- *      - @c true in case of success
- *      - @c false in case of failure
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t omanager_SetLifetime
 (
-    uint32_t lifetime                               ///< [IN] lifetime in seconds
+    uint32_t    lifetime,   ///< [IN] lifetime in seconds
+    bool        storage     ///< [IN] Indicates if the configuration needs to be stored
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -836,8 +938,9 @@ lwm2mcore_Sid_t omanager_SetLifetime
  * Retrieves the lifetime from the server configuration
  *
  * @return
- *      - @c true in case of success
- *      - @c false in case of failure
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t omanager_GetLifetime
@@ -847,15 +950,39 @@ lwm2mcore_Sid_t omanager_GetLifetime
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Function to know if the connection is secured or not
+ * Function to get the number of security and server objects in the bootstrap information
  *
  * @return
- *      - @c true in case of secured connection
- *      - @c false else
+ *  - true on success
+ *  - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool omanager_IsSecuredMode
+bool ConfigGetObjectsNumber
+(
+    uint16_t* securityObjectNumberPtr,  ///< [IN] Number of security objects in the bootstrap
+                                        ///< information
+    uint16_t* serverObjectNumberPtr     ///< [IN] Number of server objects in the bootstrap
+                                        ///< information
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to free the bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeBootstrapInformation
 (
     void
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Delete all device management credentials
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_DeleteDmCredentials
+(
+    void
+);
+
 #endif /* __HANDLERS_H__ */

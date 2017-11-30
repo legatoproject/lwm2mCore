@@ -107,7 +107,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
 )
 {
     size_t serialNumberLen;
-    clientConfig_t* config = clientConfigGet();
+    clientConfig_t* config = ClientConfigGet();
     if (!config)
     {
         return LWM2MCORE_ERR_GENERAL_ERROR;
@@ -237,7 +237,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
 )
 {
     size_t imeiLen;
-    clientConfig_t* config = clientConfigGet();
+    clientConfig_t* config = ClientConfigGet();
     if (!config)
     {
         return LWM2MCORE_ERR_GENERAL_ERROR;

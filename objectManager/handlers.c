@@ -19,10 +19,11 @@
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/location.h>
 #include "handlers.h"
+#include "sessionManager.h"
 #include "objects.h"
 #include "internals.h"
-#include "crypto.h"
 #include "utils.h"
+#include "liblwm2m.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -37,49 +38,56 @@
  * Default value for disable timeout
  */
 //--------------------------------------------------------------------------------------------------
-#define DEFAULT_DISABLE_TIMEOUT       86400
+#define DEFAULT_DISABLE_TIMEOUT     86400
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Default value for minimum period
  */
 //--------------------------------------------------------------------------------------------------
-#define DEFAULT_P_MIN                 30
+#define DEFAULT_P_MIN               30
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Default value for minimum period
  */
 //--------------------------------------------------------------------------------------------------
-#define DEFAULT_P_MAX                 60
+#define DEFAULT_P_MAX               60
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Default value for bootstrap short server Id
  */
 //--------------------------------------------------------------------------------------------------
-#define DEFAULT_BS_SERVER_ID          0
+#define DEFAULT_BS_SERVER_ID        0
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Default value for device management short server Id
  */
 //--------------------------------------------------------------------------------------------------
-#define DEFAULT_DM_SERVER_ID          1
+#define DEFAULT_DM_SERVER_ID        1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Bootstrap file version 1
+ */
+//--------------------------------------------------------------------------------------------------
+#define BS_CONFIG_VERSION_1         1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Bootstrap file version 2
+ */
+//--------------------------------------------------------------------------------------------------
+#define BS_CONFIG_VERSION_2         2
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Supported version for bootstrap file
  */
 //--------------------------------------------------------------------------------------------------
-#define BS_CONFIG_VERSION           1
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Define for the number of supported server
- */
-//--------------------------------------------------------------------------------------------------
-#define SERVER_NUMBER LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT
+#define BS_CONFIG_VERSION           BS_CONFIG_VERSION_2
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -94,21 +102,8 @@ typedef enum
     LWM2MCORE_VELOCITY_H_AND_UNCERTAINTY       = 2, ///< Horizontal Velocity with Uncertainty
     LWM2MCORE_VELOCITY_H_AND_V_AND_UNCERTAINTY = 3, ///< Horizontal with Vertical Velocity and
                                                     ///< Uncertainty
-}VelocityType_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Enum for security mode for LWM2M connection (object 0 (security); resource 2)
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    SEC_PSK,                ///< PSK
-    SEC_RAW_PK,             ///< Raw PSK
-    SEC_CERTIFICATE,        ///< Certificate
-    SEC_NONE,               ///< No security
-    SEC_MODE_MAX            ///< Internal use only
-}SecurityMode_t;
+}
+VelocityType_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -124,7 +119,8 @@ typedef struct
   uint16_t          serverId;                   ///< Short server ID
   uint16_t          clientHoldOffTime;          ///< Client hold off time
   uint32_t          bootstrapAccountTimeout;    ///< Bootstrap server account timeout
-}ConfigSecurityObject_t;
+}
+ConfigSecurityObjectV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -141,7 +137,8 @@ typedef struct
   uint32_t  disableTimeout;                              ///< Disable timeout in seconds
   bool      isNotifStored;                               ///< Notification storing
   uint8_t   bindingMode[LWM2MCORE_BINDING_STR_MAX_LEN];  ///< Binding mode
-}ConfigServerObject_t;
+}
+ConfigServerObjectV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -151,69 +148,76 @@ typedef struct
 typedef struct
 {
   uint32_t                  version;                    ///< Configuration version
-  ConfigSecurityObject_t    security[SERVER_NUMBER];    ///< DM + BS server: security resources
-  ConfigServerObject_t      server;                     ///< one DM server resources
-}ConfigBootstrapFile_t;
+  ConfigSecurityObjectV01_t security[2];                ///< DM + BS server: security resources
+  ConfigServerObjectV01_t   server;                     ///< one DM server resources
+}
+ConfigBootstrapFileV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for bootstrap configuration: default values
- */
-//--------------------------------------------------------------------------------------------------
-static ConfigBootstrapFile_t BootstrapDefaultConfig =
-{
-    BS_CONFIG_VERSION,                      // structure version
-    .security[0] = {                        // Bootstrap server
-        true,                               // isBootstrapServer
-        SEC_PSK,                            // securityMode
-        DEFAULT_BS_SERVER_ID,               // serverId
-        5                                   // clientHoldOffTime:
-                                            // 5 seconds to wait before fallback to client
-                                            // initiated bootstrap
-        },
-    .security[1] = {                        // DM server
-        false,                              // isBootstrapServer
-        SEC_PSK,                            // securityMode
-        DEFAULT_DM_SERVER_ID,               // serverId
-        0                                   // clientHoldOffTime: Not applicable to LWM2M server
-        },
-    .server = {                             // DM server
-        DEFAULT_DM_SERVER_ID,               // serverId
-        LWM2MCORE_LIFETIME_VALUE_DISABLED,  // lifetime
-        DEFAULT_P_MIN,                      // defaultPmin
-        DEFAULT_P_MAX,                      // defaultPmax
-        false,                              // isDisable
-        DEFAULT_DISABLE_TIMEOUT,            // disableTimeout
-        true,                               // isNotifStored
-        LWM2MCORE_BINDING_UDP_QUEUE         // bindingMode
-        }
-};
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Structure for bootstrap configuration
+ * Structure for bootstrap configuration: list of received bootstrap information
  * This structure needs to be stored in platform storage
  */
 //--------------------------------------------------------------------------------------------------
-static ConfigBootstrapFile_t BsConfig;
+static ConfigBootstrapFile_t BsConfigList;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Credential temporary RAM storage for BS and DM credentials: storage at the end of the bootstrap
+ * Function to get the bootstrap information for a specific object instance Id of object 0
+ * (security)
+ *
+ * @return
+ *  - pointer on object instance structure on success
+ *  - NULL if the object instance Id does not exist
  */
 //--------------------------------------------------------------------------------------------------
-static uint8_t  BsPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
-static uint16_t BsPskIdLen = 0;
-static uint8_t  BsPsk[DTLS_PSK_MAX_KEY_LEN];
-static uint16_t BsPskLen = 0;
-static uint8_t  BsAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
-static uint8_t  DmPskId[DTLS_PSK_MAX_CLIENT_IDENTITY_LEN];
-static uint16_t DmPskIdLen = 0;
-static uint8_t  DmPsk[DTLS_PSK_MAX_KEY_LEN];
-static uint16_t DmPskLen = 0;
-static uint8_t  DmAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
-static uint8_t  TempAddr[LWM2MCORE_SERVER_URI_MAX_LEN];
-static uint16_t TempAddrLen = 0;
+static ConfigSecurityObject_t* FindSecurityInstance
+(
+    ConfigBootstrapFile_t   bsConfigList,               ///< [IN] Bootstrap information list
+    uint16_t                securityObjectInstanceId    ///< [IN] Security object instance Id
+)
+{
+    ConfigSecurityObject_t* bsInfoPtr = bsConfigList.securityPtr;
+
+    while ((bsInfoPtr) && ((bsInfoPtr->data.securityObjectInstanceId) != securityObjectInstanceId))
+    {
+        bsInfoPtr = bsInfoPtr->nextPtr;
+    }
+    return bsInfoPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the bootstrap information for a specific object instance Id of object 1
+ * (server)
+ *
+ * @return
+ *  - pointer on ConfigServerObject_t
+ *  - NULL if the object instance Id does not exist
+ */
+//--------------------------------------------------------------------------------------------------
+static ConfigServerObject_t* FindServerInstance
+(
+    ConfigBootstrapFile_t   bsConfigList,               ///< [IN] Bootstrap information list
+    uint16_t                serverObjectInstanceId      ///< [IN] Server object instance Id
+)
+{
+    ConfigServerObject_t* bsInfoPtr = bsConfigList.serverPtr;
+
+    while (bsInfoPtr)
+    {
+        bsInfoPtr = bsInfoPtr->nextPtr;
+    }
+
+    bsInfoPtr = bsConfigList.serverPtr;
+
+
+    while ((bsInfoPtr) && ((bsInfoPtr->data.serverObjectInstanceId) != serverObjectInstanceId))
+    {
+        bsInfoPtr = bsInfoPtr->nextPtr;
+    }
+    return bsInfoPtr;
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -275,24 +279,24 @@ static lwm2mcore_Sid_t BuildVelocity
     {
         uint8_t vSpeedDir;
 
-        // Bits 5 to 8 of byte 1: Velocity type
+        /* Bits 5 to 8 of byte 1: Velocity type */
         gadVelocity[0] = (uint8_t)(((uint8_t)(LWM2MCORE_VELOCITY_H_AND_V)) << 4);
         gadVelocityLen++;
-        // Bit 2 of byte 1: Direction of vertical speed
-        // 0 = upward, 1 = downward
+        /* Bit 2 of byte 1: Direction of vertical speed */
+        /* 0 = upward, 1 = downward */
         vSpeedDir = (vSpeed < 0) ? 1 : 0;
         gadVelocity[0] |= (uint8_t)(vSpeedDir << 1);
-        // Last bit of byte 1 and byte 2: Bearing in degrees
+        /* Last bit of byte 1 and byte 2: Bearing in degrees */
         gadVelocity[0] |= (uint8_t)(((uint16_t)(direction & 0x0100)) >> 8);
         gadVelocity[1] |= (uint8_t)(direction & 0xFF);
         gadVelocityLen++;
-        // Bytes 3 and 4: Horizontal speed in km/h
+        /* Bytes 3 and 4: Horizontal speed in km/h */
         hSpeed = hSpeed * 3.6;
         gadVelocity[2] = (uint8_t)(((uint16_t)(hSpeed & 0xFF00)) >> 8);
         gadVelocityLen++;
         gadVelocity[3] = (uint8_t)(hSpeed & 0xFF);
         gadVelocityLen++;
-        // Byte 5: Vertical speed in km/h
+        /* Byte 5: Vertical speed in km/h */
         vSpeed = abs(vSpeed) * 3.6;
         gadVelocity[4] = (uint8_t)vSpeed;
         gadVelocityLen++;
@@ -301,14 +305,14 @@ static lwm2mcore_Sid_t BuildVelocity
     }
     else
     {
-        // Bits 5 to 8 of byte 1: Velocity type
+        /* Bits 5 to 8 of byte 1: Velocity type */
         gadVelocity[0] = (uint8_t)(((uint8_t)(LWM2MCORE_VELOCITY_H)) << 4);
         gadVelocityLen++;
-        // Last bit of byte 1 and byte 2: Bearing in degrees
+        /* Last bit of byte 1 and byte 2: Bearing in degrees */
         gadVelocity[0] |= (uint8_t)(((uint16_t)(direction & 0x0100)) >> 8);
         gadVelocity[1] |= (uint8_t)(direction & 0xFF);
         gadVelocityLen++;
-        // Bytes 3 and 4: Horizontal speed in km/h
+        /* Bytes 3 and 4: Horizontal speed in km/h */
         hSpeed = hSpeed * 3.6;
         gadVelocity[2] = (uint8_t)(((uint16_t)(hSpeed & 0xFF00)) >> 8);
         gadVelocityLen++;
@@ -335,6 +339,336 @@ static lwm2mcore_Sid_t BuildVelocity
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to add an object instance of object 0 (security) in bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+static void AddBootstrapInformationSecurity
+(
+    ConfigBootstrapFile_t* bsConfigListPtr,         ///< [IN] Bootstrap information list
+    ConfigSecurityObject_t* securityInformationPtr  ///< [IN] Security object
+)
+{
+    if (!bsConfigListPtr->securityPtr)
+    {
+        bsConfigListPtr->securityPtr = securityInformationPtr;
+        bsConfigListPtr->securityPtr->nextPtr = NULL;
+    }
+    else
+    {
+        ConfigSecurityObject_t* tempPtr = bsConfigListPtr->securityPtr;
+
+        while (tempPtr->nextPtr)
+        {
+            tempPtr = tempPtr->nextPtr;
+        }
+        tempPtr->nextPtr = securityInformationPtr;
+        securityInformationPtr->nextPtr = NULL;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to add an object instance of object 1 (server) in bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+static void AddBootstrapInformationServer
+(
+    ConfigBootstrapFile_t*  bsConfigListPtr,          ///< [IN] Bootstrap information list
+    ConfigServerObject_t*   serverInformationPtr      ///< [IN] Server object
+)
+{
+    if (!bsConfigListPtr->serverPtr)
+    {
+        bsConfigListPtr->serverPtr = serverInformationPtr;
+        bsConfigListPtr->serverPtr->nextPtr = NULL;
+    }
+    else
+    {
+        ConfigServerObject_t* tempPtr = bsConfigListPtr->serverPtr;
+
+        while (tempPtr->nextPtr)
+        {
+            tempPtr = tempPtr->nextPtr;
+        }
+        tempPtr->nextPtr = serverInformationPtr;
+        serverInformationPtr->nextPtr = NULL;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to save the bootstrap configuration in platform memory
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static bool StoreBootstrapConfiguration
+(
+    ConfigBootstrapFile_t BsConfig              ///< [IN] Bootstrap configuration to store
+)
+{
+    bool result = false;
+    uint32_t lenToStore;
+    uint32_t lenWritten = 0;
+    uint32_t len = sizeof(lenToStore);
+    uint16_t loop = 0;
+    uint8_t* dataPtr;
+    uint8_t* dataLenPtr;
+
+    ConfigSecurityObject_t* securityPtr = BsConfig.securityPtr;
+    ConfigServerObject_t* serverPtr = BsConfig.serverPtr;
+
+    lenToStore = sizeof(BsConfig.version) +
+                 sizeof(BsConfig.securityObjectNumber) +
+                 sizeof(BsConfig.serverObjectNumber) +
+                 sizeof(ConfigSecurityToStore_t) * BsConfig.securityObjectNumber +
+                 sizeof(ConfigServerToStore_t) * BsConfig.serverObjectNumber;
+
+    dataPtr = (uint8_t*)lwm2m_malloc(lenToStore);
+    if (!dataPtr)
+    {
+        return false;
+    }
+    memset(dataPtr, 0, lenToStore);
+
+    /* Copy the version */
+    memcpy(dataPtr + lenWritten, &(BsConfig.version), sizeof(BsConfig.version));
+    lenWritten += sizeof(BsConfig.version);
+
+    /* Copy the number of security objects and server objects */
+    memcpy(dataPtr + lenWritten,
+           &(BsConfig.securityObjectNumber),
+           sizeof(BsConfig.securityObjectNumber));
+    lenWritten += sizeof(BsConfig.securityObjectNumber);
+
+    memcpy(dataPtr + lenWritten,
+           &(BsConfig.serverObjectNumber),
+           sizeof(BsConfig.serverObjectNumber));
+    lenWritten += sizeof(BsConfig.serverObjectNumber);
+
+    /* Copy security objects data */
+    loop = BsConfig.securityObjectNumber;
+    while (loop && securityPtr)
+    {
+        memcpy(dataPtr + lenWritten, &(securityPtr->data), sizeof(ConfigSecurityToStore_t));
+        lenWritten += sizeof(ConfigSecurityToStore_t);
+        securityPtr = securityPtr->nextPtr;
+        loop--;
+    }
+
+    /* Copy server objects data */
+    loop = BsConfig.serverObjectNumber;
+    while (loop && serverPtr)
+    {
+        memcpy(dataPtr + lenWritten, &(serverPtr->data), sizeof(ConfigServerToStore_t));
+        lenWritten += sizeof(ConfigServerToStore_t);
+        serverPtr = serverPtr->nextPtr;
+        loop--;
+    }
+    lwm2mcore_DataDump("BS config data", dataPtr, lenToStore);
+    dataLenPtr = (uint8_t*)&lenToStore;
+
+    if ( (LWM2MCORE_ERR_COMPLETED_OK == lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM,
+                                                           dataLenPtr,
+                                                           len))
+      && (LWM2MCORE_ERR_COMPLETED_OK == lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
+                                                           dataPtr,
+                                                           lenToStore)))
+    {
+        result = true;
+    }
+
+    lwm2m_free(dataPtr);
+    LOG_ARG("StoreBootstrapConfiguration result %d", result);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to free the bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+static void FreeBootstrapInformation
+(
+    ConfigBootstrapFile_t* configPtr        ///< [INOUT] Configuration to free
+)
+{
+    ConfigSecurityObject_t* securityInformationPtr;
+    ConfigServerObject_t* serverInformationPtr;
+
+    /* Free bootstrap information list */
+    securityInformationPtr = configPtr->securityPtr;
+    while (NULL != securityInformationPtr)
+    {
+        ConfigSecurityObject_t* nextPtr = securityInformationPtr->nextPtr;
+        lwm2m_free(securityInformationPtr);
+        securityInformationPtr = nextPtr;
+    }
+    configPtr->securityPtr = NULL;
+
+    serverInformationPtr = configPtr->serverPtr;
+    while (NULL != serverInformationPtr)
+    {
+        ConfigServerObject_t* nextPtr = serverInformationPtr->nextPtr;
+        lwm2m_free(serverInformationPtr);
+        serverInformationPtr = nextPtr;
+    }
+    configPtr->serverPtr = NULL;
+
+    memset(configPtr, 0, sizeof(ConfigBootstrapFile_t));
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to set a default bootstrap information for bootstrap
+ */
+//--------------------------------------------------------------------------------------------------
+static void SetDefaultBootstrapConfiguration
+(
+    ConfigBootstrapFile_t* configPtr        ///< [INOUT] configuration
+)
+{
+    ConfigSecurityObject_t* securityInformationPtr;
+
+    LOG("Set default BS configuration");
+
+    FreeBootstrapInformation(configPtr);
+    memset(configPtr, 0, sizeof(ConfigSecurityObject_t));
+    configPtr->version = BS_CONFIG_VERSION;
+
+    /* Allocation security object for bootstrap server */
+    securityInformationPtr = (ConfigSecurityObject_t*)lwm2m_malloc(sizeof(ConfigSecurityObject_t));
+    LWM2MCORE_ASSERT(securityInformationPtr);
+    memset(securityInformationPtr, 0, sizeof(ConfigSecurityObject_t));
+    configPtr->securityObjectNumber = 1;
+    configPtr->serverObjectNumber = 0;
+
+    /* Object instance of object 0 for bootstrap is 0 */
+    securityInformationPtr->data.securityObjectInstanceId = 0;
+    securityInformationPtr->data.isBootstrapServer = true;
+    /* PSK support only */
+    securityInformationPtr->data.securityMode = SEC_PSK;
+
+    /* Default values */
+    securityInformationPtr->data.serverId = 1;
+    securityInformationPtr->data.clientHoldOffTime = 5;
+    securityInformationPtr->data.bootstrapAccountTimeout = 0;
+
+    /* Add the security object on the bootstrap configuration list */
+    AddBootstrapInformationSecurity(configPtr, securityInformationPtr);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to adapt bootstrap configuration file from previous version (v1) to current one (v2)
+ *
+ * @return
+ *      - true in case of success
+ *      - false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static bool BootstrapConfigurationAdaptation
+(
+    void
+)
+{
+    lwm2mcore_Sid_t sid;
+    ConfigBootstrapFileV01_t bsConfig;
+    size_t len = sizeof(ConfigBootstrapFileV01_t);
+
+    LOG("Adapt bootstrap configuration");
+
+    /* Check if the LwM2MCore configuration file is stored */
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, (uint8_t*)&bsConfig, &len);
+    if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+    {
+        LOG("No bootstrap configuration");
+        return false;
+    }
+
+    if (BS_CONFIG_VERSION_1 == bsConfig.version)
+    {
+        LOG("Stored file for BS is version 1");
+        /* In BS version 1, only one DM server was supported
+         * Check if at least one DM credentials set is stored
+         */
+        if (lwm2mcore_CheckCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS, LWM2MCORE_NO_SERVER_ID))
+        {
+            /* Adapt BS configuration file v1 to v2 */
+            ConfigSecurityObject_t* securityInformationPtr;
+            ConfigServerObject_t* serverInformationPtr;
+            LOG("DM credentials are present");
+
+            BsConfigList.version = BS_CONFIG_VERSION;
+            BsConfigList.securityObjectNumber = 2;
+            BsConfigList.serverObjectNumber = 1;
+
+            /* Allocation security object for bootstrap server */
+            securityInformationPtr = (ConfigSecurityObject_t*)
+                                     lwm2m_malloc(sizeof(ConfigSecurityObject_t));
+            LWM2MCORE_ASSERT(securityInformationPtr);
+            memset(securityInformationPtr, 0, sizeof(ConfigSecurityObject_t));
+
+            securityInformationPtr->data.securityObjectInstanceId = 0;
+            securityInformationPtr->data.bootstrapAccountTimeout = bsConfig.security[0].bootstrapAccountTimeout;
+            securityInformationPtr->data.clientHoldOffTime = bsConfig.security[0].clientHoldOffTime;
+            securityInformationPtr->data.isBootstrapServer = bsConfig.security[0].isBootstrapServer;
+            securityInformationPtr->data.securityMode = bsConfig.security[0].securityMode;
+            securityInformationPtr->data.serverId = bsConfig.security[0].serverId;
+
+            /* Add the security object on the bootstrap configuration list */
+            AddBootstrapInformationSecurity(&BsConfigList, securityInformationPtr);
+
+            /* Allocation security object for DM server */
+            securityInformationPtr = (ConfigSecurityObject_t*)
+                                     lwm2m_malloc(sizeof(ConfigSecurityObject_t));
+            LWM2MCORE_ASSERT(securityInformationPtr);
+            memset(securityInformationPtr, 0, sizeof(ConfigSecurityObject_t));
+
+            securityInformationPtr->data.securityObjectInstanceId = 1;
+            securityInformationPtr->data.bootstrapAccountTimeout = bsConfig.security[1].bootstrapAccountTimeout;
+            securityInformationPtr->data.clientHoldOffTime = bsConfig.security[1].clientHoldOffTime;
+            securityInformationPtr->data.isBootstrapServer = bsConfig.security[1].isBootstrapServer;
+            securityInformationPtr->data.securityMode = bsConfig.security[1].securityMode;
+            securityInformationPtr->data.serverId = bsConfig.security[1].serverId;
+
+            /* Add the security object on the bootstrap configuration list */
+            AddBootstrapInformationSecurity(&BsConfigList, securityInformationPtr);
+
+            /* Allocation server object for DM server */
+            serverInformationPtr = (ConfigServerObject_t*)
+                                   lwm2m_malloc(sizeof(ConfigServerObject_t));
+            LWM2MCORE_ASSERT(serverInformationPtr);
+            memset(serverInformationPtr, 0, sizeof(ConfigServerObject_t));
+
+            serverInformationPtr->data.serverObjectInstanceId = 0;
+            serverInformationPtr->data.serverId = bsConfig.server.serverId;
+            serverInformationPtr->data.lifetime = bsConfig.server.lifetime;
+            serverInformationPtr->data.defaultPmin = bsConfig.server.defaultPmin;
+            serverInformationPtr->data.defaultPmax = bsConfig.server.defaultPmax;
+            serverInformationPtr->data.isDisable = bsConfig.server.isDisable;
+            serverInformationPtr->data.disableTimeout = bsConfig.server.disableTimeout;
+            serverInformationPtr->data.isNotifStored = bsConfig.server.isNotifStored;
+            memcpy(serverInformationPtr->data.bindingMode,
+                   bsConfig.server.bindingMode,
+                   LWM2MCORE_BINDING_STR_MAX_LEN);
+
+            /* Add the security object on the bootstrap configuration list */
+            AddBootstrapInformationServer(&BsConfigList, serverInformationPtr);
+
+            return true;
+        }
+        /* Else consider that no connection was made to bootstrap */
+        LOG("DM credentials are NOT present");
+    }
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to read the bootstrap configuration from platform memory
  *
  * @return
@@ -344,27 +678,153 @@ static lwm2mcore_Sid_t BuildVelocity
 //--------------------------------------------------------------------------------------------------
 static bool GetBootstrapConfiguration
 (
-    ConfigBootstrapFile_t *configPtr        ///< [OUT] configuration
+    ConfigBootstrapFile_t*  configPtr,      ///< [OUT] Bootstrap configuration
+    bool                    storage         ///< [IN] Indicates if the configuration needs to be
+                                            ///<      stored
 )
 {
     lwm2mcore_Sid_t sid;
-    size_t len = sizeof(ConfigBootstrapFile_t);
-    /* Check if the LwM2MCore configuration file is stored */
-    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, (uint8_t*)configPtr, &len);
-    LOG_ARG("Read BS configuration: len %d result %d", len, sid);
+    uint32_t lenWritten = 0;
+    uint32_t loop;
+    uint32_t fileSize = 0;
+    uint32_t fileReadSize = 0;
+    size_t len = sizeof(fileSize);
+    uint8_t* dataPtr = (uint8_t*)configPtr;
+    ConfigSecurityObject_t*     securityPtr;
+    ConfigServerObject_t*       serverPtr;
+    uint8_t* rawData;
 
-    if ((LWM2MCORE_ERR_COMPLETED_OK == sid)
-     && (len == sizeof(ConfigBootstrapFile_t)))
+    /* Free the configuration */
+    FreeBootstrapInformation(configPtr);
+
+    /* Get the bootstrap information file size */
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM, (uint8_t*)&fileSize, &len);
+    LOG_ARG("Get BS configuration size: %d result %d, len %d", fileSize, sid, len);
+    if (LWM2MCORE_ERR_COMPLETED_OK != sid)
     {
-        /* Check if the file version is the supported one */
-        LOG_ARG("BS configuration version %d (only %d supported)",
-                configPtr->version, BS_CONFIG_VERSION);
-        if (BS_CONFIG_VERSION == configPtr->version)
+        if (false == BootstrapConfigurationAdaptation())
         {
-            return true;
+            /* Set a default configuration */
+            SetDefaultBootstrapConfiguration(configPtr);
+        }
+
+        /* Store the configuration */
+        if (storage)
+        {
+            StoreBootstrapConfiguration(*configPtr);
+        }
+        return false;
+    }
+
+    rawData = (uint8_t*)lwm2m_malloc(fileSize);
+    LWM2MCORE_ASSERT(rawData);
+    fileReadSize = fileSize;
+    /* Get the bootstrap information file */
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, rawData, (size_t*)&fileReadSize);
+    LOG_ARG("Read BS configuration: fileReadSize %d result %d", fileReadSize, sid);
+
+    if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+    {
+        if (false == BootstrapConfigurationAdaptation())
+        {
+            /* Set a default configuration */
+            SetDefaultBootstrapConfiguration(configPtr);
+        }
+        /* Store the configuration */
+        if (storage)
+        {
+            StoreBootstrapConfiguration(*configPtr);
+        }
+        return false;
+    }
+
+    if (fileReadSize != fileSize)
+    {
+        LOG("Not same BS configuration file size");
+        lwm2m_free(rawData);
+        lwm2mcore_DeleteParam(LWM2MCORE_BOOTSTRAP_PARAM);
+        lwm2mcore_DeleteParam(LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM);
+
+        /* Set a default configuration */
+        SetDefaultBootstrapConfiguration(configPtr);
+
+        /* Store the configuration */
+        if (storage)
+        {
+            StoreBootstrapConfiguration(*configPtr);
+        }
+        return false;
+    }
+
+    if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+    {
+        lwm2m_free(rawData);
+        /* Set a default configuration */
+        SetDefaultBootstrapConfiguration(configPtr);
+
+        /* Store the configuration */
+        if (storage)
+        {
+            StoreBootstrapConfiguration(*configPtr);
+        }
+
+        return false;
+    }
+
+    /* Copy the version */
+    memcpy(dataPtr + lenWritten, rawData + lenWritten, sizeof(configPtr->version));
+    lenWritten += sizeof(configPtr->version);
+
+    /* Copy the number of security objects and server objects */
+    memcpy(dataPtr + lenWritten, rawData + lenWritten, sizeof(configPtr->securityObjectNumber));
+    lenWritten += sizeof(configPtr->securityObjectNumber);
+    memcpy(dataPtr + lenWritten, rawData + lenWritten, sizeof(configPtr->serverObjectNumber));
+    lenWritten += sizeof(configPtr->serverObjectNumber);
+
+    /* Allocate security objects and copy related data */
+    for (loop = 0; loop < configPtr->securityObjectNumber; loop++)
+    {
+        securityPtr = (ConfigSecurityObject_t*)lwm2m_malloc(sizeof(ConfigSecurityObject_t));
+        if (securityPtr)
+        {
+            memset(securityPtr, 0, sizeof(ConfigSecurityObject_t));
+            memcpy(securityPtr, rawData + lenWritten, sizeof(ConfigSecurityToStore_t));
+            lenWritten += sizeof(ConfigSecurityToStore_t);
+
+            /* Check if the security object instance Id is already stored */
+            if (NULL == FindSecurityInstance(*configPtr, securityPtr->data.securityObjectInstanceId))
+            {
+                AddBootstrapInformationSecurity(configPtr, securityPtr);
+            }
         }
     }
-    // Delete file if necessary and copy the default config
+
+    /* Allocate server objects and copy related data */
+    for (loop = 0; loop < configPtr->serverObjectNumber; loop++)
+    {
+        serverPtr = (ConfigServerObject_t*)lwm2m_malloc(sizeof(ConfigServerObject_t));
+        if (serverPtr)
+        {
+            memset(serverPtr, 0, sizeof(ConfigServerObject_t));
+            memcpy(serverPtr, rawData + lenWritten, sizeof(ConfigServerToStore_t));
+            lenWritten += sizeof(ConfigServerToStore_t);
+
+            /* Check if the server object instance Id is already stored */
+            if (NULL == FindServerInstance(*configPtr, serverPtr->data.serverObjectInstanceId))
+            {
+                AddBootstrapInformationServer(configPtr, serverPtr);
+            }
+        }
+    }
+
+    lwm2m_free(rawData);
+
+    if (BS_CONFIG_VERSION == configPtr->version)
+    {
+        return true;
+    }
+
+    /* Delete file if necessary and copy the default config */
     LOG_ARG("Failed to read the BS configuration: read result %d, len %d", sid, len);
     if (len)
     {
@@ -377,36 +837,24 @@ static bool GetBootstrapConfiguration
         {
             LOG("Error to delete BS configuration parameter");
         }
-    }
-    /* Copy the default configuration */
-    memcpy(configPtr, &BootstrapDefaultConfig, sizeof(ConfigBootstrapFile_t));
-    return false;
-}
 
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to save the bootstrap configuration in platform memory
- *
- * @return
- *      - true in case of success
- *      - false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-static bool SetBootstrapConfiguration
-(
-    ConfigBootstrapFile_t *configPtr        ///< [OUT] configuration
-)
-{
-    bool result = false;
-    lwm2mcore_Sid_t sid = lwm2mcore_SetParam(LWM2MCORE_BOOTSTRAP_PARAM,
-                                             (uint8_t*)configPtr,
-                                             sizeof(ConfigBootstrapFile_t));
-    if (LWM2MCORE_ERR_COMPLETED_OK == sid)
-    {
-        result = true;
+        sid = lwm2mcore_DeleteParam(LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM);
+        if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+        {
+            LOG("Error to delete BS configuration size parameter");
+        }
     }
-    LOG_ARG("Set BS configuration %d", result);
-    return result;
+
+    /* Set a default configuration */
+    SetDefaultBootstrapConfiguration(configPtr);
+
+    /* Store the configuration */
+    if (storage)
+    {
+        StoreBootstrapConfiguration(*configPtr);
+    }
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -423,75 +871,96 @@ bool omanager_GetBootstrapConfiguration
     void
 )
 {
-   return GetBootstrapConfiguration(&BsConfig);
+    return GetBootstrapConfiguration(&BsConfigList, true);
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to save the bootstrap configuration in platform memory
- *
- * @return
- *      - true in case of success
- *      - false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool omanager_SetBootstrapConfiguration
-(
-    void
-)
-{
-    return SetBootstrapConfiguration(&BsConfig);
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Sets the lifetime in the server configuration and saves it to file system
+ * Sets the lifetime in the server configuration and saves it to platform memory
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t omanager_SetLifetime
 (
-    uint32_t lifetime   ///< [IN] lifetime in seconds
+    uint32_t    lifetime,   ///< [IN] lifetime in seconds
+    bool        storage     ///< [IN] Indicates if the configuration needs to be stored
 )
 {
-    bool result;
-    ConfigBootstrapFile_t config;
+    ConfigServerObject_t* serverInformationPtr = BsConfigList.serverPtr;
+    LOG_ARG("omanager_SetLifetime %d sec", lifetime);
 
     if (lwm2mcore_CheckLifetimeLimit(lifetime) != true)
     {
+        LOG("Lifetime not in good range");
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
-    if (BS_CONFIG_VERSION == BsConfig.version)
-    {
-        /* set lifetime */
-        BsConfig.server.lifetime = lifetime;
+    LOG_ARG("BsConfigList.version %d", BsConfigList.version);
 
-        /* save bs config to file system */
-        result = SetBootstrapConfiguration(&BsConfig);
+    if (!(BsConfigList.version) || (BS_CONFIG_VERSION != (BsConfigList.version)))
+    {
+        /* Load configuration */
+        GetBootstrapConfiguration(&BsConfigList, false);
+
+        serverInformationPtr = BsConfigList.serverPtr;
+        if (!serverInformationPtr)
+        {
+            /* No DM server configuration */
+            LOG("No DM server configuration");
+            return LWM2MCORE_ERR_INVALID_STATE;
+        }
+
+        /* Set lifetime for all servers */
+        while (serverInformationPtr)
+        {
+            serverInformationPtr->data.lifetime = lifetime;
+            serverInformationPtr = serverInformationPtr->nextPtr;
+        }
+
+        if (false == storage)
+        {
+            return LWM2MCORE_ERR_COMPLETED_OK;
+        }
+
+        /* Save bootstrap configuration */
+        if (StoreBootstrapConfiguration(BsConfigList))
+        {
+            return LWM2MCORE_ERR_COMPLETED_OK;
+        }
     }
     else
     {
-        /* load config */
-        GetBootstrapConfiguration(&config);
+        if (!serverInformationPtr)
+        {
+            /* No DM server configuration */
+            LOG("No DM server configuration");
+            return LWM2MCORE_ERR_INVALID_STATE;
+        }
 
-        /* set lifetime */
-        config.server.lifetime = lifetime;
+        /* Set lifetime for all servers */
+        while (serverInformationPtr)
+        {
+            serverInformationPtr->data.lifetime = lifetime;
+            serverInformationPtr = serverInformationPtr->nextPtr;
+        }
 
-        /* save config */
-        result = SetBootstrapConfiguration(&config);
+        if (false == storage)
+        {
+            return LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        /* Save bootstrap configuration */
+        if (StoreBootstrapConfiguration(BsConfigList))
+        {
+            return LWM2MCORE_ERR_COMPLETED_OK;
+        }
     }
 
-    if (true != result)
-    {
-        LOG("Failed to set config to le_fs");
-        return LWM2MCORE_ERR_GENERAL_ERROR;
-    }
-
-    return LWM2MCORE_ERR_COMPLETED_OK;
+    LOG("Failed to store lifetime");
+    return LWM2MCORE_ERR_GENERAL_ERROR;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -500,6 +969,7 @@ lwm2mcore_Sid_t omanager_SetLifetime
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
@@ -508,23 +978,36 @@ lwm2mcore_Sid_t omanager_GetLifetime
     uint32_t* lifetimePtr                 ///< [OUT] lifetime in seconds
 )
 {
-    ConfigBootstrapFile_t config;
-
-    if (BS_CONFIG_VERSION == BsConfig.version)
+    if (!(BsConfigList.version) || (BS_CONFIG_VERSION != (BsConfigList.version)))
     {
-        /* set lifetime to default (disabled) */
-        *lifetimePtr = BsConfig.server.lifetime;
+        memset(&BsConfigList, 0, sizeof(BsConfigList));
+        GetBootstrapConfiguration(&BsConfigList, true);
+        if (!BsConfigList.serverPtr)
+        {
+            /* No DM server configuration */
+            LOG("No DM server configuration");
+            return LWM2MCORE_ERR_INVALID_STATE;
+        }
+        *lifetimePtr = BsConfigList.serverPtr->data.lifetime;
     }
     else
     {
-        GetBootstrapConfiguration(&config);
-        *lifetimePtr = config.server.lifetime;
+        ConfigServerObject_t* serverInformationPtr = BsConfigList.serverPtr;
+        if (!serverInformationPtr)
+        {
+            /* No DM server configuration */
+            LOG("No DM server configuration");
+            return LWM2MCORE_ERR_INVALID_STATE;
+        }
+
+        /* Set lifetime to default (disabled) */
+        *lifetimePtr = serverInformationPtr->data.lifetime;
     }
+
 
     LOG_ARG("Lifetime is %d seconds", *lifetimePtr);
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -558,6 +1041,7 @@ int omanager_WriteSecurityObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    ConfigSecurityObject_t* securityInformationPtr;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
@@ -569,10 +1053,19 @@ int omanager_WriteSecurityObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (uriPtr->oiid >= SERVER_NUMBER)
+    securityInformationPtr = FindSecurityInstance(BsConfigList, uriPtr->oiid);
+    if (!securityInformationPtr)
     {
-        return LWM2MCORE_ERR_INCORRECT_RANGE;
+        /* Create new securityInformationPtr */
+        securityInformationPtr =
+                            (ConfigSecurityObject_t*)lwm2m_malloc(sizeof(ConfigSecurityObject_t));
+        LWM2MCORE_ASSERT(securityInformationPtr);
+        memset(securityInformationPtr, 0, sizeof(ConfigSecurityObject_t));
+        BsConfigList.securityObjectNumber++;
+
+        /* Set the security object instance Id */
+        securityInformationPtr->data.securityObjectInstanceId = uriPtr->oiid;
+        AddBootstrapInformationSecurity(&BsConfigList, securityInformationPtr);
     }
 
     switch (uriPtr->rid)
@@ -585,51 +1078,34 @@ int omanager_WriteSecurityObj
             }
             else
             {
-                /* Copy the server address in a temporary parameter
-                 * Wait for write on /0/x/1 to know if it concerns a bootstrap server address
-                 * or a device management address
-                 */
-                memcpy(TempAddr, bufferPtr, len);
-                TempAddrLen = len;
+                /* Copy the server address */
+                snprintf((char*)securityInformationPtr->serverURI,
+                         LWM2MCORE_SERVER_URI_MAX_LEN,
+                         "%s",
+                         bufferPtr);
                 sID = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
         /* Resource 1: Bootstrap server (true or false) */
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
-            BsConfig.security[uriPtr->oiid].isBootstrapServer =
-                (bool)omanager_BytesToInt((const char*)bufferPtr, len);
-
-            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
-            {
-                /* Bootstrap server */
-                LOG("WRITE BS server address");
-                memcpy(BsAddr, TempAddr, TempAddrLen);
-            }
-            else
-            {
-                /* Device Management server */
-                LOG("WRITE DM server address");
-                memcpy(DmAddr, TempAddr, TempAddrLen);
-            }
 #ifdef CREDENTIALS_DEBUG
             lwm2mcore_DataDump("server addr write", bufferPtr, len);
 #endif
-            memset(TempAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
-            TempAddrLen = 0;
+            securityInformationPtr->data.isBootstrapServer =
+                                            (bool)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 2: Security mode */
         case LWM2MCORE_SECURITY_MODE_RID:
-            BsConfig.security[uriPtr->oiid].securityMode =
-                (SecurityMode_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            securityInformationPtr->data.securityMode =
+                                (SecurityMode_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Public key or identity */
         case LWM2MCORE_SECURITY_PKID_RID:
-        {
             if (DTLS_PSK_MAX_CLIENT_IDENTITY_LEN < len)
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
@@ -639,30 +1115,17 @@ int omanager_WriteSecurityObj
 #ifdef CREDENTIALS_DEBUG
                 lwm2mcore_DataDump("PSK ID write", bufferPtr, len);
 #endif
-                if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
-                {
-                    /* Bootstrap server */
-                    memcpy(BsPskId, bufferPtr, len);
-                    BsPskIdLen = len;
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
-                else
-                {
-                    /* Device Management server */
-                    memcpy(DmPskId, bufferPtr, len);
-                    DmPskIdLen = len;
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
+                memset(securityInformationPtr->devicePKID, 0, DTLS_PSK_MAX_CLIENT_IDENTITY_LEN);
+                memcpy(securityInformationPtr->devicePKID, bufferPtr, len);
+                securityInformationPtr->pskIdLen = (uint16_t)len;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
             }
-        }
-        break;
+            break;
 
         /* Resource 4: Server public key */
         case LWM2MCORE_SECURITY_SERVER_KEY_RID:
-        {
             sID = LWM2MCORE_ERR_COMPLETED_OK;
-        }
-        break;
+            break;
 
         /* Resource 5: Secret key */
         case LWM2MCORE_SECURITY_SECRET_KEY_RID:
@@ -675,20 +1138,9 @@ int omanager_WriteSecurityObj
 #ifdef CREDENTIALS_DEBUG
                 lwm2mcore_DataDump("PSK secret write", bufferPtr, len);
 #endif
-                if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
-                {
-                    /* Bootstrap server */
-                    memcpy(BsPsk, bufferPtr, len);
-                    BsPskLen = len;
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
-                else
-                {
-                    /* Device Management server */
-                    memcpy(DmPsk, bufferPtr, len);
-                    DmPskLen = len;
-                    sID = LWM2MCORE_ERR_COMPLETED_OK;
-                }
+                memcpy(securityInformationPtr->secretKey, bufferPtr, len);
+                securityInformationPtr->pskLen = (uint16_t)len;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
             }
             break;
 
@@ -714,15 +1166,15 @@ int omanager_WriteSecurityObj
 
         /* Resource 10: Short server ID */
         case LWM2MCORE_SECURITY_SERVER_ID_RID:
-            BsConfig.security[uriPtr->oiid].serverId =
-                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
-            sID = LWM2MCORE_ERR_COMPLETED_OK;
+                securityInformationPtr->data.serverId =
+                                        (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 11: Client hold of time */
         case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
-            BsConfig.security[uriPtr->oiid].clientHoldOffTime =
-                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            securityInformationPtr->data.clientHoldOffTime =
+                                        (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -766,6 +1218,9 @@ int omanager_ReadSecurityObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    ConfigSecurityObject_t* securityInformationPtr;
+
+    (void)changedCb;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
@@ -777,8 +1232,8 @@ int omanager_ReadSecurityObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (uriPtr->oiid >= SERVER_NUMBER)
+    securityInformationPtr = FindSecurityInstance(BsConfigList, uriPtr->oiid);
+    if (!securityInformationPtr)
     {
         return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
@@ -787,17 +1242,19 @@ int omanager_ReadSecurityObj
     {
         /* Resource 0: LWM2M server URI */
         case LWM2MCORE_SECURITY_SERVER_URI_RID:
-            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
+            if (securityInformationPtr->data.isBootstrapServer)
             {
                 /* Bootstrap server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
@@ -806,8 +1263,8 @@ int omanager_ReadSecurityObj
         /* Resource 1: Bootstrap server (true or false) */
         case LWM2MCORE_SECURITY_BOOTSTRAP_SERVER_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                  &BsConfig.security[uriPtr->oiid].isBootstrapServer,
-                                  sizeof(BsConfig.security[uriPtr->oiid].isBootstrapServer),
+                                  &(securityInformationPtr->data.isBootstrapServer),
+                                  sizeof(securityInformationPtr->data.isBootstrapServer),
                                   false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
@@ -815,25 +1272,27 @@ int omanager_ReadSecurityObj
         /* Resource 2: Security mode */
         case LWM2MCORE_SECURITY_MODE_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                        &BsConfig.security[uriPtr->oiid].securityMode,
-                                        sizeof(BsConfig.security[uriPtr->oiid].securityMode),
+                                        &(securityInformationPtr->data.securityMode),
+                                        sizeof(securityInformationPtr->data.securityMode),
                                         false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Public key or identity */
         case LWM2MCORE_SECURITY_PKID_RID:
-            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
+            if (securityInformationPtr->data.isBootstrapServer)
             {
                 /* Bootstrap server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
@@ -849,17 +1308,19 @@ int omanager_ReadSecurityObj
 
         /* Resource 5: Secret key */
         case LWM2MCORE_SECURITY_SECRET_KEY_RID:
-            if (BsConfig.security[uriPtr->oiid].isBootstrapServer)
+            if (securityInformationPtr->data.isBootstrapServer)
             {
                 /* Bootstrap server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
             else
             {
                 /* Device Management server */
-                sID = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                sID = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                              securityInformationPtr->data.serverId,
                                               bufferPtr,
                                               lenPtr);
             }
@@ -891,18 +1352,18 @@ int omanager_ReadSecurityObj
         /* Resource 10: Short server ID */
         case LWM2MCORE_SECURITY_SERVER_ID_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.security[uriPtr->oiid].serverId,
-                                         sizeof(BsConfig.security[uriPtr->oiid].serverId),
-                                         false);
+                                                  &(securityInformationPtr->data.serverId),
+                                                  sizeof(securityInformationPtr->data.serverId),
+                                                  false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 11: Client hold of time */
         case LWM2MCORE_SECURITY_CLIENT_HOLD_OFF_TIME_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.security[uriPtr->oiid].clientHoldOffTime,
-                                         sizeof(BsConfig.security[uriPtr->oiid].clientHoldOffTime),
-                                        false);
+                                            &(securityInformationPtr->data.clientHoldOffTime),
+                                            sizeof(securityInformationPtr->data.clientHoldOffTime),
+                                            false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -935,73 +1396,93 @@ bool omanager_StoreCredentials
     bool result = false;
     int storageResult = LWM2MCORE_ERR_COMPLETED_OK;
 
-    LOG_ARG("BsPskIdLen %d BsPskLen %d strlen(BsAddr) %d", BsPskIdLen,
-                                                           BsPskLen, strlen((const char *)BsAddr));
-    LOG_ARG("DmPskIdLen %d DmPskLen %d strlen(DmAddr) %d", DmPskIdLen,
-                                                           DmPskLen, strlen((const char *)DmAddr));
-    if (BsPskIdLen && BsPskLen && (strlen((const char *)BsAddr)))
+    ConfigSecurityObject_t* securityInformationPtr = BsConfigList.securityPtr;
+
+    while (securityInformationPtr)
     {
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                (char*)BsPskId,
-                                                BsPskIdLen);
-        LOG_ARG("Store BsPskId result %d", storageResult);
+        if (securityInformationPtr->data.isBootstrapServer)
+        {
+            LOG_ARG("Bootstrap: PskIdLen %d PskLen %d Addr len %d",
+                    securityInformationPtr->pskIdLen,
+                    securityInformationPtr->pskLen,
+                    strlen((const char *)securityInformationPtr->serverURI));
 
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                (char*)BsPsk,
-                                                BsPskLen);
-        LOG_ARG("Store BsPsk result %d", storageResult);
+            if (   (securityInformationPtr->pskIdLen)
+                && (securityInformationPtr->pskLen)
+                && (strlen((const char *)securityInformationPtr->serverURI))
+                )
+            {
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                                        LWM2MCORE_BS_SERVER_ID,
+                                                        (char*)securityInformationPtr->devicePKID,
+                                                        securityInformationPtr->pskIdLen);
+                LOG_ARG("Store Bootstrap PskId result %d", storageResult);
 
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                (char*)BsAddr,
-                                                strlen((const char *)BsAddr));
-        LOG_ARG("Store BsAddr result %d", storageResult);
-    }
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                                        LWM2MCORE_BS_SERVER_ID,
+                                                        (char*)securityInformationPtr->secretKey,
+                                                        securityInformationPtr->pskLen);
+                LOG_ARG("Store Bootstrap Psk result %d", storageResult);
 
-    /* In case of non-secure connection, DmPskIdLen and DmPskLen can be 0 */
-    if (DmPskIdLen && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
-    {
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                                (char*)DmPskId,
-                                                DmPskIdLen);
-        LOG_ARG("Store DmPskId result %d", storageResult);
-    }
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                                        LWM2MCORE_BS_SERVER_ID,
+                                                        (char*)securityInformationPtr->serverURI,
+                                                        strlen((const char *)securityInformationPtr->serverURI));
+                LOG_ARG("Store Bootstrap Addr result %d", storageResult);
+            }
+        }
+        else
+        {
+            LOG_ARG("Device management: PskIdLen %d PskLen %d Addr len %d",
+                    securityInformationPtr->pskIdLen,
+                    securityInformationPtr->pskLen,
+                    strlen((const char *)securityInformationPtr->serverURI));
 
-    if (DmPskLen && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
-    {
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                                (char*)DmPsk,
-                                                DmPskLen);
-        LOG_ARG("Store DmPsk result %d", storageResult);
-    }
+            /* In case of non-secure connection, pskIdLen and pskLen can be 0 */
+            if ((securityInformationPtr->pskIdLen) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
+            {
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                                        securityInformationPtr->data.serverId,
+                                                        (char*)securityInformationPtr->devicePKID,
+                                                        securityInformationPtr->pskIdLen);
+                LOG_ARG("Store Device management (%d) PskId result %d",
+                        securityInformationPtr->data.serverId, storageResult);
+            }
 
-    if ((strlen((const char *)DmAddr)) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
-    {
-        storageResult = lwm2mcore_SetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                                (char*)DmAddr,
-                                                strlen((const char *)DmAddr));
-        LOG_ARG("Store DmAddr result %d", storageResult);
+            if ((securityInformationPtr->pskLen) && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
+            {
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                                        securityInformationPtr->data.serverId,
+                                                        (char*)securityInformationPtr->secretKey,
+                                                        securityInformationPtr->pskLen);
+                LOG_ARG("Store Device management (%d) Psk result %d",
+                        securityInformationPtr->data.serverId, storageResult);
+            }
+
+            if ((strlen((const char *)securityInformationPtr->serverURI))
+             && (LWM2MCORE_ERR_COMPLETED_OK == storageResult))
+            {
+                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                                        securityInformationPtr->data.serverId,
+                                                        (char*)securityInformationPtr->serverURI,
+                                                        strlen((const char *)
+                                                               securityInformationPtr->serverURI));
+                LOG_ARG("Store Device management (%d) Addr result %d",
+                        securityInformationPtr->data.serverId, storageResult);
+            }
+        }
+
+        securityInformationPtr = securityInformationPtr->nextPtr;
     }
 
     if (LWM2MCORE_ERR_COMPLETED_OK == storageResult)
     {
         result = true;
-
-        /* Reset local variables */
-        BsPskIdLen = 0;
-        BsPskLen = 0;
-        DmPskIdLen = 0;
-        DmPskLen = 0;
-
-        memset(BsPskId, 0, DTLS_PSK_MAX_CLIENT_IDENTITY_LEN);
-        memset(BsPsk, 0, DTLS_PSK_MAX_KEY_LEN);
-        memset(BsAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
-        memset(DmPskId, 0, DTLS_PSK_MAX_CLIENT_IDENTITY_LEN);
-        memset(DmPsk, 0, DTLS_PSK_MAX_KEY_LEN);
-        memset(DmAddr, 0, LWM2MCORE_SERVER_URI_MAX_LEN);
     }
     LOG_ARG("credentials storage: %d", result);
+
     /* Set the bootstrap configuration */
-    omanager_SetBootstrapConfiguration();
+    StoreBootstrapConfiguration(BsConfigList);
     return result;
 }
 
@@ -1030,33 +1511,21 @@ int omanager_SmsDummy
     size_t len                             ///< [IN] length of input buffer
 )
 {
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    (void)uriPtr;
+    (void)bufferPtr;
+    (void)len;
 
-    if ((NULL ==uriPtr) || (NULL == bufferPtr))
+    if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
-
-    /* Check that the server which tries to read/write is the bootstrap one
-     * The Device Management server can not access to this resource
-     */
-    //TODO
 
     if ((uriPtr->op & (LWM2MCORE_OP_READ | LWM2MCORE_OP_WRITE)) == 0)
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (uriPtr->oiid >= SERVER_NUMBER)
-    {
-        sID = LWM2MCORE_ERR_INCORRECT_RANGE;
-    }
-    else
-    {
-        sID = LWM2MCORE_ERR_COMPLETED_OK;
-    }
-    return sID;
+    return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1092,6 +1561,7 @@ int omanager_WriteServerObj
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
     uint32_t lifetime;
+    ConfigServerObject_t* serverInformationPtr;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr))
     {
@@ -1103,54 +1573,80 @@ int omanager_WriteServerObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    serverInformationPtr = FindServerInstance(BsConfigList, uriPtr->oiid);
+    if (!serverInformationPtr)
     {
-        return LWM2MCORE_ERR_INCORRECT_RANGE;
+        /* Create new serverInformationPtr */
+        serverInformationPtr = (ConfigServerObject_t*)lwm2m_malloc(sizeof(ConfigServerObject_t));
+        LWM2MCORE_ASSERT(serverInformationPtr);
+        memset(serverInformationPtr, 0, sizeof(ConfigServerObject_t));
+        BsConfigList.serverObjectNumber++;
+
+        serverInformationPtr->data.serverObjectInstanceId = uriPtr->oiid;
+        AddBootstrapInformationServer(&BsConfigList, serverInformationPtr);
     }
 
     switch (uriPtr->rid)
     {
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
-            BsConfig.server.serverId = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            serverInformationPtr->data.serverId =
+                                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
             lifetime = (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
-            sID = lwm2mcore_SetLifetime(lifetime);
+            LOG_ARG("set lifetime %d", lifetime);
+            if (!smanager_IsBootstrapConnection())
+            {
+                sID = omanager_SetLifetime(lifetime, false);
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    serverInformationPtr->data.lifetime = lifetime;
+                }
+            }
+            else
+            {
+                /* In case of bootstrap, the configuration will be stored at the bootstrap end */
+                serverInformationPtr->data.lifetime = lifetime;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
             break;
 
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
-            BsConfig.server.defaultPmin = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            serverInformationPtr->data.defaultPmin =
+                                (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
-            BsConfig.server.defaultPmax = (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            serverInformationPtr->data.defaultPmax =
+                                    (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 5: Disable timeout */
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
-            BsConfig.server.disableTimeout =
-                (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            serverInformationPtr->data.disableTimeout =
+                                    (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
-            BsConfig.server.isNotifStored = (bool)omanager_BytesToInt((const char*)bufferPtr, len);
+            serverInformationPtr->data.isNotifStored =
+                                    (bool)omanager_BytesToInt((const char*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 7: Binding */
         case LWM2MCORE_SERVER_BINDING_MODE_RID:
-            memcpy(BsConfig.server.bindingMode, (uint8_t*)bufferPtr, len);
+            memset(serverInformationPtr->data.bindingMode, 0, LWM2MCORE_BINDING_STR_MAX_LEN);
+            memcpy(serverInformationPtr->data.bindingMode, (uint8_t*)bufferPtr, len);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1159,8 +1655,13 @@ int omanager_WriteServerObj
             break;
     }
 
-    /* Write server object to disk */
-    omanager_SetBootstrapConfiguration();
+    /* Write server object in platform storage only in case of device management
+     * For bootstrap, the configuration is stored at the end of bootstap
+     */
+    if (false == smanager_IsBootstrapConnection())
+    {
+        StoreBootstrapConfiguration(BsConfigList);
+    }
 
     return sID;
 }
@@ -1193,6 +1694,9 @@ int omanager_ReadServerObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    ConfigServerObject_t* serverInformationPtr;
+
+    (void)changedCb;
 
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
@@ -1204,10 +1708,11 @@ int omanager_ReadServerObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    /* Check that the object instance Id is in the correct range */
-    if (LWM2MCORE_DM_SERVER_MAX_COUNT <= uriPtr->oiid)
+    serverInformationPtr = FindServerInstance(BsConfigList, uriPtr->oiid);
+    if (!serverInformationPtr)
     {
-        return LWM2MCORE_ERR_INCORRECT_RANGE;
+        LOG("serverInformationPtr NULL");
+        return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     switch (uriPtr->rid)
@@ -1215,8 +1720,8 @@ int omanager_ReadServerObj
         /* Resource 0: Server short ID */
         case LWM2MCORE_SERVER_SHORT_ID_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.serverId,
-                                         sizeof(BsConfig.server.serverId),
+                                         &(serverInformationPtr->data.serverId),
+                                         sizeof(serverInformationPtr->data.serverId),
                                          false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
@@ -1224,15 +1729,14 @@ int omanager_ReadServerObj
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
         {
-            BsConfig.server.lifetime = (BsConfig.server.lifetime == 0)
-                                       ? LWM2MCORE_LIFETIME_VALUE_DISABLED
-                                       : BsConfig.server.lifetime;
-
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.lifetime,
-                                         sizeof(BsConfig.server.lifetime),
+                                         &(serverInformationPtr->data.lifetime),
+                                         sizeof(serverInformationPtr->data.lifetime),
                                          false);
-            LOG_ARG("lifetime read len %d", *lenPtr);
+            serverInformationPtr->data.lifetime = (serverInformationPtr->data.lifetime == 0)
+                                       ? LWM2MCORE_LIFETIME_VALUE_DISABLED
+                                       : serverInformationPtr->data.lifetime;
+            LOG_ARG("lifetime write %d", serverInformationPtr->data.lifetime);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
         }
@@ -1240,8 +1744,8 @@ int omanager_ReadServerObj
         /* Resource 2: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MIN_PERIOD_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.defaultPmin,
-                                         sizeof(BsConfig.server.defaultPmin),
+                                         &(serverInformationPtr->data.defaultPmin),
+                                         sizeof(serverInformationPtr->data.defaultPmin),
                                          false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
@@ -1249,8 +1753,8 @@ int omanager_ReadServerObj
         /* Resource 3: Server default minimum period */
         case LWM2MCORE_SERVER_DEFAULT_MAX_PERIOD_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.defaultPmax,
-                                         sizeof(BsConfig.server.defaultPmax),
+                                         &(serverInformationPtr->data.defaultPmax),
+                                         sizeof(serverInformationPtr->data.defaultPmax),
                                          false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
@@ -1258,8 +1762,8 @@ int omanager_ReadServerObj
         /* Resource 5: Disable timeout */
         case LWM2MCORE_SERVER_DISABLE_TIMEOUT_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.disableTimeout,
-                                         sizeof(BsConfig.server.disableTimeout),
+                                         &(serverInformationPtr->data.disableTimeout),
+                                         sizeof(serverInformationPtr->data.disableTimeout),
                                          false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
@@ -1267,15 +1771,15 @@ int omanager_ReadServerObj
         /* Resource 6: Notification storing when disabled or offline */
         case LWM2MCORE_SERVER_STORE_NOTIF_WHEN_OFFLINE_RID:
             *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
-                                         &BsConfig.server.isNotifStored,
-                                         sizeof(BsConfig.server.isNotifStored),
+                                         &(serverInformationPtr->data.isNotifStored),
+                                         sizeof(serverInformationPtr->data.isNotifStored),
                                          false);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 7: Binding */
         case LWM2MCORE_SERVER_BINDING_MODE_RID:
-            *lenPtr = snprintf(bufferPtr, *lenPtr, "%s", BsConfig.server.bindingMode);
+            *lenPtr = snprintf(bufferPtr, *lenPtr, "%s", serverInformationPtr->data.bindingMode);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
@@ -1319,6 +1823,8 @@ int omanager_WriteDeviceObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)len;
 
     if ((!uriPtr) || (!bufferPtr))
     {
@@ -1387,6 +1893,8 @@ int omanager_ReadDeviceObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -1581,6 +2089,8 @@ int omanager_ReadConnectivityMonitoringObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -1989,6 +2499,9 @@ int omanager_ReadFwUpdateObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2089,7 +2602,7 @@ int omanager_ExecFwUpdate
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
-    // bufferPtr can be null as per spec (OMA-TS-LightweightM2M-V1_0-20151214-C.pdf, appendix E.6)
+    /* BufferPtr can be null as per spec (OMA-TS-LightweightM2M-V1_0-20151214-C.pdf, E.6) */
     if (NULL == uriPtr)
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2157,6 +2670,8 @@ int omanager_ReadLocationObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -2268,6 +2783,8 @@ int omanager_ReadConnectivityStatisticsObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -2463,12 +2980,10 @@ int omanager_WriteSwUpdateObj
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
 
-    LOG_ARG("omanager_WriteSwUpdateObj rid %d", uriPtr->rid);
     switch (uriPtr->rid)
     {
         /* Resource 3: Package URI */
         case LWM2MCORE_SW_UPDATE_PACKAGE_URI_RID:
-            LOG_ARG("omanager_WriteSwUpdateObj len %d", len);
             if (LWM2MCORE_BUFFER_MAX_LEN < len)
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
@@ -2530,6 +3045,9 @@ int omanager_ReadSwUpdateObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
     if ((NULL == uriPtr) || (NULL == bufferPtr) || (NULL == lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2738,6 +3256,8 @@ int omanager_ReadSubscriptionObj
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
+    (void)changedCb;
+
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -2926,6 +3446,8 @@ int omanager_ReadExtConnectivityStatsObj
 )
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
 
     if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
     {
@@ -3172,26 +3694,114 @@ int omanager_OnUnlistedObject
                                             ///< operation
 )
 {
+    (void)uriPtr;
+    (void)bufferPtr;
+    (void)lenPtr;
+    (void)changedCb;
+
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
 }
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to know if the connection is secured or not
+ * Function to get the number of security and server objects in the bootstrap information
  *
  * @return
- *      - true in case of secured connection
- *      - false else
+ *  - true on success
+ *  - false on failure
  */
 //--------------------------------------------------------------------------------------------------
-bool omanager_IsSecuredMode
+bool ConfigGetObjectsNumber
+(
+    uint16_t* securityObjectNumberPtr,  ///< [IN] Number of security objects in the bootstrap
+                                        ///< information
+    uint16_t* serverObjectNumberPtr     ///< [IN] Number of server objects in the bootstrap
+                                        ///< information
+)
+{
+    if ((!securityObjectNumberPtr) || (!serverObjectNumberPtr))
+    {
+        return false;
+    }
+
+    *securityObjectNumberPtr = BsConfigList.securityObjectNumber;
+    *serverObjectNumberPtr = BsConfigList.serverObjectNumber;
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to free the bootstrap information list
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeBootstrapInformation
 (
     void
 )
 {
-    if (SEC_NONE > BsConfig.security[LWM2MCORE_DM_SERVER_OIID].securityMode)
+    FreeBootstrapInformation(&BsConfigList);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Delete all device management credentials
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_DeleteDmCredentials
+(
+    void
+)
+{
+    ConfigSecurityObject_t* securityInformationPtr = BsConfigList.securityPtr;
+    ConfigSecurityObject_t* newSecurityInformationPtr = NULL;
+    ConfigServerObject_t* serverInformationPtr;
+
+    while (securityInformationPtr)
     {
-        return true;
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                   securityInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,
+                                   securityInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                   securityInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                   securityInformationPtr->data.serverId);
+
+        /* Delete bootstrap information related to DM servers */
+        if (false == (securityInformationPtr->data.isBootstrapServer))
+        {
+            ConfigSecurityObject_t* nextPtr = securityInformationPtr->nextPtr;
+            omanager_FreeObjectByInstanceId(LWM2MCORE_SECURITY_OID,
+                                            securityInformationPtr->data.securityObjectInstanceId);
+            lwm2m_free(securityInformationPtr);
+            securityInformationPtr = nextPtr;
+            BsConfigList.securityObjectNumber--;
+        }
+        else
+        {
+            newSecurityInformationPtr = securityInformationPtr;
+            securityInformationPtr = securityInformationPtr->nextPtr;
+            newSecurityInformationPtr->nextPtr = NULL;
+        }
     }
-    return false;
+    BsConfigList.securityPtr = newSecurityInformationPtr;
+
+    /* Delete all information about servers */
+    serverInformationPtr = BsConfigList.serverPtr;
+    while (NULL != serverInformationPtr)
+    {
+        ConfigServerObject_t* nextPtr = serverInformationPtr->nextPtr;
+        lwm2m_free(serverInformationPtr);
+        serverInformationPtr = nextPtr;
+        BsConfigList.serverObjectNumber--;
+    }
+    BsConfigList.serverObjectNumber = 0;
+    BsConfigList.serverPtr = NULL;
+
+    /* Unregister all object instances of object 1 in Wakaama */
+    omanager_FreeObjectById(LWM2MCORE_SERVER_OID);
+
+    /* Store the new configuration */
+    StoreBootstrapConfiguration(BsConfigList);
 }

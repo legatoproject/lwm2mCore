@@ -51,7 +51,7 @@ bool lwm2mcore_CheckLifetimeLimit
         if ((lifetime < LIFETIME_VALUE_MIN)
             || (lifetime > LIFETIME_VALUE_MAX))
         {
-            printf("Lifetime not within limit");
+            printf("Lifetime not within limit\n");
             return false;
         }
     }

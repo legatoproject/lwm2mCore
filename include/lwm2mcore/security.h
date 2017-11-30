@@ -17,35 +17,51 @@
  * Define for server address maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_SERVERADDR_LEN 256
+#define LWM2MCORE_SERVERADDR_LEN            256
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for PSK ID maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_PSKID_LEN 32
+#define LWM2MCORE_PSKID_LEN                 32
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for PSK secret maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_PSK_LEN 16
+#define LWM2MCORE_PSK_LEN                   16
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Define value for public key maximum length
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_PUBLICKEY_LEN   1024
+#define LWM2MCORE_PUBLICKEY_LEN             1024
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Maximal length of the security error string
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_ERROR_STR_MAX_LEN   128
+#define LWM2MCORE_ERROR_STR_MAX_LEN         128
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This define value is used in lwm2mcore_GetCredential, lwm2mcore_SetCredential,
+ * lwm2mcore_CheckCredential APIs to indicate that the credential is linked to the bootstrap server.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_BS_SERVER_ID              0
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * This define value is used in lwm2mcore_GetCredential, lwm2mcore_SetCredential,
+ * lwm2mcore_CheckCredential APIs to indicate that the credential is not linked to server.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_NO_SERVER_ID              0
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -55,8 +71,8 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Retrieve a credential
- * This API treatment needs to have a procedural treatment
+ * Retrieve a credential.
+ * This API treatment needs to have a procedural treatment.
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
@@ -70,10 +86,11 @@
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCredential
 (
-    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be retrieved
-    char *bufferPtr,                        ///< [INOUT] data buffer
-    size_t *lenPtr                          ///< [INOUT] length of input buffer and length of the
-                                            ///< returned data
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
+    uint16_t                serverId,   ///< [IN] server Id
+    char*                   bufferPtr,  ///< [INOUT] data buffer
+    size_t*                 lenPtr      ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -85,17 +102,15 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetCredential
 (
-    lwm2mcore_Credentials_t credId,         ///< [IN] credential Id of credential to be set
-    char *bufferPtr,                        ///< [INOUT] data buffer
-    size_t len                              ///< [IN] length of input buffer
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be set
+    uint16_t                serverId,   ///< [IN] server Id
+    char*                   bufferPtr,  ///< [INOUT] data buffer
+    size_t                  len         ///< [IN] length of input buffer
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -119,34 +134,33 @@ lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to check if one credential is provisioned
- *
- * @note This API is called by LwM2MCore
+ * Function to check if one credential is present in platform storage
  *
  * @return
- *      - true if  a Device Management server was provided
+ *      - true if the credential is present
  *      - false else
+ *
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mCore_CheckCredential
+bool lwm2mcore_CheckCredential
 (
-    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
+    lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
+    uint16_t                serverId    ///< [IN] server Id
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to delete one credential from platform memory
- *
- * @note This API is called by LwM2MCore
+ * This function erases one credential from platform storage
  *
  * @return
- *      - true if  a Device Management server was provided
+ *      - true if the credential is deleted
  *      - false else
  */
 //--------------------------------------------------------------------------------------------------
-bool lwm2mCore_DeleteCredential
+bool lwm2mcore_DeleteCredential
 (
-    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
+    lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
+    uint16_t                serverId    ///< [IN] server Id
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -282,34 +296,4 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
     char*  certPtr,    ///< [IN] Certificate
     int    len         ///< [IN] Certificate len
 );
-
-//--------------------------------------------------------------------------------------------------
-/**
- * This function erases one credential from platform storage
- *
- * @return
- *      - true if the credential is deleted
- *      - false else
- */
-//--------------------------------------------------------------------------------------------------
-bool lwm2mcore_DeleteCredential
-(
-    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to check if one credential is present in platform storage
- *
- * @return
- *      - true if the credential is present
- *      - false else
- *
- */
-//--------------------------------------------------------------------------------------------------
-bool lwm2mcore_CheckCredential
-(
-    lwm2mcore_Credentials_t credId      ///< [IN] Credential identifier
-);
-
 #endif /* __LWM2MCORE_SECURITY_H__ */

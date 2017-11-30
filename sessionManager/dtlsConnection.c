@@ -74,7 +74,7 @@ static char* SecurityGetUri
         (LWM2M_TYPE_STRING == dataPtr->type) &&
         (0 < dataPtr->value.asBuffer.length))
     {
-        if(bufferSize > dataPtr->value.asBuffer.length)
+        if((size_t)bufferSize > dataPtr->value.asBuffer.length)
         {
             memset(uriBufferPtr, 0, (dataPtr->value.asBuffer.length + 1 ));
             strncpy(uriBufferPtr,
@@ -319,6 +319,9 @@ static int GetPskInfo
 {
     dtls_Connection_t* cnxPtr;
 
+    (void)idPtr;
+    (void)idLen;
+
     LOG_ARG("GetPskInfo type %d", type);
     // find connection
     cnxPtr = dtls_FindConnection((dtls_Connection_t*) ctxPtr->app,
@@ -333,26 +336,28 @@ static int GetPskInfo
     {
         case DTLS_PSK_IDENTITY:
         {
-            int idLen = 0;
-            char* idPtr;
-            idPtr = SecurityGetPublicId(cnxPtr->securityObjPtr, cnxPtr->securityInstId, &idLen);
+            int length = 0;
+            char* identityPtr;
+            identityPtr = SecurityGetPublicId(cnxPtr->securityObjPtr,
+                                              cnxPtr->securityInstId,
+                                              &length);
 #ifdef CREDENTIALS_DEBUG
-            LOG_ARG("DTLS_PSK_IDENTITY resultLength %d idLen %d", resultLength, idLen);
+            LOG_ARG("DTLS_PSK_IDENTITY resultLength %d length %d", resultLength, length);
 #endif
-            if (resultLength < idLen)
+            if (resultLength < (size_t)length)
             {
-                if (idPtr)
+                if (identityPtr)
                 {
-                   lwm2m_free(idPtr);
+                   lwm2m_free(identityPtr);
                 }
 
                 LOG("cannot set psk_identity -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
-            memcpy(resultPtr, idPtr, idLen);
-            lwm2m_free(idPtr);
-            return idLen;
+            memcpy(resultPtr, identityPtr, length);
+            lwm2m_free(identityPtr);
+            return length;
         }
         case DTLS_PSK_KEY:
         {
@@ -362,7 +367,7 @@ static int GetPskInfo
 #ifdef CREDENTIALS_DEBUG
             LOG_ARG("DTLS_PSK_KEY resultLength %d keyLen %d", resultLength, keyLen);
 #endif
-            if (resultLength < keyLen)
+            if (resultLength < (size_t)keyLen)
             {
                 if (keyPtr)
                 {
@@ -471,6 +476,10 @@ static int dtlsEventCb
                                     ///< greater indicate internal DTLS session changes.
 )
 {
+    (void)level;
+    (void)sessionPtr;
+    (void)ctxPtr;
+
     switch (code)
     {
         case DTLS_EVENT_CONNECT:
@@ -516,6 +525,8 @@ static dtls_handler_t cb = {
   ReadFromPeer,                 //.read
   dtlsEventCb,                  //.event
   GetPskInfo,                   //.get_psk_info
+  NULL,                         //.get_ecdsa_key
+  NULL                          //.verify_ecdsa_key
 };
 
 
@@ -661,6 +672,7 @@ dtls_Connection_t* dtls_FindConnection
 )
 {
     dtls_Connection_t* connPtr = connListPtr;
+    (void)addrLen;
     while (NULL != connPtr)
     {
        if (SockaddrCmp((struct sockaddr*) (&connPtr->addr), (struct sockaddr*) addrPtr))
@@ -741,7 +753,7 @@ dtls_Connection_t* dtls_CreateConnection
     char* uriPtr;
     char* hostPtr;
     char* portPtr;
-    char* defaultPortPtr;
+    const char* defaultPortPtr;
 
     LOG("Entering");
 
@@ -1011,12 +1023,13 @@ uint8_t lwm2m_buffer_send
     void* sessionHPtr,      ///< [IN] Session handle identifying the peer (opaque to the core)
     uint8_t* bufferPtr,     ///< [IN] Data to be sent
     size_t length,          ///< [IN] Data length
-    void* userdataPtr       ///< [IN] Parameter to lwm2m_init()
+    void* userDataPtr       ///< [IN] Parameter to lwm2m_init()
 )
 {
     dtls_Connection_t* connPtr = (dtls_Connection_t*) sessionHPtr;
 
-    LOG("lwm2m_buffer_send");
+    (void)userDataPtr;
+
     if (NULL == connPtr)
     {
         LOG_ARG("#> failed sending %lu bytes, missing connection", length);
@@ -1048,5 +1061,6 @@ bool lwm2m_session_is_equal
     void * userDataPtr
 )
 {
+    (void)userDataPtr;
     return (session1Ptr == session2Ptr);
 }

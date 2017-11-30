@@ -99,6 +99,20 @@ void smanager_SendSessionEvent
     smanager_EventType_t eventId,     ///< [IN] Event Id
     smanager_EventStatus_t status     ///< [IN] Event status
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to check if the client is connected to a bootstrap server
+ *
+ * @return
+ *      - true if the client is connected to a bootstrap server
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool smanager_IsBootstrapConnection
+(
+    void
+);
 /**
   * @}
   */

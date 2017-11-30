@@ -38,17 +38,20 @@ lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
     // Check if we have all information necessary to connect to DM server
     // i.e URL, public key and secret key
     bufferLen = sizeof(buffer);
-    rcPskId = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+    rcPskId = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                      LWM2MCORE_BS_SERVER_ID,
                                       buffer,
                                       &bufferLen);
 
     bufferLen = sizeof(buffer);
-    rcPsk = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+    rcPsk = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                    LWM2MCORE_BS_SERVER_ID,
                                     buffer,
                                     &bufferLen);
 
     bufferLen = sizeof(buffer);
-    rcAddr = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+    rcAddr = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                     LWM2MCORE_BS_SERVER_ID,
                                      buffer,
                                      &bufferLen);
 
@@ -62,17 +65,20 @@ lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
     // Check if we have all information necessary to connect to BS server
     // i.e URL, public key and secret key
     bufferLen = sizeof(buffer);
-    rcPskId = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+    rcPskId = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                      LWM2MCORE_BS_SERVER_ID,
                                       buffer,
                                       &bufferLen);
 
     bufferLen = sizeof(buffer);
-    rcPsk = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+    rcPsk = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                    LWM2MCORE_BS_SERVER_ID,
                                     buffer,
                                     &bufferLen);
 
     bufferLen = sizeof(buffer);
-    rcAddr = lwm2mcore_GetCredential((uint8_t)LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+    rcAddr = lwm2mcore_GetCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                     LWM2MCORE_BS_SERVER_ID,
                                      buffer,
                                      &bufferLen);
 

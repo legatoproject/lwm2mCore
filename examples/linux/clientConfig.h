@@ -104,21 +104,21 @@
  * Client configuration file: Server URL parameter name
  */
 //--------------------------------------------------------------------------------------------------
-#define CLIENT_CONFIG_SERVER_URL                    "SERVER URI"
+#define CLIENT_CONFIG_SERVER_URL                    "SERVER_URI"
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Client configuration file: PSK identity parameter name
  */
 //--------------------------------------------------------------------------------------------------
-#define CLIENT_CONFIG_SERVER_PSKID                  "DEVICE PKID"
+#define CLIENT_CONFIG_SERVER_PSKID                  "DEVICE_PKID"
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Client configuration file: PSK secret parameter name
  */
 //--------------------------------------------------------------------------------------------------
-#define CLIENT_CONFIG_SERVER_PSK                    "SECRET KEY"
+#define CLIENT_CONFIG_SERVER_PSK                    "SECRET_KEY"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -127,8 +127,9 @@
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    char IMEI[LWM2MCORE_ENDPOINT_LEN];  ///< Client Endpoint
-    char SN[LWM2MCORE_NAME_LEN];        ///< Client serial number
+    char        IMEI[LWM2MCORE_ENDPOINT_LEN];   ///< Client Endpoint
+    char        SN[LWM2MCORE_NAME_LEN];         ///< Client serial number
+    int         dmServerNumber;                 ///< Device Management server number
 }
 clientGeneralConfig_t;
 
@@ -137,13 +138,19 @@ clientGeneralConfig_t;
  * Structure for server configuration
  */
 //--------------------------------------------------------------------------------------------------
-typedef struct
+typedef struct _clientSecurityConfig_t
 {
-    char        serverURI[LWM2MCORE_SERVERADDR_LEN];    ///< Server URI
-    char        devicePKID[LWM2MCORE_PSKID_LEN+1];      ///< PSK identity
-    int         pkidLen;                                ///< PSK identity length
-    uint8_t     secretKey[2*LWM2MCORE_PSK_LEN+1];       ///< PSK secret
-    int         secretKeyLen;                           ///< PSK secret length
+
+    char                            serverURI[LWM2MCORE_SERVERADDR_LEN];    ///< Server URI
+    char                            devicePKID[LWM2MCORE_PSKID_LEN+1];      ///< PSK identity
+    uint8_t                         secretKey[2*LWM2MCORE_PSK_LEN+1];       ///< PSK secret
+    int                             pkidLen;                                ///< PSK identity length
+    int                             secretKeyLen;                           ///< PSK secret length
+    struct _clientSecurityConfig_t* nextPtr;                                ///< Next entry in the
+                                                                            ///< list
+    bool                            isBootstrapServer;                      ///< Is bootstrap
+                                                                            ///< server ?
+    int                             serverId;                               ///< Server Id
 }
 clientSecurityConfig_t;
 
@@ -154,9 +161,8 @@ clientSecurityConfig_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    clientGeneralConfig_t general;                                      ///< General configuration
-    clientSecurityConfig_t security[LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT +\
-                                    LWM2MCORE_DM_SERVER_MAX_COUNT];     ///< Server configuration
+    clientGeneralConfig_t   general;        ///< General configuration
+    clientSecurityConfig_t* securityPtr;    ///< Server configuration
 }
 clientConfig_t;
 
@@ -200,10 +206,47 @@ int clientConfigWriteOneLine
  *  - NULL on failure
  */
 //--------------------------------------------------------------------------------------------------
-clientConfig_t* clientConfigGet
+clientConfig_t* ClientConfigGet
 (
     void
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get security information for the bootstrap server
+ *
+ * @return
+ *  - Pointer on security object instance on success
+ *  - NULL on failure
+ */
+//--------------------------------------------------------------------------------------------------
+clientSecurityConfig_t* GetBootstrapInformation
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get security configuration for a specific server Id
+ *
+ * @return
+ *  - Pointer on security object instance on success
+ *  - NULL on failure
+ */
+//--------------------------------------------------------------------------------------------------
+clientSecurityConfig_t* GetDmServerConfigById
+(
+    uint16_t            serverId            ///< Server Id
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Free the client configuration
+ */
+//--------------------------------------------------------------------------------------------------
+void ClientConfigFree
+(
+    void
+);
 #endif /* _CLIENTCONFIG_H_ */
 

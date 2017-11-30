@@ -334,7 +334,7 @@ size_t lwm2mcore_GetTokenLength
  * Function to get content type from request
  */
 //--------------------------------------------------------------------------------------------------
-const unsigned int lwm2mcore_GetContentType
+unsigned int lwm2mcore_GetContentType
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 )

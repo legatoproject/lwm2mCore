@@ -212,7 +212,7 @@ size_t lwm2mcore_GetTokenLength
  *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
-const unsigned int lwm2mcore_GetContentType
+unsigned int lwm2mcore_GetContentType
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );

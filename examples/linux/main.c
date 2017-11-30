@@ -576,6 +576,7 @@ int main
                 }
                 else
                 {
+                    ClientConfigFree();
                     printf("\r\n");
                 }
             }

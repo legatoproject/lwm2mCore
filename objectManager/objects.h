@@ -200,6 +200,19 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Enumeration for LwM2M object 2 (ACL) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_ACL_OBJECT_ID_RID = 0,            ///< Object ID of access control
+    LWM2MCORE_ACL_OBJECT_INSTANCE_ID_RID,       ///< Object instance ID of access control
+    LWM2MCORE_ACL_ACCESS_CONTROL_ID,            ///< Access control resource
+    LWM2MCORE_ACL_OWNER_RID,                    ///< Owner of this object instance
+}lwm2mcore_aclResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
 * @brief Enumeration for LwM2M object 3 (device) resources
  */
 //--------------------------------------------------------------------------------------------------
@@ -472,6 +485,28 @@ DLIST_HEAD(_lwm2mcore_objectsList, _lwm2mcore_internalObject);
 void omanager_ObjectsFree
 (
     void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeObjectById
+(
+    uint16_t    objectId        ///< [IN] Object Id to remove
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id and
+ * object instance Id
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_FreeObjectByInstanceId
+(
+    uint16_t    objectId,           ///< [IN] Object Id to remove
+    uint16_t    objectInstanceId    ///< [IN] Object instance Id to remove
 );
 
 //--------------------------------------------------------------------------------------------------

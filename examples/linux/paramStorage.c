@@ -48,8 +48,8 @@
 lwm2mcore_Sid_t lwm2mcore_SetParam
 (
     lwm2mcore_Param_t paramId,      ///< [IN] Parameter Id
-    uint8_t* bufferPtr,             ///< [IN] data buffer
-    size_t len                      ///< [IN] length of input buffer
+    uint8_t* bufferPtr,             ///< [IN] Data buffer
+    size_t len                      ///< [IN] Length of input buffer
 )
 {
     FILE* fPtr = NULL;
@@ -102,12 +102,12 @@ lwm2mcore_Sid_t lwm2mcore_SetParam
 lwm2mcore_Sid_t lwm2mcore_GetParam
 (
     lwm2mcore_Param_t paramId,      ///< [IN] Parameter Id
-    uint8_t* bufferPtr,             ///< [INOUT] data buffer
-    size_t* lenPtr                  ///< [INOUT] length of input buffer
+    uint8_t* bufferPtr,             ///< [INOUT] Data buffer
+    size_t* lenPtr                  ///< [INOUT] Length of input buffer
 )
 {
     FILE* fPtr = NULL;
-    int bsize = CONFIG_FILE_MAX_LENGTH;
+    int bsize = *lenPtr;
     int rsize = 0;
     char fname0[CONFIG_FILENAME_MAX_LENGTH];
     char fname1[CONFIG_FILENAME_MAX_LENGTH];

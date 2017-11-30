@@ -856,77 +856,77 @@ static lwm2mcore_Resource_t SslCertificateResources[] =
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_Object_t ObjArray[] =
 {
-    /* object 0, LWM2M security */
+    /* Object 0: LWM2M security */
     {
         LWM2MCORE_SECURITY_OID,                                                 //.id
-        LWM2MCORE_DM_SERVER_MAX_COUNT + LWM2MCORE_BOOTSRAP_SERVER_MAX_COUNT,    //.maxObjInstCnt
+        LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(SecurityResources),                                           //.resCnt
         SecurityResources                                                       //.resources
     },
-    /* object 1, LWM2M DM server */
+    /* Object 1: LWM2M DM server */
     {
         LWM2MCORE_SERVER_OID,                                                   //.id
-        LWM2MCORE_DM_SERVER_MAX_COUNT,                                          //.maxObjInstCnt
+        LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(ServerResources),                                             //.resCnt
         ServerResources                                                         //.resources
     },
-    /* object 3, device */
+    /* Object 3: device */
     {
         LWM2MCORE_DEVICE_OID,                                                   //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(DeviceResources),                                             //.resCnt
         DeviceResources                                                         //.resources
     },
-    /* object 4, connectivity monitoring */
+    /* Object 4: connectivity monitoring */
     {
         LWM2MCORE_CONN_MONITOR_OID,                                             //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(ConnectivityMonitoringResources),                             //.resCnt
         ConnectivityMonitoringResources                                         //.resources
     },
-    /* object 5, firmware update */
+    /* Object 5: firmware update */
     {
         LWM2MCORE_FIRMWARE_UPDATE_OID,                                          //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(FirmwareUpdateResources),                                     //.resCnt
         FirmwareUpdateResources                                                 //.resources
     },
-    /* object 6, location */
+    /* Object 6: location */
     {
         LWM2MCORE_LOCATION_OID,                                                 //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(LocationResources),                                           //.resCnt
         LocationResources                                                       //.resources
     },
-    /* object 7, connectivity statistics */
+    /* Object 7: connectivity statistics */
     {
         LWM2MCORE_CONN_STATS_OID,                                               //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(ConnectivityStatisticsResources),                             //.resCnt
         ConnectivityStatisticsResources                                         //.resources
     },
-    /* object 9, software update */
+    /* Object 9: software update */
     {
         LWM2MCORE_SOFTWARE_UPDATE_OID,                                          //.id
         LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(SoftwareUpdateResources),                                     //.resCnt
         SoftwareUpdateResources                                                 //.resources
     },
-    /* object 10241, subscription */
+    /* Object 10241: subscription */
     {
         LWM2MCORE_SUBSCRIPTION_OID,                                             //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(SubscriptionResources),                                       //.resCnt
         SubscriptionResources                                                   //.resources
     },
-    /* object 10242, extended connectivity statistics */
+    /* Object 10242: extended connectivity statistics */
     {
         LWM2MCORE_EXT_CONN_STATS_OID,                                           //.id
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(ExtConnectivityStatsResources),                               //.resCnt
         ExtConnectivityStatsResources                                           //.resources
     },
-    /* object 10243, SSL certificate */
+    /* Object 10243: SSL certificate */
     {
         LWM2MCORE_SSL_CERTIFS_OID,                                              //.id
         1,                                                                      //.maxObjInstCnt

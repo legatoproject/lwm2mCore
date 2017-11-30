@@ -192,8 +192,7 @@
  * @note To be fully compliant with LwM2M 1.0 specification, the @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
  *
  * @subsection subs_restriction Restrictions
- * @warning Only one device management server is supported for the moment.
- * @warning Object 2 and multi-server will be supported later.
+ * @warning Multiple DM servers are supported but object 2 (ACL) is not supported for the moment.
  * @warning tinyDTLS does not support DTLS resume. When a registration update message is sent to the
  * sever, a DTLS rehandshake is made.
  *
