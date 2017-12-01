@@ -1685,8 +1685,8 @@ static bool UpdateSwListWakaama
     aData = strtok_r(tempPath, REG_PATH_END, &cSavePtr);
     while (NULL != aData)
     {
-        memset(aOnePath, 0, ONE_PATH_MAX_LEN);
-        if (strlen(aData) <= strlen(aOnePath))
+        memset(aOnePath, 0, sizeof(aOnePath));
+        if (strlen(aData) < sizeof(aOnePath))
         {
             strncpy(aOnePath, aData, strlen(aData));
         }
@@ -1706,8 +1706,8 @@ static bool UpdateSwListWakaama
             aData = strtok_r(NULL, REG_PATH_SEPARATOR, &cSaveOnePathPtr);
             if (NULL != aData)
             {
-                memset(prefix, 0, LWM2MCORE_NAME_LEN + 1);
-                if (strlen(aData) <= strlen(prefix))
+                memset(prefix, 0, sizeof(prefix));
+                if (strlen(aData) < sizeof(prefix))
                 {
                     strncpy(prefix, aData, strlen(aData));
                 }
