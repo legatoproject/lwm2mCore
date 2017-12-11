@@ -2,11 +2,12 @@
 /**
  * @file tests.c
  *
- * Unitary test entry point
+ * Unitary test for Lwm2mCore.
  *
  * Copyright (C) Sierra Wireless Inc.
  */
 //-------------------------------------------------------------------------------------------------
+
 
 #include <stdio.h>
 #include <stdint.h>
@@ -14,17 +15,60 @@
 #include "liblwm2m.h"
 #include <lwm2mcore/lwm2mcore.h>
 #include <objectManager/objects.h>
+#include <sessionManager/sessionManager.h>
+#include <lwm2mcore/coapHandlers.h>
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Macro definition for assert.
+ */
+//--------------------------------------------------------------------------------------------------
 #define TEST_FATAL(formatString, ...) \
         { printf(formatString, ##__VA_ARGS__); exit(EXIT_FAILURE); }
-
 
 #define TEST_ASSERT(condition) \
         if (!(condition)) { TEST_FATAL("Assert Failed: '%s'\n", #condition) }
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Event handler for LwM2MCore events
+ * Maximum size of payload.
+ */
+//--------------------------------------------------------------------------------------------------
+#define MAX_LEN_PAYLOAD  100
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Static value for LWM2MCore context storage.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Ref_t Lwm2mcoreRef = NULL;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * LWM2MCore client endpoint
+ */
+//--------------------------------------------------------------------------------------------------
+static char Endpoint[LWM2MCORE_ENDPOINT_LEN] = { 0 };
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Lwm2mcore response from CoAP
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_CoapResponse_t Lwm2mServerResponse;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Lwm2mcore request to CoAP
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_CoapRequest_t* RequestPtr;
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Event handler for LwM2MCore events
  */
 //--------------------------------------------------------------------------------------------------
 static int EventHandler
@@ -37,24 +81,56 @@ static int EventHandler
     switch (status.event)
     {
         case LWM2MCORE_EVENT_SESSION_STARTED:
+            printf("The OTA update client succeeded in authenticating with the server and has "\
+                   "started the session\n");
             break;
 
         case LWM2MCORE_EVENT_SESSION_FAILED:
+            printf("The session with the server failed\n");
             break;
 
         case LWM2MCORE_EVENT_SESSION_FINISHED:
+            printf("The session with the server finished successfully\n");
             break;
 
         case LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START:
+            if (LWM2MCORE_SESSION_BOOTSTRAP == status.u.session.type)
+            {
+                printf("Connected to the Bootstrap server \n");
+            }
+            else
+            {
+                printf("Connected to the Device Management server \n");
+            }
             break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS:
+            printf("A descriptor was downloaded with the package size\n");
+            break;
+
         case LWM2MCORE_EVENT_DOWNLOAD_PROGRESS:
+            printf("Download progress %d\%%\n", status.u.pkgStatus.progress);
+            break;
+
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED:
+            printf("The OTA update package downloaded successfully\n");
+            break;
+
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED:
+            printf("The OTA update package downloaded successfully, but could not be stored "\
+                   "in flash\n");
+            break;
+
         case LWM2MCORE_EVENT_UPDATE_STARTED:
+            printf("An update package is being applied\n");
+            break;
+
         case LWM2MCORE_EVENT_UPDATE_FINISHED:
+            printf("The update succeeded\n");
+            break;
+
         case LWM2MCORE_EVENT_UPDATE_FAILED:
+            printf("The update failed\n");
             break;
 
         default:
@@ -66,7 +142,7 @@ static int EventHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Test function for lwm2mcore_Init API
+ * Test function for lwm2mcore_Init API
  */
 //--------------------------------------------------------------------------------------------------
 static void test_lwm2mcore_Init
@@ -74,20 +150,18 @@ static void test_lwm2mcore_Init
     void
 )
 {
-    lwm2mcore_Ref_t lwm2mcoreRef = NULL;
-
     TEST_ASSERT(lwm2mcore_Init(NULL) == NULL);
 
-    lwm2mcoreRef = lwm2mcore_Init(EventHandler);
-    TEST_ASSERT(lwm2mcoreRef != NULL);
+    Lwm2mcoreRef = lwm2mcore_Init(EventHandler);
+    TEST_ASSERT(Lwm2mcoreRef != NULL);
 
-    lwm2mcore_Free(lwm2mcoreRef);
-    lwm2mcoreRef = NULL;
+    strncpy(Endpoint, "SIERRAWIRELESS", sizeof(Endpoint));
+    TEST_ASSERT(lwm2mcore_ObjectRegister(Lwm2mcoreRef, Endpoint, NULL, NULL) != 0);
 }
 
 //-------------------------------------------------------------------------------------------------
 /**
- *  Test function for lwm2mcore_Connect API
+ * Test function for lwm2mcore_Connect API
  */
 //--------------------------------------------------------------------------------------------------
 static void test_lwm2mcore_Connect
@@ -96,11 +170,13 @@ static void test_lwm2mcore_Connect
 )
 {
     TEST_ASSERT(lwm2mcore_Connect(NULL) == false);
+    printf("Lwm2mcoreRef is %p\n", Lwm2mcoreRef);
+    TEST_ASSERT(lwm2mcore_Connect(Lwm2mcoreRef) == true);
 }
 
 //-------------------------------------------------------------------------------------------------
 /**
- *  Test function for lwm2mcore_Disconnect API
+ * Test function for lwm2mcore_Disconnect API
  */
 //--------------------------------------------------------------------------------------------------
 static void test_lwm2mcore_Disconnect
@@ -109,11 +185,26 @@ static void test_lwm2mcore_Disconnect
 )
 {
     TEST_ASSERT(lwm2mcore_Disconnect(NULL) == false);
+    printf("Lwm2mcoreRef is %p\n", Lwm2mcoreRef);
+    TEST_ASSERT(lwm2mcore_Disconnect(Lwm2mcoreRef) == true);
 }
 
 //-------------------------------------------------------------------------------------------------
 /**
- *  Test function for lwm2mcore_Update API
+ * Test function for lwm2mcore_Free API
+ */
+//--------------------------------------------------------------------------------------------------
+static void test_lwm2mcore_Free
+(
+    void
+)
+{
+    lwm2mcore_Free(Lwm2mcoreRef);
+}
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for lwm2mcore_Update API
  */
 //--------------------------------------------------------------------------------------------------
 static void test_lwm2mcore_Update
@@ -122,41 +213,30 @@ static void test_lwm2mcore_Update
 )
 {
     TEST_ASSERT(lwm2mcore_Update(NULL) == false);
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)Lwm2mcoreRef;
+    dataPtr->lwm2mHPtr->state = STATE_REGISTER_REQUIRED;
+    TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == false);
+
+    lwm2m_server_t* targetP;
+    targetP = (lwm2m_server_t*)lwm2m_malloc(sizeof(lwm2m_server_t));
+    if (NULL == targetP)
+    {
+        printf("targetP is NULL!\n");
+        TEST_ASSERT(false);
+    }
+
+    memset(targetP, 0, sizeof(lwm2m_server_t));
+    targetP->secObjInstID = 123;
+    targetP->shortID = 1;
+    dataPtr->lwm2mHPtr->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(dataPtr->lwm2mHPtr->serverList,
+                                                                     targetP);
+
+    TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == true);
 }
 
 //-------------------------------------------------------------------------------------------------
 /**
- *  Test function for lwm2mcore_ConnectionGetType API
- */
-//--------------------------------------------------------------------------------------------------
-static void test_lwm2mcore_ConnectionGetType
-(
-    void
-)
-{
-    bool result = false;
-    bool isDeviceManagement = false;
-
-    result = lwm2mcore_ConnectionGetType(NULL, &isDeviceManagement);
-    TEST_ASSERT(result == false);
-}
-
-//-------------------------------------------------------------------------------------------------
-/**
- *  Test function for lwm2mcore_Free API
- */
-//--------------------------------------------------------------------------------------------------
-static void test_lwm2mcore_Free
-(
-    void
-)
-{
-    lwm2mcore_Free(NULL);
-}
-
-//-------------------------------------------------------------------------------------------------
-/**
- *  Test function for lwm2mcore_Push API
+ * Test function for lwm2mcore_Push API
  */
 //--------------------------------------------------------------------------------------------------
 static void test_lwm2mcore_Push
@@ -164,13 +244,113 @@ static void test_lwm2mcore_Push
     void
 )
 {
-    TEST_ASSERT(lwm2mcore_Push(NULL, NULL, 0, 0, NULL) == LWM2MCORE_PUSH_FAILED);
+    uint8_t payload[MAX_LEN_PAYLOAD] = "1234567890";
+    uint16_t midPtr = 0;
+    TEST_ASSERT(lwm2mcore_Push(Lwm2mcoreRef, payload, strlen((const char*)payload),
+                               LWM2MCORE_PUSH_CONTENT_CBOR, &midPtr) == LWM2MCORE_PUSH_INITIATED);
 }
 
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for lwm2m_connect_server API
+ */
+//--------------------------------------------------------------------------------------------------
+void test_lwm2m_connect_server
+(
+    void
+)
+{
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)Lwm2mcoreRef;
+    lwm2m_list_t* instancePtr;
+    instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
+    if (NULL == instancePtr)
+    {
+        printf("instancePtr is NULL!\n");
+        TEST_ASSERT(false);
+    }
+
+    instancePtr->id = 1;
+    dataPtr->securityObjPtr->instanceList = LWM2M_LIST_ADD(dataPtr->securityObjPtr->instanceList,
+                                                           instancePtr);
+
+    TEST_ASSERT(lwm2m_connect_server(1, dataPtr->lwm2mHPtr->userData) != NULL);
+}
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for smanager_SendSessionEvent API
+ */
+//--------------------------------------------------------------------------------------------------
+void test_smanager_SendSessionEvent
+(
+    void
+)
+{
+    smanager_SendSessionEvent(EVENT_TYPE_BOOTSTRAP, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_BOOTSTRAP, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_BOOTSTRAP, EVENT_STATUS_DONE_FAIL);
+    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_DONE_FAIL);
+    smanager_SendSessionEvent(EVENT_TYPE_REG_UPDATE, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_REG_UPDATE, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_REG_UPDATE, EVENT_STATUS_DONE_FAIL);
+    smanager_SendSessionEvent(EVENT_TYPE_DEREG, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_DEREG, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_DEREG, EVENT_STATUS_DONE_FAIL);
+    smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);
+    smanager_SendSessionEvent(EVENT_TYPE_RESUMING, EVENT_STATUS_STARTED);
+    smanager_SendSessionEvent(EVENT_TYPE_RESUMING, EVENT_STATUS_DONE_SUCCESS);
+    smanager_SendSessionEvent(EVENT_TYPE_RESUMING, EVENT_STATUS_DONE_FAIL);
+}
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for lwm2mcore_SendAsyncResponse API
+ */
+//--------------------------------------------------------------------------------------------------
+void test_lwm2mcore_SendAsyncResponse
+(
+    void
+)
+{
+    RequestPtr = (lwm2mcore_CoapRequest_t*)lwm2m_malloc(sizeof(lwm2mcore_CoapRequest_t));
+    if (NULL == RequestPtr)
+    {
+        printf("RequestPtr is NULL!\n");
+        TEST_ASSERT(false);
+    }
+
+    RequestPtr->uriLength = strlen("www.sierrawireless.com");
+    RequestPtr->uri = (char*)lwm2m_malloc(RequestPtr->uriLength + 1);
+    strncpy(RequestPtr->uri, "www.sierrawireless.com", RequestPtr->uriLength + 1);
+
+    RequestPtr->method = 1;
+
+    RequestPtr->bufferLength = strlen("123456789");
+    RequestPtr->buffer = (uint8_t*)lwm2m_malloc(RequestPtr->bufferLength + 1);
+    strncpy((char*)RequestPtr->buffer, "123456789", RequestPtr->bufferLength + 1);
+
+    RequestPtr->messageId = 100;
+    RequestPtr->tokenLength = 3;
+    memcpy(RequestPtr->token, "hi", 3);
+    RequestPtr->contentType = 1;
+
+    Lwm2mServerResponse.code = COAP_RESOURCE_CHANGED;
+
+    Lwm2mServerResponse.payloadLength = strlen("123456789");
+    Lwm2mServerResponse.payload = (uint8_t*)lwm2m_malloc(Lwm2mServerResponse.payloadLength + 1);
+    strncpy((char*)Lwm2mServerResponse.payload, "123456789", Lwm2mServerResponse.payloadLength + 1);
+
+    TEST_ASSERT(lwm2mcore_SendAsyncResponse(Lwm2mcoreRef, RequestPtr, &Lwm2mServerResponse)
+                != false);
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Unitary test entry point
+ *  Unitary test entry point.
  */
 //--------------------------------------------------------------------------------------------------
 int main
@@ -186,22 +366,28 @@ int main
     printf("======== test of lwm2mcore_Connect() ========\n");
     test_lwm2mcore_Connect();
 
-    printf("======== test of lwm2mcore_Disconnect() ========\n");
-    test_lwm2mcore_Disconnect();
-
     printf("======== test of lwm2mcore_Update() ========\n");
     test_lwm2mcore_Update();
-
-    printf("======== test of lwm2mcore_ConnectionGetType() ========\n");
-    test_lwm2mcore_ConnectionGetType();
-
-    printf("======== test of lwm2mcore_Free() ========\n");
-    test_lwm2mcore_Free();
 
     printf("======== test of lwm2mcore_Push() ========\n");
     test_lwm2mcore_Push();
 
-    printf("======== UnitTest of Lwm2mcore API ends with SUCCESS ========\n");
+    printf("======== test of lwm2m_connect_server() ========\n");
+    test_lwm2m_connect_server();
+
+    printf("======== test of lwm2mcore_SendAsyncResponse() ========\n");
+    test_lwm2mcore_SendAsyncResponse();
+
+    printf("======== test of lwm2mcore_Disconnect() ========\n");
+    test_lwm2mcore_Disconnect();
+
+    printf("======== test of smanager_SendSessionEvent() ========\n");
+    test_smanager_SendSessionEvent();
+
+    printf("======== test of lwm2mcore_Free() ========\n");
+    test_lwm2mcore_Free();
+
+    printf("======== UnitTest of lwm2mcore ends with SUCCESS ========\n");
 
     exit(EXIT_SUCCESS);
 }

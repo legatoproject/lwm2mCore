@@ -8,18 +8,30 @@
  */
 //-------------------------------------------------------------------------------------------------
 
+
 #include <string.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <lwm2mcore/lwm2mcore.h>
+#include <sessionManager/sessionManager.h>
 #include "liblwm2m.h"
+#include <stdarg.h>
+
+
+//-------------------------------------------------------------------------------------------------
+/**
+ * maximum length of the buffer
+ */
+//-------------------------------------------------------------------------------------------------
+#define MAX_BUFFER_LEN 100
+
 
 char* coap_get_multi_option_as_string
 (
-    char* path
+    multi_option_t* option
 )
 {
-    (void)path;
+    (void)option;
     return NULL;
 }
 
@@ -87,8 +99,29 @@ lwm2m_data_t* lwm2m_data_new
     int size
 )
 {
-    (void)size;
-    return NULL;
+    lwm2m_data_t* dataP;
+    int length;
+    char buffer[MAX_BUFFER_LEN] = "coaps://sierra:2467";
+
+    if (size <= 0)
+    {
+        return NULL;
+    }
+
+    dataP = (lwm2m_data_t*)lwm2m_malloc(size * sizeof(lwm2m_data_t));
+
+    if (dataP == NULL)
+    {
+        return NULL;
+    }
+
+    memset(dataP, 0, size * sizeof(lwm2m_data_t));
+    dataP->type = LWM2M_TYPE_STRING;
+    length = strlen(buffer);
+    dataP->value.asBuffer.buffer = (uint8_t*)lwm2m_malloc(length + 1);
+    strncpy((char*)dataP->value.asBuffer.buffer, buffer, length + 1);
+    dataP->value.asBuffer.length = length + 1;
+    return dataP;
 }
 
 void lwm2m_data_encode_instances
@@ -110,8 +143,16 @@ lwm2m_list_t* lwm2m_list_find
     uint16_t id
 )
 {
-    (void)head;
-    (void)id;
+    while (NULL != head && head->id < id)
+    {
+        head = head->next;
+    }
+
+    if (NULL != head && head->id == id)
+    {
+        return head;
+    }
+
     return NULL;
 }
 
@@ -134,9 +175,29 @@ lwm2m_list_t* lwm2m_list_add
     lwm2m_list_t* node
 )
 {
-    (void)head;
-    (void)node;
-    return NULL;
+    lwm2m_list_t * target;
+
+    if (NULL == head)
+    {
+       return node;
+    }
+
+    if (head->id > node->id)
+    {
+        node->next = head;
+        return node;
+    }
+
+    target = head;
+    while (NULL != target->next && target->next->id < node->id)
+    {
+        target = target->next;
+    }
+
+    node->next = target->next;
+    target->next = node;
+
+    return head;
 }
 
 lwm2m_list_t* lwm2m_list_remove
@@ -162,13 +223,17 @@ int lwm2m_configure
     lwm2m_object_t* objectList[]
 )
 {
-    (void)contextP;
+    int i;
     (void)endpointName;
     (void)msisdn;
     (void)altPath;
-    (void)numObject;
-    (void)objectList;
-    return -1;
+
+    for (i = 0; i < numObject; i++)
+    {
+        objectList[i]->next = NULL;
+        contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_ADD(contextP->objectList, objectList[i]);
+    }
+    return COAP_NO_ERROR;
 }
 
 int lwm2m_data_decode_int
@@ -205,7 +270,7 @@ int lwm2m_step
 {
     (void)contextP;
     (void)timeoutP;
-    return -1;
+    return 0;
 }
 
 int lwm2m_update_registration
@@ -218,7 +283,8 @@ int lwm2m_update_registration
     (void)contextP;
     (void)shortServerID;
     (void)withObjects;
-    return -1;
+
+    return COAP_NO_ERROR;
 }
 
 void lwm2m_close
@@ -255,7 +321,8 @@ int lwm2m_data_push
     (void)payload_len;
     (void)contentType;
     (void)midP;
-    return -1;
+
+    return COAP_NO_ERROR;
 }
 
 bool lwm2m_async_response
@@ -280,7 +347,7 @@ bool lwm2m_async_response
     (void)content_type;
     (void)payload;
     (void)payload_len;
-    return false;
+    return true;
 }
 
 void lwm2m_data_free
@@ -294,11 +361,18 @@ void lwm2m_data_free
     return;
 }
 
-lwm2m_context_t* lwm2m_init
-(
-    void* userData
-)
+lwm2m_context_t * lwm2m_init(void * userData)
 {
-    (void)userData;
-    return NULL;
+    lwm2m_context_t * contextP;
+
+    contextP = (lwm2m_context_t *)lwm2m_malloc(sizeof(lwm2m_context_t));
+    if (NULL != contextP)
+    {
+        memset(contextP, 0, sizeof(lwm2m_context_t));
+        contextP->userData = userData;
+        srand((int)lwm2m_gettime());
+        contextP->nextMID = rand();
+    }
+
+    return contextP;
 }
