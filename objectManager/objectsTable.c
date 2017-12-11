@@ -821,6 +821,14 @@ static lwm2mcore_Resource_t ExtConnectivityStatsResources[] =
         omanager_ReadExtConnectivityStatsObj,           //.read
         NULL,                                           //.write
         NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_EXT_CONN_STATS_TAC_RID,               //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadExtConnectivityStatsObj,           //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
     }
 };
 

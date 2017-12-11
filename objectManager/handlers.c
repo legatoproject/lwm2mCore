@@ -3476,9 +3476,9 @@ int omanager_ReadExtConnectivityStatsObj
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &signalBars,
-                                             sizeof(signalBars),
-                                             false);
+                                                      &signalBars,
+                                                      sizeof(signalBars),
+                                                      false);
             }
         }
         break;
@@ -3497,11 +3497,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             uint8_t roamingIndicator = 0;
             sID = lwm2mcore_GetRoamingIndicator(&roamingIndicator);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &roamingIndicator,
-                                             sizeof(roamingIndicator),
-                                             false);
+                                                      &roamingIndicator,
+                                                      sizeof(roamingIndicator),
+                                                      false);
             }
         }
         break;
@@ -3511,11 +3512,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             int32_t ecIo = 0;
             sID = lwm2mcore_GetEcIo(&ecIo);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &ecIo,
-                                             sizeof(ecIo),
-                                             true);
+                                                      &ecIo,
+                                                      sizeof(ecIo),
+                                                      true);
             }
         }
         break;
@@ -3525,11 +3527,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             int32_t rsrp = 0;
             sID = lwm2mcore_GetRsrp(&rsrp);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &rsrp,
-                                             sizeof(rsrp),
-                                             true);
+                                                      &rsrp,
+                                                      sizeof(rsrp),
+                                                      true);
             }
         }
         break;
@@ -3539,11 +3542,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             int32_t rsrq = 0;
             sID = lwm2mcore_GetRsrq(&rsrq);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &rsrq,
-                                             sizeof(rsrq),
-                                             true);
+                                                      &rsrq,
+                                                      sizeof(rsrq),
+                                                      true);
             }
         }
         break;
@@ -3553,11 +3557,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             int32_t rscp = 0;
             sID = lwm2mcore_GetRscp(&rscp);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &rscp,
-                                             sizeof(rscp),
-                                             true);
+                                                      &rscp,
+                                                      sizeof(rscp),
+                                                      true);
             }
         }
         break;
@@ -3567,11 +3572,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             int32_t deviceTemperature = 0;
             sID = lwm2mcore_GetDeviceTemperature(&deviceTemperature);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &deviceTemperature,
-                                             sizeof(deviceTemperature),
-                                             true);
+                                                      &deviceTemperature,
+                                                      sizeof(deviceTemperature),
+                                                      true);
             }
         }
         break;
@@ -3581,11 +3587,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             uint32_t unexpectedResets = 0;
             sID = lwm2mcore_GetDeviceUnexpectedResets(&unexpectedResets);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &unexpectedResets,
-                                             sizeof(unexpectedResets),
-                                             false);
+                                                      &unexpectedResets,
+                                                      sizeof(unexpectedResets),
+                                                      false);
             }
         }
         break;
@@ -3595,11 +3602,12 @@ int omanager_ReadExtConnectivityStatsObj
         {
             uint32_t totalResets = 0;
             sID = lwm2mcore_GetDeviceTotalResets(&totalResets);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &totalResets,
-                                             sizeof(totalResets),
-                                             false);
+                                                      &totalResets,
+                                                      sizeof(totalResets),
+                                                      false);
             }
         }
         break;
@@ -3609,11 +3617,27 @@ int omanager_ReadExtConnectivityStatsObj
         {
             uint32_t lac = 0;
             sID = lwm2mcore_GetLac(&lac);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &lac,
-                                             sizeof(lac),
-                                             false);
+                                                      &lac,
+                                                      sizeof(lac),
+                                                      false);
+            }
+        }
+        break;
+
+        /* Resource 10: Tracking Area Code (LTE) )*/
+        case LWM2MCORE_EXT_CONN_STATS_TAC_RID:
+        {
+            uint16_t tac = 0;
+            sID = lwm2mcore_GetServingCellLteTracAreaCode(&tac);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &tac,
+                                                      sizeof(tac),
+                                                      false);
             }
         }
         break;

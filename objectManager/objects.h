@@ -401,7 +401,8 @@ typedef enum
     LWM2MCORE_EXT_CONN_STATS_TEMPERATURE_RID,       ///< Device temperature
     LWM2MCORE_EXT_CONN_STATS_UNEXPECTED_RESETS_RID, ///< Unexpected reset counter
     LWM2MCORE_EXT_CONN_STATS_TOTAL_RESETS_RID,      ///< Total reset counter
-    LWM2MCORE_EXT_CONN_STATS_LAC_RID                ///< Location Area Code (LAC)
+    LWM2MCORE_EXT_CONN_STATS_LAC_RID,               ///< Location Area Code (LAC)
+    LWM2MCORE_EXT_CONN_STATS_TAC_RID                ///< Tracking Area Code (TAC)
 }lwm2mcore_extConnectivityStatsResource_t;
 
 //--------------------------------------------------------------------------------------------------

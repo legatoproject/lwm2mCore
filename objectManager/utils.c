@@ -80,7 +80,6 @@ size_t omanager_FormatUint64ToBytes
  *  - converted size
  */
 //--------------------------------------------------------------------------------------------------
-// TODO: check if the Wakaama utils_encodeInt function does not make the same treatment
 size_t omanager_FormatValueToBytes
 (
     uint8_t* bytesPtr,      ///< [INOUT] bytes buffer in which uPtr value will be written
@@ -92,131 +91,167 @@ size_t omanager_FormatValueToBytes
     size_t lReturn = 0;
     size_t updatedSize = size;
 
-    if ((NULL != bytesPtr) && (NULL != uPtr))
+    uint8_t u8Value;
+    uint16_t u16Value;
+    uint32_t u32Value;
+    uint64_t u64Value;
+
+    uint8_t* u8ValuePtr = 0;
+    uint16_t* u16ValuePtr = 0;
+    uint32_t* u32ValuePtr = 0;
+    uint64_t* u64ValuePtr = 0;
+
+    if ((!bytesPtr) || (!uPtr))
     {
-        if (bSignedValue == false)
+        return 0;
+    }
+
+    if (bSignedValue == false)
+    {
+        if (size == sizeof(uint8_t))
         {
-            uint8_t* u8Value = 0;
-            uint16_t* u16Value = 0;
-            uint32_t* u32Value = 0;
-            uint64_t* u64Value = 0;
-            if (size == sizeof(uint8_t))
+            u8ValuePtr = (uint8_t*)uPtr;
+            if (*u8ValuePtr > 0x7F)
             {
-                u8Value = (uint8_t*)uPtr;
-                if (*u8Value > 0x7F)
-                {
-                    /* Value shall be coded in 2 bytes */
-                    u16Value = (uint16_t*)uPtr;
-                    updatedSize = sizeof (uint16_t);
-                }
+                /* Value shall be coded in 2 bytes */
+                u16Value = (uint16_t)*u8ValuePtr;
+                u16ValuePtr = &u16Value;
+                updatedSize = sizeof (uint16_t);
             }
-            else if (size == sizeof(uint16_t))
+        }
+        else if (size == sizeof(uint16_t))
+        {
+            u16ValuePtr = (uint16_t*)uPtr;
+            if (*u16ValuePtr > 0x7FFF)
             {
-                u16Value = (uint16_t*)uPtr;
-                if (*u16Value > 0x7FFF)
-                {
-                    /* Value shall be coded in 4 bytes */
-                    u32Value = (uint32_t*)uPtr;
-                    updatedSize = sizeof (uint32_t);
-                }
-                else if (*u16Value <= 0x7F)
-                {
-                    /* the value could be coded in 1 byte */
-                    u8Value = (uint8_t*)uPtr;
-                    updatedSize = sizeof (uint8_t);
-                }
+                /* Value shall be coded in 4 bytes */
+                u32Value = (uint32_t)*u16ValuePtr;
+                u32ValuePtr = &u32Value;
+                updatedSize = sizeof (uint32_t);
             }
-            else if (size == sizeof (uint32_t))
+            else if (*u16ValuePtr <= 0x7F)
             {
-                u32Value = (uint32_t*)uPtr;
-                if (*u32Value > 0x7FFFFFFF)
-                {
-                    /* Value shall be coded in 8 bytes */
-                    u64Value = (uint64_t*)uPtr;
-                    updatedSize = sizeof (uint64_t);
-                }
-                else if (*u32Value <= 0x7F)
-                {
-                    /* the value could be coded in 1 byte */
-                    u8Value = (uint8_t*)uPtr;
-                    updatedSize = sizeof (uint8_t);
-                }
-                else if (*u32Value <= 0x7FFF)
-                {
-                    /* the value could be coded in 2 bytes */
-                    u16Value = (uint16_t*)uPtr;
-                    updatedSize = sizeof (uint16_t);
-                }
+                /* the value could be coded in 1 byte */
+                u8Value = (uint8_t)*u16ValuePtr;
+                u8ValuePtr = &u8Value;
+                updatedSize = sizeof (uint8_t);
             }
-            else if (size == sizeof (uint64_t))
+        }
+        else if (size == sizeof (uint32_t))
+        {
+            u32ValuePtr = (uint32_t*)uPtr;
+            if (*u32ValuePtr > 0x7FFFFFFF)
             {
-                u64Value = (uint64_t*)uPtr;
-                if (*u64Value >> 63)
-                {
-                    updatedSize = 0;
-                }
-                else if (*u64Value <= 0x7F)
-                {
-                    /* the value could be coded in 1 byte */
-                    u8Value = (uint8_t*)uPtr;
-                    updatedSize = sizeof (uint8_t);
-                }
-                else if (*u64Value <= 0x7FFF)
-                {
-                    /* the value could be coded in 2 bytes */
-                    u16Value = (uint16_t*)uPtr;
-                    updatedSize = sizeof (uint16_t);
-                }
-                else if (*u64Value <= 0x7FFFFFFF)
-                {
-                    /* the value could be coded in 4 bytes */
-                    u32Value = (uint32_t*)uPtr;
-                    updatedSize = sizeof (uint32_t);
-                }
+                /* Value shall be coded in 8 bytes */
+                u64Value = (uint64_t)*u32ValuePtr;
+                u64ValuePtr = &u64Value;
+                updatedSize = sizeof (uint64_t);
             }
-            else
+            else if (*u32ValuePtr <= 0x7F)
+            {
+                /* the value could be coded in 1 byte */
+                u8Value = (uint8_t)*u32ValuePtr;
+                u8ValuePtr = &u8Value;
+                updatedSize = sizeof (uint8_t);
+            }
+            else if (*u32ValuePtr <= 0x7FFF)
+            {
+                /* the value could be coded in 2 bytes */
+                u16Value = (uint16_t)*u32ValuePtr;
+                u16ValuePtr = &u16Value;
+                updatedSize = sizeof (uint16_t);
+            }
+        }
+        else if (size == sizeof (uint64_t))
+        {
+            u64ValuePtr = (uint64_t*)uPtr;
+            if (*u64ValuePtr >> 63)
             {
                 updatedSize = 0;
             }
+            else if (*u64ValuePtr <= 0x7F)
+            {
+                /* the value could be coded in 1 byte */
+                u8Value = (uint8_t)*u64ValuePtr;
+                u8ValuePtr = &u8Value;
+                updatedSize = sizeof (uint8_t);
+            }
+            else if (*u64ValuePtr <= 0x7FFF)
+            {
+                /* the value could be coded in 2 bytes */
+                u16Value = (uint16_t)*u64ValuePtr;
+                u16ValuePtr = &u16Value;
+                updatedSize = sizeof (uint16_t);
+            }
+            else if (*u64ValuePtr <= 0x7FFFFFFF)
+            {
+                /* the value could be coded in 4 bytes */
+                u32Value = (uint32_t)*u64ValuePtr;
+                u32ValuePtr = &u32Value;
+                updatedSize = sizeof (uint32_t);
+            }
         }
-
-        switch (updatedSize)
+        else
         {
-            case 1:
-            {
-                uint8_t* u8Value = (uint8_t*)uPtr;
-                lReturn = sizeof (uint8_t);
-                bytesPtr[ 0 ] = *u8Value;
-            }
-            break;
-
-            case 2:
-            {
-                uint16_t* u16Value = (uint16_t*)uPtr;
-                lReturn = omanager_FormatUint16ToBytes(bytesPtr, *u16Value);
-            }
-            break;
-
-            case 4:
-            {
-                uint32_t* u32Value = (uint32_t*)uPtr;
-                lReturn = omanager_FormatUint32ToBytes(bytesPtr, *u32Value);
-            }
-            break;
-
-            case 8:
-            {
-                uint64_t* u64Value = (uint64_t*)uPtr;
-                lReturn = omanager_FormatUint64ToBytes(bytesPtr, *u64Value);
-            }
-            break;
-
-            default:
-            {
-                lReturn = -1;
-            }
-            break;
+            updatedSize = 0;
         }
+    }
+    else
+    {
+        if (size == sizeof(uint8_t))
+        {
+            u8ValuePtr = (uint8_t*)uPtr;
+        }
+        else if (size == sizeof(uint16_t))
+        {
+            u16ValuePtr = (uint16_t*)uPtr;
+        }
+        else if (size == sizeof (uint32_t))
+        {
+            u32ValuePtr = (uint32_t*)uPtr;
+        }
+        else if (size == sizeof (uint64_t))
+        {
+            u64ValuePtr = (uint64_t*)uPtr;
+        }
+        else
+        {
+            updatedSize = 0;
+        }
+    }
+
+    switch (updatedSize)
+    {
+        case 1:
+        {
+            lReturn = sizeof (uint8_t);
+            bytesPtr[ 0 ] = *u8ValuePtr;
+        }
+        break;
+
+        case 2:
+        {
+            lReturn = omanager_FormatUint16ToBytes(bytesPtr, *u16ValuePtr);
+        }
+        break;
+
+        case 4:
+        {
+            lReturn = omanager_FormatUint32ToBytes(bytesPtr, *u32ValuePtr);
+        }
+        break;
+
+        case 8:
+        {
+            lReturn = omanager_FormatUint64ToBytes(bytesPtr, *u64ValuePtr);
+        }
+        break;
+
+        default:
+        {
+            lReturn = -1;
+        }
+        break;
     }
 
     return lReturn;
