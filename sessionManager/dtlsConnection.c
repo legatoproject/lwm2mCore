@@ -880,7 +880,8 @@ static int ConnectionSend
 (
     dtls_Connection_t* connPtr,         ///< [IN] DTLS connection structure
     uint8_t* bufferPtr,                 ///< [IN] Buffer to be sent
-    size_t length                       ///< [IN] Buffer length
+    size_t length,                      ///< [IN] Buffer length
+    bool firstBlock                     ///< [IN] First data block
 )
 {
     if (NULL == connPtr->dtlsSessionPtr)
@@ -897,7 +898,8 @@ static int ConnectionSend
     {
         time_t timeFromLastData = lwm2m_gettime() - connPtr->lastSend;
         LOG_ARG("now - connP->lastSend %d", timeFromLastData);
-        if ((0 < DTLS_NAT_TIMEOUT)
+        if (firstBlock
+         && (0 < DTLS_NAT_TIMEOUT)
          && ((DTLS_NAT_TIMEOUT < timeFromLastData)
             // If difference is negative, a time update could have been made on platform side.
             // In this case, do a rehandshake
@@ -1023,7 +1025,8 @@ uint8_t lwm2m_buffer_send
     void* sessionHPtr,      ///< [IN] Session handle identifying the peer (opaque to the core)
     uint8_t* bufferPtr,     ///< [IN] Data to be sent
     size_t length,          ///< [IN] Data length
-    void* userDataPtr       ///< [IN] Parameter to lwm2m_init()
+    void* userDataPtr,      ///< [IN] Parameter to lwm2m_init()
+    bool firstBlock         ///< [IN] First block
 )
 {
     dtls_Connection_t* connPtr = (dtls_Connection_t*) sessionHPtr;
@@ -1036,7 +1039,7 @@ uint8_t lwm2m_buffer_send
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
-    if (-1 == ConnectionSend(connPtr, bufferPtr, length))
+    if (-1 == ConnectionSend(connPtr, bufferPtr, length, firstBlock))
     {
         LOG_ARG("#> failed sending %lu bytes", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
