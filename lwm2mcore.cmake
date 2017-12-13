@@ -55,6 +55,7 @@ add_definitions(-g
                 -Wwrite-strings
                 -Waggregate-return
                 -Wswitch-default
+                -Werror
                 -std=gnu99
                 -DLWM2M_CLIENT_MODE
                 -DLWM2M_BOOTSTRAP

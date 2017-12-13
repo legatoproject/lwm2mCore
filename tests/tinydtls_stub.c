@@ -23,6 +23,7 @@ dtls_context_t* dtls_new_context
     void *app_data
 )
 {
+    (void)app_data;
     return NULL;
 }
 
@@ -31,6 +32,7 @@ void dtls_free_context
     dtls_context_t* ctx
 )
 {
+    (void)ctx;
     return;
 }
 
@@ -42,6 +44,10 @@ int dtls_write
     size_t len
 )
 {
+    (void)ctx;
+    (void)dst;
+    (void)buf;
+    (void)len;
     return -1;
 }
 
@@ -53,6 +59,10 @@ int dtls_handle_message
     int msglen
 )
 {
+    (void)ctx;
+    (void)session;
+    (void)msg;
+    (void)msglen;
     return -1;
 }
 
@@ -62,6 +72,8 @@ dtls_peer_t* dtls_get_peer
     const session_t* session
 )
 {
+    (void)ctx;
+    (void)session;
     return NULL;
 }
 
@@ -71,6 +83,8 @@ void dtls_reset_peer
     dtls_peer_t* peer
 )
 {
+    (void)ctx;
+    (void)peer;
     return;
 }
 
@@ -80,6 +94,8 @@ int dtls_connect_peer
     dtls_peer_t* peer
 )
 {
+    (void)ctx;
+    (void)peer;
     return -1;
 }
 
@@ -89,5 +105,7 @@ int dtls_connect
     const session_t *dst
 )
 {
+    (void)ctx;
+    (void)dst;
     return -1;
 }

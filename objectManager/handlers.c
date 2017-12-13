@@ -720,7 +720,7 @@ static bool GetBootstrapConfiguration
     LWM2MCORE_ASSERT(rawData);
     fileReadSize = fileSize;
     /* Get the bootstrap information file */
-    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, rawData, (size_t*)&fileReadSize);
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, rawData, (size_t*)((void*)&fileReadSize));
     LOG_ARG("Read BS configuration: fileReadSize %d result %d", fileReadSize, sid);
 
     if (LWM2MCORE_ERR_COMPLETED_OK != sid)

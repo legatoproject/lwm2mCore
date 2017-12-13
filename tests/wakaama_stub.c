@@ -19,6 +19,7 @@ char* coap_get_multi_option_as_string
     char* path
 )
 {
+    (void)path;
     return NULL;
 }
 
@@ -28,6 +29,8 @@ void lwm2m_data_encode_int
     lwm2m_data_t* dataP
 )
 {
+    (void)value;
+    (void)dataP;
     return;
 }
 
@@ -37,6 +40,8 @@ void lwm2m_data_encode_bool
     lwm2m_data_t* dataP
 )
 {
+    (void)value;
+    (void)dataP;
     return;
 }
 
@@ -47,6 +52,9 @@ void lwm2m_data_encode_nstring
     lwm2m_data_t* dataP
 )
 {
+    (void)string;
+    (void)length;
+    (void)dataP;
     return;
 }
 
@@ -57,6 +65,9 @@ void lwm2m_data_encode_opaque
     lwm2m_data_t* dataP
 )
 {
+    (void)buffer;
+    (void)length;
+    (void)dataP;
     return;
 }
 
@@ -66,6 +77,8 @@ void lwm2m_data_encode_float
     lwm2m_data_t* dataP
 )
 {
+    (void)value;
+    (void)dataP;
     return;
 }
 
@@ -74,6 +87,7 @@ lwm2m_data_t* lwm2m_data_new
     int size
 )
 {
+    (void)size;
     return NULL;
 }
 
@@ -84,6 +98,9 @@ void lwm2m_data_encode_instances
     lwm2m_data_t* dataP
 )
 {
+    (void)subDataP;
+    (void)count;
+    (void)dataP;
     return;
 }
 
@@ -93,6 +110,8 @@ lwm2m_list_t* lwm2m_list_find
     uint16_t id
 )
 {
+    (void)head;
+    (void)id;
     return NULL;
 }
 
@@ -103,6 +122,9 @@ int utils_textToInt
     int64_t* dataP
 )
 {
+    (void)buffer;
+    (void)length;
+    (void)dataP;
     return -1;
 }
 
@@ -112,6 +134,8 @@ lwm2m_list_t* lwm2m_list_add
     lwm2m_list_t* node
 )
 {
+    (void)head;
+    (void)node;
     return NULL;
 }
 
@@ -122,6 +146,9 @@ lwm2m_list_t* lwm2m_list_remove
     lwm2m_list_t** nodeP
 )
 {
+    (void)head;
+    (void)id;
+    (void)nodeP;
     return NULL;
 }
 
@@ -135,6 +162,12 @@ int lwm2m_configure
     lwm2m_object_t* objectList[]
 )
 {
+    (void)contextP;
+    (void)endpointName;
+    (void)msisdn;
+    (void)altPath;
+    (void)numObject;
+    (void)objectList;
     return -1;
 }
 
@@ -144,6 +177,8 @@ int lwm2m_data_decode_int
     int64_t* valueP
 )
 {
+    (void)dataP;
+    (void)valueP;
     return -1;
 }
 
@@ -155,6 +190,10 @@ void lwm2m_handle_packet
     void* fromSessionH
 )
 {
+    (void)contextP;
+    (void)buffer;
+    (void)length;
+    (void)fromSessionH;
     return;
 }
 
@@ -164,6 +203,8 @@ int lwm2m_step
     time_t* timeoutP
 )
 {
+    (void)contextP;
+    (void)timeoutP;
     return -1;
 }
 
@@ -174,6 +215,9 @@ int lwm2m_update_registration
     bool withObjects
 )
 {
+    (void)contextP;
+    (void)shortServerID;
+    (void)withObjects;
     return -1;
 }
 
@@ -182,6 +226,7 @@ void lwm2m_close
     lwm2m_context_t* contextP
 )
 {
+    (void)contextP;
     return;
 }
 
@@ -190,6 +235,7 @@ void lwm2m_set_push_callback
     lwm2mcore_PushAckCallback_t callbackP
 )
 {
+    (void)callbackP;
     return;
 }
 
@@ -203,6 +249,12 @@ int lwm2m_data_push
     uint16_t* midP
 )
 {
+    (void)contextP;
+    (void)shortServerID;
+    (void)payloadP;
+    (void)payload_len;
+    (void)contentType;
+    (void)midP;
     return -1;
 }
 
@@ -219,6 +271,15 @@ bool lwm2m_async_response
     size_t payload_len
 )
 {
+    (void)contextP;
+    (void)shortServerId;
+    (void)mid;
+    (void)code;
+    (void)token;
+    (void)token_len;
+    (void)content_type;
+    (void)payload;
+    (void)payload_len;
     return false;
 }
 
@@ -228,6 +289,8 @@ void lwm2m_data_free
     lwm2m_data_t* dataP
 )
 {
+    (void)size;
+    (void)dataP;
     return;
 }
 
@@ -236,5 +299,6 @@ lwm2m_context_t* lwm2m_init
     void* userData
 )
 {
+    (void)userData;
     return NULL;
 }

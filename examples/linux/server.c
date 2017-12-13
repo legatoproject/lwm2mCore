@@ -26,13 +26,6 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Lifetime minimum value
- */
-//--------------------------------------------------------------------------------------------------
-#define LIFETIME_VALUE_MIN            0
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Function to check if the lifetime is within aceptable limits
  *
  * @return
@@ -48,8 +41,7 @@ bool lwm2mcore_CheckLifetimeLimit
     // Check only when enabling lifetime
     if (lifetime != LWM2MCORE_LIFETIME_VALUE_DISABLED)
     {
-        if ((lifetime < LIFETIME_VALUE_MIN)
-            || (lifetime > LIFETIME_VALUE_MAX))
+        if (LIFETIME_VALUE_MAX < lifetime)
         {
             printf("Lifetime not within limit\n");
             return false;

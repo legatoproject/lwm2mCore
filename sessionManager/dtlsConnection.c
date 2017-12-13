@@ -578,11 +578,11 @@ static int GetPort
 {
    if (x->sa_family == AF_INET)
    {
-       return ((struct sockaddr_in *)x)->sin_port;
+       return ((struct sockaddr_in *)(void*)x)->sin_port;
    }
    else if (x->sa_family == AF_INET6)
    {
-       return ((struct sockaddr_in6 *)x)->sin6_port;
+       return ((struct sockaddr_in6 *)(void*)x)->sin6_port;
    }
    else
    {
@@ -622,18 +622,18 @@ static int SockaddrCmp
         if (AF_INET == y->sa_family)
         {
             // compare V4 with V4
-            return ((struct sockaddr_in *)x)->sin_addr.s_addr == \
-                                            ((struct sockaddr_in *)y)->sin_addr.s_addr;
+            return ((struct sockaddr_in *)(void*)x)->sin_addr.s_addr == \
+                                            ((struct sockaddr_in *)(void*)y)->sin_addr.s_addr;
             // is V6 mapped V4?
         }
-        else if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)y)->sin6_addr))
+        else if (IN6_IS_ADDR_V4MAPPED(&((struct sockaddr_in6 *)(void*)y)->sin6_addr))
         {
-            struct in6_addr* addr6 = &((struct sockaddr_in6 *)y)->sin6_addr;
+            struct in6_addr* addr6 = &((struct sockaddr_in6 *)(void*)y)->sin6_addr;
             uint32_t y6to4 = addr6->s6_addr[15] << 24 | \
                              addr6->s6_addr[14] << 16 | \
                              addr6->s6_addr[13] << 8 | \
                              addr6->s6_addr[12];
-            return y6to4 == ((struct sockaddr_in *)x)->sin_addr.s_addr;
+            return y6to4 == ((struct sockaddr_in *)(void*)x)->sin_addr.s_addr;
         }
         else
         {
@@ -643,8 +643,8 @@ static int SockaddrCmp
     else if (x->sa_family == AF_INET6 && y->sa_family == AF_INET6)
     {
         // IPV6 with IPV6 compare
-        return memcmp(((struct sockaddr_in6 *)x)->sin6_addr.s6_addr,
-                      ((struct sockaddr_in6 *)y)->sin6_addr.s6_addr,
+        return memcmp(((struct sockaddr_in6 *)(void*)x)->sin6_addr.s6_addr,
+                      ((struct sockaddr_in6 *)(void*)y)->sin6_addr.s6_addr,
                       16) == 0;
     }
     else
@@ -782,7 +782,7 @@ dtls_Connection_t* dtls_CreateConnection
     portPtr = strrchr(hostPtr, ':');
     if (NULL == portPtr)
     {
-        portPtr = defaultPortPtr;
+        portPtr = (char*)defaultPortPtr;
     }
     else
     {

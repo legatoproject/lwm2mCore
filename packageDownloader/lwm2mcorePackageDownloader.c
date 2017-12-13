@@ -765,7 +765,7 @@ static lwm2mcore_DwlResult_t HashData
             {
                 // Compute CRC starting from fileSize in UPCK DWL prolog,
                 // ignore DWLF magic, file size, CRC
-                DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)DwlParserObj.dataToParsePtr;
+                DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)((void*)DwlParserObj.dataToParsePtr);
                 size_t prologSizeForCrc = sizeof(DwlProlog_t) - (3 * sizeof(uint32_t));
                 DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
                                                            (uint8_t*)&dwlPrologPtr->fileSize,
@@ -907,7 +907,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
 )
 {
     lwm2mcore_DwlResult_t result;
-    DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)DwlParserObj.dataToParsePtr;
+    DwlProlog_t* dwlPrologPtr = (DwlProlog_t*)((void*)DwlParserObj.dataToParsePtr);
 
     // Check DWL magic number
     if (DWL_MAGIC_NUMBER != dwlPrologPtr->magicNumber)
@@ -1094,7 +1094,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
         case DWL_TYPE_UPCK:
         {
             // Check UPCK type
-            uint32_t upckType = ((UpckHeader_t*)DwlParserObj.dataToParsePtr)->structHeader.upckType;
+            uint32_t upckType = ((UpckHeader_t*)((void*)DwlParserObj.dataToParsePtr))->structHeader.upckType;
             if (   (LWM2MCORE_UPCK_TYPE_FW != upckType)
                 && (LWM2MCORE_UPCK_TYPE_AMSS != upckType)
                )
@@ -1972,12 +1972,6 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
     if (!pkgDwlPtr)
     {
         LOG("No package downloader object");
-        return DWL_FAULT;
-    }
-
-    if (!pkgDwlPtr->data.packageUri)
-    {
-        LOG("No package URI");
         return DWL_FAULT;
     }
 

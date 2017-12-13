@@ -396,7 +396,7 @@ static uint8_t ReadCb
     uint8_t result;
     int i = 0;
     int sid = 0;
-    lwm2mcore_Uri_t uri = { 0 };
+    lwm2mcore_Uri_t uri;
     lwm2mcore_internalObject_t* objPtr;
     lwm2mcore_internalResource_t* resourcePtr = NULL;
     char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
@@ -418,6 +418,7 @@ static uint8_t ReadCb
 
     LOG("object instance Id was registered");
 
+    memset(&uri, 0, sizeof(uri));
     uri.op = LWM2MCORE_OP_READ;
     uri.oid = objectPtr->objID;
     uri.oiid = instanceId;

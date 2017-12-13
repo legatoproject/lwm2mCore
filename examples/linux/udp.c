@@ -111,10 +111,10 @@ bool lwm2mcore_UdpOpen
     // IP v4
     configPtr->instanceRef = instanceRef;
     configPtr->af = AF_INET;
-    configPtr->type = SOCK_DGRAM;
+    configPtr->type = LWM2MCORE_SOCK_DGRAM;
 
-    LinuxSocketConfig.type = LWM2MCORE_SOCK_UDP;
-    LinuxSocketConfig.proto = SOCK_DGRAM;
+    LinuxSocketConfig.type = LWM2MCORE_SOCK_DGRAM;
+    LinuxSocketConfig.proto = LWM2MCORE_SOCK_UDP;
     configPtr->sock = CreateSocket (localPortPtr, LinuxSocketConfig);
     LinuxSocketConfig.sock = configPtr->sock;
     LinuxSocketConfig.instanceRef = instanceRef;

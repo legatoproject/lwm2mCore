@@ -1115,7 +1115,7 @@ lwm2mcore_Sid_t lwm2mcore_CopySha1
     // Check buffer length
     if (bufSize < sizeof(SHA_CTX))
     {
-        printf("Buffer is too short (%zu < %lu)\n", bufSize, sizeof(SHA_CTX));
+        printf("Buffer is too short (%zu < %zu)\n", bufSize, sizeof(SHA_CTX));
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
@@ -1152,7 +1152,7 @@ lwm2mcore_Sid_t lwm2mcore_RestoreSha1
     // Check buffer length
     if (bufSize < sizeof(SHA_CTX))
     {
-        printf("Buffer is too short (%zu < %lu)\n", bufSize, sizeof(SHA_CTX));
+        printf("Buffer is too short (%zu < %zu)\n", bufSize, sizeof(SHA_CTX));
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 

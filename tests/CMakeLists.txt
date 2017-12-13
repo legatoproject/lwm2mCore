@@ -26,17 +26,12 @@ add_definitions(-g
                 -Wcast-align
                 -Wwrite-strings
                 -Waggregate-return
-                -Wswitch-default)
-
-remove_definitions(-Werror)
+                -Wswitch-default
+                -Werror)
 
 SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
 SET(CMAKE_C_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
 SET(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
-add_definitions(--coverage)
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} --coverage")
-set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} --coverage")
 
 add_custom_target(
     coverage_report_lwm2mcore
