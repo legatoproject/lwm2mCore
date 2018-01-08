@@ -119,7 +119,10 @@ bool lwm2mcore_TimerSet
 
             // remove signal handler
             sa.sa_handler = SIG_DFL;
-            sigaction(SIGRTMIN, &sa, NULL);
+            if (sigaction(SIGRTMIN, &sa, NULL))
+            {
+                printf("failed to remove signal handler\n");
+            }
         }
         else
         {

@@ -107,7 +107,7 @@ lwm2mcore_Sid_t lwm2mcore_GetParam
 )
 {
     FILE* fPtr = NULL;
-    int bsize = *lenPtr;
+    int bsize;
     int rsize = 0;
     char fname0[CONFIG_FILENAME_MAX_LENGTH];
     char fname1[CONFIG_FILENAME_MAX_LENGTH];
@@ -116,6 +116,8 @@ lwm2mcore_Sid_t lwm2mcore_GetParam
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
+
+    bsize = *lenPtr;
 
     sprintf(fname0, "%s%d.txt", CONFIG_FILENAME, paramId);
     sprintf(fname1, "%s%d.bak", CONFIG_FILENAME, paramId);

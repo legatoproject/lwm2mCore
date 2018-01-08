@@ -965,6 +965,7 @@ static uint8_t CreateCb
         }
         instancePtr->id = instanceId;
         objectPtr->instanceList = LWM2M_LIST_ADD(objectPtr->instanceList, instancePtr);
+        /* instancePtr is released by omanager_ObjectsFree API */
     }
     else
     {
@@ -1623,6 +1624,7 @@ static bool RegisterObjTable
                     ObjectArray[ObjNb]->instanceList =
                         LWM2M_LIST_ADD (ObjectArray[ObjNb]->instanceList,
                                         instancePtr);
+                    /* instancePtr is released by omanager_ObjectsFree API */
                 }
 
                 for (j = 0; j < objInstanceNb; j++)
