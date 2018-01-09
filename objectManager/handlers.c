@@ -3627,7 +3627,7 @@ int omanager_ReadExtConnectivityStatsObj
         }
         break;
 
-        /* Resource 10: Tracking Area Code (LTE) )*/
+        /* Resource 11: Tracking Area Code (LTE) */
         case LWM2MCORE_EXT_CONN_STATS_TAC_RID:
         {
             uint16_t tac = 0;
