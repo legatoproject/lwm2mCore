@@ -925,6 +925,12 @@ bool lwm2mcore_Update
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
+    if (!instanceRef)
+    {
+        LOG("Null instance reference");
+        return false;
+    }
+
     return omanager_UpdateRequest(instanceRef, false);
 }
 

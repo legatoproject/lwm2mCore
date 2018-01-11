@@ -1905,9 +1905,15 @@ uint16_t lwm2mcore_ObjectRegister
 
     RegisteredObjNb = 0;
 
+    if (!instanceRef)
+    {
+        LOG("Null instance reference");
+        return RegisteredObjNb;
+    }
+
     /* For the moment, servicePtr can be NULL */
     (void)servicePtr;
-    if (NULL == endpointPtr)
+    if (!endpointPtr)
     {
         LOG("param error");
         return RegisteredObjNb;
