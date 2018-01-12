@@ -129,95 +129,99 @@ static int StatusHandler
     switch (eventStatus.event)
     {
         case LWM2MCORE_EVENT_INITIALIZED:
-               printf("LwM2MCore is initialized and ready to be used\n");
-               break;
+            printf("LwM2MCore is initialized and ready to be used\n");
+            break;
 
         case LWM2MCORE_EVENT_AGREEMENT_CONNECTION:
-                printf("The device requests a user agreement to make a connection to the server\n");
-                break;
+            printf("The device requests a user agreement to make a connection to the server\n");
+            break;
 
         case LWM2MCORE_EVENT_AGREEMENT_DOWNLOAD:
-                printf("The device requests a user agreement to make a connection to the server\n");
-                break;
+            printf("The device requests a user agreement to make a connection to the server\n");
+            break;
 
         case LWM2MCORE_EVENT_AGREEMENT_UPDATE:
-                printf("The device requests a user agreement to install a downloaded package\n");
-                break;
+            printf("The device requests a user agreement to install a downloaded package\n");
+            break;
 
         case LWM2MCORE_EVENT_AUTHENTICATION_STARTED:
-                printf("The OTA update client has started authentication with the server\n");
-                break;
+            printf("The OTA update client has started authentication with the server\n");
+            break;
 
         case LWM2MCORE_EVENT_AUTHENTICATION_FAILED:
-                printf("The OTA update client failed to authenticate with the server\n");
-                break;
+            printf("The OTA update client failed to authenticate with the server\n");
+            break;
 
         case LWM2MCORE_EVENT_SESSION_STARTED:
-                printf("The OTA update client succeeded in authenticating with the server and has "\
-                       "started the session\n");
-                break;
+            printf("The OTA update client succeeded in authenticating with the server and has "\
+                   "started the session\n");
+            break;
 
         case LWM2MCORE_EVENT_SESSION_FAILED:
-                printf("The session with the server failed\n");
-                break;
+            printf("The session with the server failed\n");
+            break;
 
         case LWM2MCORE_EVENT_SESSION_FINISHED:
-                printf("The session with the server finished successfully\n");
-                break;
+            printf("The session with the server finished successfully\n");
+            break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS:
-                printf("A descriptor was downloaded with the package size\n");
-                break;
+            printf("A descriptor was downloaded with the package size\n");
+            break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED:
-                printf("The OTA update package downloaded successfully\n");
-                break;
+            printf("The OTA update package downloaded successfully\n");
+            break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED:
-                printf("The OTA update package downloaded successfully, but could not be stored "\
-                       "in flash\n");
-                break;
+            printf("The OTA update package downloaded successfully, but could not be stored "\
+                   "in flash\n");
+            break;
 
         case LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_OK:
-                printf("The OTA update package was certified to have been sent by a trusted "\
-                       "server\n");
-                break;
+            printf("The OTA update package was certified to have been sent by a trusted "\
+                   "server\n");
+            break;
 
         case LWM2MCORE_EVENT_PACKAGE_CERTIFICATION_NOT_OK:
-                printf("The OTA update package was not certified to have been sent by a trusted "\
-                       "server\n");
-                break;
+            printf("The OTA update package was not certified to have been sent by a trusted "\
+                   "server\n");
+            break;
 
         case LWM2MCORE_EVENT_UPDATE_STARTED:
-                printf("An update package is being applied\n");
-                break;
+            printf("An update package is being applied\n");
+            break;
 
         case LWM2MCORE_EVENT_UPDATE_FAILED:
-                printf("The update failed\n");
-                break;
+            printf("The update failed\n");
+            break;
 
         case LWM2MCORE_EVENT_UPDATE_FINISHED:
-                printf("The update succeeded\n");
-                break;
+            printf("The update succeeded\n");
+            break;
 
         case LWM2MCORE_EVENT_FALLBACK_STARTED:
-                printf("A fallback mechanism was started\n");
-                break;
+            printf("A fallback mechanism was started\n");
+            break;
 
         case LWM2MCORE_EVENT_DOWNLOAD_PROGRESS:
-                printf("Download progress %d\%%\n", eventStatus.u.pkgStatus.progress);
-                break;
+            printf("Download progress %d\%%\n", eventStatus.u.pkgStatus.progress);
+            break;
 
         case LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START:
-                if (LWM2MCORE_SESSION_BOOTSTRAP == eventStatus.u.session.type)
-                {
-                    printf("Connected to the Bootstrap server \n");
-                }
-                else
-                {
-                    printf("Connected to the Device Management server \n");
-                }
-                break;
+            if (LWM2MCORE_SESSION_BOOTSTRAP == eventStatus.u.session.type)
+            {
+                printf("Connected to the Bootstrap server \n");
+            }
+            else
+            {
+                printf("Connected to the Device Management server \n");
+            }
+            break;
+
+        case LWM2MCORE_EVENT_LWM2M_SESSION_INACTIVE:
+            printf("Inactive session event\n");
+            break;
 
         default:
             printf("Unknown event %d\n", eventStatus.event);

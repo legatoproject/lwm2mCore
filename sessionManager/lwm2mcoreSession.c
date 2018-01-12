@@ -60,6 +60,13 @@ static bool BootstrapSession = false;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *  Inactivity timeout after which a notification will be sent.
+ */
+//--------------------------------------------------------------------------------------------------
+#define INACTIVE_TIMEOUT_SECONDS    20
+
+//--------------------------------------------------------------------------------------------------
+/**
  *  Client state bootstrapping / registered etc.,
  */
 //--------------------------------------------------------------------------------------------------
@@ -247,6 +254,30 @@ static void UpdateBootstrapInfo
             break;
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *  LwM2M client inactivity timeout.
+ */
+//--------------------------------------------------------------------------------------------------
+static void Lwm2mClientInactivityHandler
+(
+    void
+)
+{
+    LOG_ARG("client inactive for %d seconds", INACTIVE_TIMEOUT_SECONDS);
+
+    /* Restart the timer for monitoring next period */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
+                                    INACTIVE_TIMEOUT_SECONDS,
+                                    Lwm2mClientInactivityHandler))
+    {
+        LOG("Error re-launching inactivity timer");
+    }
+
+    /* Notify that the session is inactive */
+    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_INACTIVE);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -468,6 +499,23 @@ void smanager_SendSessionEvent
                     {
                         LOG("Error while checking download resume");
                     }
+
+                    /* Launch inactivity timer to monitor inactivity during registered state */
+                    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
+                                                    INACTIVE_TIMEOUT_SECONDS,
+                                                    Lwm2mClientInactivityHandler))
+                    {
+                        LOG("Error launching client inactivity timer");
+                    }
+                }
+                break;
+
+                case EVENT_STATUS_INACTIVE:
+                {
+                    LOG("Session inactive");
+
+                    status.event = LWM2MCORE_EVENT_LWM2M_SESSION_INACTIVE;
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -711,6 +759,17 @@ void lwm2mcore_UdpReceiveCb
         LOG_ARG("Failed to handle DTLS packet %d.", rc);
         lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_RECV_ERR);
         return;
+    }
+
+    /* Re-launch inactivity timer */
+    if (lwm2mcore_TimerIsRunning(LWM2MCORE_TIMER_INACTIVITY))
+    {
+        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
+                                        INACTIVE_TIMEOUT_SECONDS,
+                                        Lwm2mClientInactivityHandler))
+        {
+            LOG("Error launching client inactivity timer");
+        }
     }
 }
 
@@ -964,6 +1023,11 @@ bool lwm2mcore_Disconnect
     if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
     {
         LOG("Failed to stop the step timer");
+    }
+
+    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_INACTIVITY))
+    {
+        LOG("Failed to stop the inactivity timer");
     }
 
     dataPtr = (smanager_ClientData_t*) instanceRef;

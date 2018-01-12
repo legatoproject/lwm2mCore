@@ -58,6 +58,7 @@ typedef enum
     EVENT_STATUS_STARTED,       ///< Event started
     EVENT_STATUS_DONE_SUCCESS,  ///< Event stopped successfully
     EVENT_STATUS_DONE_FAIL,     ///< Event stopped with failure
+    EVENT_STATUS_INACTIVE,      ///< Event inactive
     EVENT_STATUS_MAX = 0xFF,    ///< Internal usage
 }smanager_EventStatus_t;
 

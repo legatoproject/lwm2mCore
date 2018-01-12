@@ -143,8 +143,9 @@ typedef enum
     LWM2MCORE_EVENT_FALLBACK_STARTED               = 17,    ///< A fallback mechanism was started.
     LWM2MCORE_EVENT_DOWNLOAD_PROGRESS              = 18,    ///< Indicate the download %
     LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START       = 23,    ///< LWM2M Event to know if the session is a Bootstrap or a Device Management one
+    LWM2MCORE_EVENT_LWM2M_SESSION_INACTIVE         = 24,    ///< LWM2M Event to know if the session is inactive for 20 sec
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
-    LWM2MCORE_EVENT_LAST                           = 24     ///< Internal usage
+    LWM2MCORE_EVENT_LAST                           = 25     ///< Internal usage
 }lwm2mcore_StatusType_t;
 
 //--------------------------------------------------------------------------------------------------

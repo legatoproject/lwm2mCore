@@ -31,8 +31,9 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_TIMER_STEP,      ///< Timer step
-    LWM2MCORE_TIMER_MAX        ///< Maximum timer value (internal use)
+    LWM2MCORE_TIMER_STEP,           ///< Timer step
+    LWM2MCORE_TIMER_INACTIVITY,     ///< Inactivity timer
+    LWM2MCORE_TIMER_MAX             ///< Maximum timer value (internal use)
 }lwm2mcore_TimerType_t;
 
 //--------------------------------------------------------------------------------------------------

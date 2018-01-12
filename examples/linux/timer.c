@@ -88,6 +88,11 @@ bool lwm2mcore_TimerSet
     struct sigaction sa;
     printf("lwm2mcore_TimerSet time %d\n", time);
 
+    if(lwm2mcore_TimerIsRunning(timerType))
+    {
+        lwm2mcore_TimerStop(timerType);
+    }
+
     sa.sa_flags = SA_SIGINFO;
     sa.sa_sigaction = TimerSigHandler;
     sigemptyset(&sa.sa_mask);
@@ -164,9 +169,13 @@ bool lwm2mcore_TimerStop
     lwm2mcore_TimerType_t timerType     ///< [IN] Timer Id
 )
 {
-    timer_delete(TimerTable[timerType].timerId);
-    TimerTable[timerType].timerCb = NULL;
-    return true;
+    if (TimerTable[timerType].timerId)
+    {
+        timer_delete(TimerTable[timerType].timerId);
+        TimerTable[timerType].timerCb = NULL;
+        return true;
+    }
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
