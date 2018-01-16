@@ -2058,6 +2058,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLifetime
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the lifetime is not correct
  *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */

@@ -880,6 +880,7 @@ bool omanager_GetBootstrapConfiguration
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the lifetime is not correct
  *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
@@ -896,7 +897,7 @@ lwm2mcore_Sid_t omanager_SetLifetime
     if (lwm2mcore_CheckLifetimeLimit(lifetime) != true)
     {
         LOG("Lifetime not in good range");
-        return LWM2MCORE_ERR_GENERAL_ERROR;
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
 
     LOG_ARG("BsConfigList.version %d", BsConfigList.version);
@@ -1729,14 +1730,15 @@ int omanager_ReadServerObj
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
         {
-            *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
+            serverInformationPtr->data.lifetime = (serverInformationPtr->data.lifetime == 0)
+                                                  ? LWM2MCORE_LIFETIME_VALUE_DISABLED
+                                                  : serverInformationPtr->data.lifetime;
+
+           *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
                                          &(serverInformationPtr->data.lifetime),
                                          sizeof(serverInformationPtr->data.lifetime),
                                          false);
-            serverInformationPtr->data.lifetime = (serverInformationPtr->data.lifetime == 0)
-                                       ? LWM2MCORE_LIFETIME_VALUE_DISABLED
-                                       : serverInformationPtr->data.lifetime;
-            LOG_ARG("lifetime write %d", serverInformationPtr->data.lifetime);
+            LOG_ARG("lifetime read %d", serverInformationPtr->data.lifetime);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
         }

@@ -348,6 +348,24 @@ void test_lwm2mcore_SendAsyncResponse
                 != false);
 }
 
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for lwm2mcore_SetLifetime API
+ */
+//--------------------------------------------------------------------------------------------------
+static void test_lwm2mcore_SetLifetime
+(
+    void
+)
+{
+    /* Invalid value */
+    TEST_ASSERT(lwm2mcore_SetLifetime(0) == LWM2MCORE_ERR_INCORRECT_RANGE);
+
+    /* No DM servers */
+    TEST_ASSERT(lwm2mcore_SetLifetime(8600) == LWM2MCORE_ERR_INVALID_STATE);
+}
+
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  Unitary test entry point.
@@ -386,6 +404,9 @@ int main
 
     printf("======== test of lwm2mcore_Free() ========\n");
     test_lwm2mcore_Free();
+
+    printf("======== test of lwm2mcore_SetLifetime() ========\n");
+    test_lwm2mcore_SetLifetime();
 
     printf("======== UnitTest of lwm2mcore ends with SUCCESS ========\n");
 
