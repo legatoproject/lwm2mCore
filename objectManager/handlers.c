@@ -59,7 +59,6 @@ VelocityType_t;
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not available
  *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
@@ -80,7 +79,7 @@ static lwm2mcore_Sid_t BuildVelocity
     lsID = lwm2mcore_GetDirection(&direction);
     switch (lsID)
     {
-        case LWM2MCORE_ERR_NOT_YET_IMPLEMENTED:
+        case LWM2MCORE_ERR_INVALID_STATE:
             /* No direction available, assume 0 */
             direction = 0;
             break;
@@ -91,7 +90,7 @@ static lwm2mcore_Sid_t BuildVelocity
 
         default:
             /* Direction is necessary to build the velocity */
-            return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+            return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     /* Get the horizontal speed */
@@ -99,7 +98,7 @@ static lwm2mcore_Sid_t BuildVelocity
     if (LWM2MCORE_ERR_COMPLETED_OK != hsID)
     {
         /* We need at least the horizontal speed to build the velocity */
-        return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+        return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     /* Velocity initialization */
