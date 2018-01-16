@@ -213,6 +213,49 @@ static lwm2mcore_Resource_t ServerResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Acl_resources supported resources defined for LWM2M Access Control Lists object.
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t AclResources[] =
+{
+    {
+        LWM2MCORE_ACL_OBJECT_ID_RID,            //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,            //.type
+        1,                                      //.maxResInstCnt
+        omanager_ReadAclObj,                    //.read
+        omanager_WriteAclObj,                   //.write
+        NULL,                                   //.exec
+    },
+    {
+        LWM2MCORE_ACL_OBJECT_INSTANCE_ID_RID,   //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,            //.type
+        1,                                      //.maxResInstCnt
+        omanager_ReadAclObj,                    //.read
+        omanager_WriteAclObj,                   //.write
+        NULL,                                   //.exec
+    },
+    {
+        LWM2MCORE_ACL_ACCESS_CONTROL_ID,        //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,            //.type
+        LWM2MCORE_ID_NONE,                      //.maxResInstCnt
+        omanager_ReadAclObj,                    //.read
+        omanager_WriteAclObj,                   //.write
+        NULL,                                   //.exec
+    },
+    {
+        LWM2MCORE_ACL_OWNER_RID,                //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,            //.type
+        1,                                      //.maxResInstCnt
+        omanager_ReadAclObj,                    //.read
+        omanager_WriteAclObj,                   //.write
+        NULL,                                   //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Device_resources supported resources defined for LWM2M device object.
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -877,6 +920,13 @@ static lwm2mcore_Object_t ObjArray[] =
         LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(ServerResources),                                             //.resCnt
         ServerResources                                                         //.resources
+    },
+    /* Object 2: ACL */
+    {
+        LWM2MCORE_ACL_OID,                                                      //.id
+        LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
+        ARRAYSIZE(AclResources),                                                //.resCnt
+        AclResources                                                            //.resources
     },
     /* Object 3: device */
     {

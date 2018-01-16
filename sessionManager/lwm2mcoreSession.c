@@ -22,6 +22,8 @@
 #include "dtlsConnection.h"
 #include "sessionManager.h"
 #include "handlers.h"
+#include "aclConfiguration.h"
+#include "bootstrapConfiguration.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -456,6 +458,7 @@ void smanager_SendSessionEvent
                     LOG("BOOTSTRAP DONE");
                     BootstrapSession = false;
                     omanager_StoreCredentials();
+                    omanager_StoreAclConfiguration();
                 }
                 break;
 
@@ -906,6 +909,7 @@ void lwm2mcore_Free
         /* Free objects */
         omanager_ObjectsFree();
         omanager_FreeBootstrapInformation();
+        omanager_FreeAclConfiguration();
 
         if (NULL != dataPtr->lwm2mcoreCtxPtr)
         {

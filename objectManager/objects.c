@@ -19,13 +19,15 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "handlers.h"
+#include "aclConfiguration.h"
+#include "bootstrapConfiguration.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Maximum number of objects which can be registered in Wakaama
  */
 //--------------------------------------------------------------------------------------------------
-#define OBJ_COUNT 11
+#define OBJ_COUNT 12
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -100,8 +102,7 @@ static SwApplicationList_t* SwApplicationListPtr;
  * Function to translate a resource handler status to a CoAP error
  *
  * @return
- *      - object pointer  if the object is found
- *      - NULL  if the object is not found
+ *      - CoAP error value
  */
 //--------------------------------------------------------------------------------------------------
 static uint8_t SetCoapError
@@ -307,12 +308,31 @@ static uint8_t ReadResourceInstances
 )
 {
     int sid = 0;
-    uint8_t i = 0;
+    uint16_t i = 0;
+    uint16_t instanceNumber;
     uint8_t result = COAP_404_NOT_FOUND;
     char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
     size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
-    lwm2m_data_t* instancesPtr = lwm2m_data_new(resourcePtr->maxInstCount);
+    lwm2m_data_t* instancesPtr;
 
+    /* Check for object 2 (ACL
+     * For this object, the resource instance Id are not incremented but correspond
+     * to a server Id.
+     * This means that, for example, 2 resource instances can exist with
+     * 1st resource instance Id = 1 (server Id = 1)
+     * 2nd resource instance Id = 123 (server Id = 123)
+     * So the number of resource instances can not be linked to riid in this case
+     */
+    if (LWM2MCORE_ACL_OID == uriPtr->oid)
+    {
+        instanceNumber = omanager_GetAclInstanceNumber(uriPtr->oiid);
+    }
+    else
+    {
+        instanceNumber = resourcePtr->maxInstCount;
+    }
+
+    instancesPtr = lwm2m_data_new(instanceNumber);
     if (!instancesPtr)
     {
         return COAP_500_INTERNAL_SERVER_ERROR;
@@ -325,7 +345,6 @@ static uint8_t ReadResourceInstances
         uriPtr->riid = i;
 
         /* Read the instance of the resource */
-        LOG_ARG("Instance %d", uriPtr->riid);
         sid  = resourcePtr->read(uriPtr, asyncBuf, &asyncBufLen, NULL);
 
         /* Define the CoAP result */
@@ -359,12 +378,20 @@ static uint8_t ReadResourceInstances
         }
         i++;
     }
-    while ((i < resourcePtr->maxInstCount) && (COAP_205_CONTENT == result));
+    while ((i < instanceNumber) && (COAP_205_CONTENT == result));
 
     if (COAP_205_CONTENT == result)
     {
         /* No error, encode the resources in a single LWM2M data */
-        lwm2m_data_encode_instances(instancesPtr, uriPtr->riid, dataPtr);
+        if (LWM2MCORE_ACL_OID == uriPtr->oid)
+        {
+            lwm2m_data_encode_instances(instancesPtr, instanceNumber, dataPtr);
+        }
+        else
+        {
+            lwm2m_data_encode_instances(instancesPtr, uriPtr->riid, dataPtr);
+        }
+        result = COAP_205_CONTENT;
     }
     else
     {
@@ -580,18 +607,18 @@ static uint8_t ReadCb
 //--------------------------------------------------------------------------------------------------
 static bool FormatDataWriteExecute
 (
-    lwm2mcore_ResourceType_t resourceFormatType,    ///< [IN] Resource format type
-    lwm2m_data_t dataArray,                         ///< [IN] Array of requested resources to be
-                                                    ///< written
-    char* bufferPtr,                                ///< [IN] Output buffer
-    size_t* bufferLenPtr                            ///< [IN] Output buffer length
+    lwm2mcore_ResourceType_t    resourceFormatType,     ///< [IN] Resource format type
+    lwm2m_data_t                dataArray,              ///< [IN] Array of requested resources to be
+                                                        ///< written
+    char*                       bufferPtr,              ///< [IN] Output buffer
+    size_t*                     bufferLenPtr            ///< [IN] Output buffer length
 )
 {
     bool result = false;
 
     if ( (NULL == bufferPtr) || (NULL == bufferLenPtr))
     {
-        return result;
+        return false;
     }
 
     // This indicates in which format the server sent a data
@@ -619,7 +646,7 @@ static bool FormatDataWriteExecute
                         // Change the string in value
                         int64_t value = 0;
 
-                        // If the length is 0, immediately   return the right length value
+                        // If the length is 0, immediately return the right length value
                         // else Wakaama utils_textToInt will return an error
                         if(!(dataArray.value.asBuffer.length))
                         {
@@ -669,6 +696,13 @@ static bool FormatDataWriteExecute
         break;
 
         case LWM2M_TYPE_INTEGER:
+            *bufferLenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
+                                                        &(dataArray.value.asInteger),
+                                                        sizeof(dataArray.value.asInteger),
+                                                        false);
+            result = true;
+        break;
+
         case LWM2M_TYPE_FLOAT:
         case LWM2M_TYPE_BOOLEAN:
         default:
@@ -698,8 +732,14 @@ static uint8_t WriteCb
     lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
 )
 {
-    uint8_t result;
+    uint8_t result = COAP_400_BAD_REQUEST;
     int i;
+    int sid = 0;
+    lwm2mcore_Uri_t uri;
+    lwm2mcore_internalResource_t* resourcePtr = NULL;
+    lwm2mcore_internalObject_t* objPtr;
+    char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
+    size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
 
     if ((NULL == objectPtr) || (NULL == dataArrayPtr))
     {
@@ -709,113 +749,123 @@ static uint8_t WriteCb
     LOG_ARG("WriteCb oid %d oiid %d", objectPtr->objID, instanceId);
 
     /* Search if the object was registered */
-    if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
+    if (!LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_Uri_t uri;
-        lwm2mcore_internalObject_t* objPtr;
-        LOG("object instance Id was registered");
+        LOG_ARG("Object %d not found", objectPtr->objID);
+        return COAP_404_NOT_FOUND;
+    }
 
-        memset( &uri, 0, sizeof (lwm2mcore_Uri_t));
+    LOG("object instance Id was registered");
 
-        uri.op = LWM2MCORE_OP_WRITE;
-        uri.oid = objectPtr->objID;
-        uri.oiid = instanceId;
+    memset( &uri, 0, sizeof (lwm2mcore_Uri_t));
+    uri.op = LWM2MCORE_OP_WRITE;
+    uri.oid = objectPtr->objID;
+    uri.oiid = instanceId;
 
-        objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
-        if (NULL == objPtr)
+    objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
+    if (!objPtr)
+    {
+        LOG_ARG("Object %d is NOT registered", objectPtr->objID);
+        return COAP_404_NOT_FOUND;
+    }
+
+    LOG_ARG("numData %d", numData);
+    // is the server asking for the full object ?
+    if (0 == numData)
+    {
+        uint16_t resList[50];
+        int nbRes = 0;
+
+        /* Search the supported resources for the required object */
+        i = 0;
+        for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
+             resourcePtr;
+             resourcePtr = DLIST_NEXT(resourcePtr, list))
         {
-            LOG_ARG("Object %d is NOT registered", objectPtr->objID);
-            result = COAP_404_NOT_FOUND;
+            resList[ i++ ] = resourcePtr->id;
+        }
+
+        nbRes = i;
+
+        dataArrayPtr = lwm2m_data_new(nbRes);
+        if (NULL == dataArrayPtr)
+        {
+            return COAP_500_INTERNAL_SERVER_ERROR;
+        }
+        numData = nbRes;
+        for (i = 0 ; i < nbRes ; i++)
+        {
+            dataArrayPtr[i].id = resList[i];
+        }
+    }
+
+    i = 0;
+    do
+    {
+        uri.rid = dataArrayPtr[i].id;
+        memset(asyncBuf, 0, LWM2MCORE_BUFFER_MAX_LEN);
+        asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+
+        /* Search the resource handler */
+        resourcePtr = FindResource(objPtr, uri.rid);
+        if (!resourcePtr)
+        {
+            LOG("resource NULL");
+            return COAP_404_NOT_FOUND;
+        }
+
+        if (!(resourcePtr->write))
+        {
+            LOG("WRITE callback NULL");
+            return COAP_405_METHOD_NOT_ALLOWED;
+        }
+
+        LOG_ARG("data type %d resourcePtr->ptr %d", dataArrayPtr[i].type, resourcePtr->type);
+        if (LWM2M_TYPE_MULTIPLE_RESOURCE != dataArrayPtr[i].type)
+        {
+            if (FormatDataWriteExecute(resourcePtr->type,
+                                       dataArrayPtr[i],
+                                       asyncBuf,
+                                       &asyncBufLen))
+            {
+                LOG_ARG("WRITE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
+                sid = resourcePtr->write(&uri, asyncBuf, asyncBufLen);
+                LOG_ARG("WRITE sID %d", sid);
+                /* Define the CoAP result */
+                result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
         }
         else
         {
-            int sid = 0;
-            lwm2mcore_internalResource_t* resourcePtr = NULL;
-            char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
-            size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+            uint32_t count = (uint32_t)dataArrayPtr[i].value.asChildren.count;
+            uint32_t loop;
 
-            LOG_ARG("numData %d", numData);
-            // is the server asking for the full object ?
-            if (0 == numData)
+            for (loop = 0; loop < count; loop++)
             {
-                uint16_t resList[50];
-                int nbRes = 0;
-
-                /* Search the supported resources for the required object */
-                i = 0;
-                for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
-                     resourcePtr;
-                     resourcePtr = DLIST_NEXT(resourcePtr, list))
+                if (FormatDataWriteExecute(resourcePtr->type,
+                                           dataArrayPtr[i].value.asChildren.array[loop],
+                                           asyncBuf,
+                                           &asyncBufLen))
                 {
-                    resList[ i++ ] = resourcePtr->id;
-                }
-
-                nbRes = i;
-
-                dataArrayPtr = lwm2m_data_new(nbRes);
-                if (NULL == dataArrayPtr)
-                {
-                    return COAP_500_INTERNAL_SERVER_ERROR;
-                }
-                numData = nbRes;
-                for (i = 0 ; i < nbRes ; i++)
-                {
-                    dataArrayPtr[i].id = resList[i];
-                }
-            }
-
-            i = 0;
-            do
-            {
-                uri.rid = dataArrayPtr[i].id;
-                memset(asyncBuf, 0, LWM2MCORE_BUFFER_MAX_LEN);
-                asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
-
-                /* Search the resource handler */
-                resourcePtr = FindResource(objPtr, uri.rid);
-                if (NULL != resourcePtr)
-                {
-                    if (NULL != resourcePtr->write)
-                    {
-                        LOG_ARG("data type %d resourcePtr->ptr %d",
-                                dataArrayPtr[i].type, resourcePtr->type);
-
-                       if (FormatDataWriteExecute(resourcePtr->type,
-                                                  dataArrayPtr[i],
-                                                  asyncBuf,
-                                                  &asyncBufLen))
-                        {
-                            LOG_ARG("WRITE / %d / %d / %d", uri.oid, uri.oiid, uri.rid);
-                            sid = resourcePtr->write(&uri, asyncBuf, asyncBufLen);
-                            LOG_ARG("WRITE sID %d", sid);
-                            /* Define the CoAP result */
-                            result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
-                        }
-                        else
-                        {
-                            result = COAP_400_BAD_REQUEST;
-                        }
-                    }
-                    else
-                    {
-                        LOG("WRITE callback NULL");
-                        result = COAP_405_METHOD_NOT_ALLOWED;
-                    }
+                    uri.riid = dataArrayPtr[i].value.asChildren.array[loop].id;
+                    LOG_ARG("WRITE / %d / %d / %d / %d", uri.oid, uri.oiid, uri.rid, uri.riid);
+                    sid = resourcePtr->write(&uri, asyncBuf, asyncBufLen);
+                    LOG_ARG("WRITE sID %d", sid);
+                    /* Define the CoAP result */
+                    result = SetCoapError(sid, LWM2MCORE_OP_WRITE);
                 }
                 else
                 {
-                    LOG("resource NULL");
-                    result = COAP_404_NOT_FOUND;
+                    result = COAP_400_BAD_REQUEST;
                 }
-                i++;
-            } while ((i < numData) && ((COAP_204_CHANGED == result) || (COAP_NO_ERROR == result)));
+            }
         }
-    }
-    else
-    {
-        LOG_ARG("Object %d not found", objectPtr->objID);
-        result = COAP_404_NOT_FOUND;
-    }
+        i++;
+    } while ((i < numData) && ((COAP_204_CHANGED == result) || (COAP_NO_ERROR == result)));
 
     LOG_ARG("WriteCb result %d", result);
     return result;
@@ -951,7 +1001,7 @@ static uint8_t CreateCb
 static uint8_t DeleteCb
 (
     uint16_t instanceId,            ///< [IN] Object instance ID
-    lwm2m_object_t* objectPtr      ///< [IN] Pointer on object
+    lwm2m_object_t* objectPtr       ///< [IN] Pointer on object
 )
 {
     uint8_t result;
@@ -995,24 +1045,36 @@ static uint8_t DeleteCb
 
     /* Search if the object instance was registered */
     instancePtr = LWM2M_LIST_FIND(objectPtr->instanceList, instanceId);
-    SwApplicationList_t* appPtr;
 
     if (NULL != instancePtr)
     {
-        lwm2m_client_t* clientP;
-        /* Delete the object instance in the Wakaama format */
-        objectPtr->instanceList = LWM2M_LIST_RM(objectPtr->instanceList, instanceId, &clientP);
-        lwm2m_free(instancePtr);
-
-        LOG_ARG("Remove oiid %d from SwApplicationListPtr", instanceId);
-        instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr, instanceId);
-
-        if (NULL != instancePtr)
+        if (LWM2MCORE_ACL_OID == (objectPtr->objID))
         {
-            SwApplicationListPtr = (SwApplicationList_t*)LWM2M_LIST_RM(SwApplicationListPtr,
-                                                                       instanceId,
-                                                                       &appPtr);
+            omanager_RemoveAclObjectInstance(instanceId);
+            lwm2m_acl_deleteObjectInstance(objectPtr, instanceId);
+            omanager_StoreAclConfiguration();
+        }
+        else
+        {
+            lwm2m_client_t* clientP;
+            /* Delete the object instance in the Wakaama format */
+            objectPtr->instanceList = LWM2M_LIST_RM(objectPtr->instanceList, instanceId, &clientP);
             lwm2m_free(instancePtr);
+
+            if (LWM2MCORE_SOFTWARE_UPDATE_OID == objectPtr->objID)
+            {
+                LOG_ARG("Remove oiid %d from SwApplicationListPtr", instanceId);
+                instancePtr = (lwm2m_list_t*)LWM2M_LIST_FIND(SwApplicationListPtr, instanceId);
+
+                if (NULL != instancePtr)
+                {
+                    SwApplicationList_t* appPtr;
+                    SwApplicationListPtr = (SwApplicationList_t*)LWM2M_LIST_RM(SwApplicationListPtr,
+                                                                               instanceId,
+                                                                               &appPtr);
+                    lwm2m_free(instancePtr);
+                }
+            }
         }
 
         result = COAP_202_DELETED;
@@ -1468,7 +1530,7 @@ static bool RegisterObjTable
     ObjNb = *registeredObjNbPtr;
 
     /* Check if a DM server was provided: only for static LwM2MCore case */
-    ConfigGetObjectsNumber(&securityObjectNumber, &serverObjectNumber);
+    omanager_GetBootstrapConfigObjectsNumber(&securityObjectNumber, &serverObjectNumber);
     LOG_ARG("securityObjectNumber %d, serverObjectNumber %d",
             securityObjectNumber, serverObjectNumber);
 
@@ -1517,6 +1579,21 @@ static bool RegisterObjTable
                 else
                 {
                     objInstanceNb = serverObjectNumber;
+                }
+            }
+
+            /* Object 2 case: check stored ACL configuration */
+            if (LWM2M_ACL_OBJECT_ID == ObjectArray[ObjNb]->objID)
+            {
+                uint16_t object2InstanceNumber = omanager_GetObject2InstanceNumber();
+                if (object2InstanceNumber >= 1)
+                {
+                    objInstanceNb = object2InstanceNumber;
+                }
+                else
+                {
+                    /* Consider that ACLs are not configured: single server */
+                    objInstanceNb = LWM2MCORE_ID_NONE;
                 }
             }
 
@@ -1747,8 +1824,9 @@ static bool UpdateSwListWakaama
                         {
                             LOG("Obj 9 is registered");
 
-                            instancePtr = (SwApplicationList_t*)LWM2M_LIST_FIND(SwApplicationListPtr,
-                                                                         oiid);
+                            instancePtr =
+                                (SwApplicationList_t*)LWM2M_LIST_FIND(SwApplicationListPtr, oiid);
+
                             if (NULL == instancePtr)
                             {
                                 // Object instance is not registered
@@ -1923,13 +2001,19 @@ uint16_t lwm2mcore_ObjectRegister
     LOG_ARG("lwm2mcore_ObjectRegister RegisteredObjNb %d", RegisteredObjNb);
 
     /* Read the bootstrap configuration file */
-    if (false == omanager_GetBootstrapConfiguration())
+    if (false == omanager_LoadBootstrapConfigurationFile())
     {
         /* If the file is not present:
          * Delete DM credentials to force a connection to the bootstrap server
          * Then the configuration file will be created at the end of the bootstrap procedure
          */
         omanager_DeleteDmCredentials();
+    }
+
+    /* Read the ACL configuration file */
+    if (false == omanager_LoadAclConfiguration())
+    {
+        LOG("ERROR on reading ACL configuration -> set default");
     }
 
     lwm2mcoreHandlersPtr = omanager_GetHandlers();

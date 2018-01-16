@@ -35,6 +35,8 @@ include_directories(${LWM2MCORE_SOURCES_DIR}/examples/linux/
                     ${LWM2MCORE_SOURCES_DIR}/wakaama/core/er-coap-13/)
 
 set(LWM2MCORE_SOURCES
+    ${LWM2MCORE_SOURCES_DIR}/objectManager/aclConfiguration.c
+    ${LWM2MCORE_SOURCES_DIR}/objectManager/bootstrapConfiguration.c
     ${LWM2MCORE_SOURCES_DIR}/objectManager/handlers.c
     ${LWM2MCORE_SOURCES_DIR}/objectManager/lwm2mcoreCoapHandlers.c
     ${LWM2MCORE_SOURCES_DIR}/objectManager/objects.c

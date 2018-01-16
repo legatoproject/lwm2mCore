@@ -376,3 +376,17 @@ lwm2m_context_t * lwm2m_init(void * userData)
 
     return contextP;
 }
+
+/**
+ * Delete an object instance of object 2
+ *
+ * @return
+ *  - true on success
+ *  - false on failure.
+ */
+bool lwm2m_acl_deleteObjectInstance(lwm2m_object_t * objectP, uint16_t oiid)
+{
+    (void)objectP;
+    (void) oiid;
+    return false;
+}

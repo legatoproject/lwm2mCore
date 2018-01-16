@@ -14,9 +14,9 @@ SN = LWM2MCORE12345
 #-- Without security, remove these fields from this file
 
 [BOOTSTRAP SECURITY]
-SERVER URI = coaps://leshan.eclipse.org:5784
-DEVICE PKID = 11111
-SECRET KEY = 3232323232
+SERVER_URI = coaps://leshan.eclipse.org:5784
+DEVICE_PKID = 11111
+SECRET_KEY = 3232323232
 
 [LWM2M SECURITY]
 #-- This section can be updated by the bootstrap server

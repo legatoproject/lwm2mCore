@@ -118,6 +118,23 @@ CommandDesc_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to stop the connection
+ */
+//--------------------------------------------------------------------------------------------------
+static void StopConnection
+(
+    void
+)
+{
+    lwm2mcore_Disconnect(ContextPtr);
+    lwm2mcore_Free(ContextPtr);
+    ContextPtr = NULL;
+    FD_CLR(LinuxSocketConfig.sock, &Fd);
+    LinuxSocketConfig.sock = 0;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Handler for LWM2MCore events
  */
 //--------------------------------------------------------------------------------------------------
@@ -159,6 +176,7 @@ static int StatusHandler
 
         case LWM2MCORE_EVENT_SESSION_FAILED:
             printf("The session with the server failed\n");
+            StopConnection();
             break;
 
         case LWM2MCORE_EVENT_SESSION_FINISHED:
@@ -404,11 +422,7 @@ static void TreatCmd
             break;
 
         case STOP_CNX:
-            lwm2mcore_Disconnect(ContextPtr);
-            lwm2mcore_Free(ContextPtr);
-            ContextPtr = NULL;
-            FD_CLR(LinuxSocketConfig.sock, &Fd);
-            LinuxSocketConfig.sock = 0;
+            StopConnection();
         break;
 
         case UPDATE_REQUEST:
