@@ -833,4 +833,8 @@ void lwm2mcore_ReportCoapResponseCode
     int code    ///< [IN] CoAP error code as defined in RFC 7252 section 12.1.2
 );
 
-#endif /*  __LWM2MCORE_H__ */
+/**
+  * @}
+  */
+
+#endif /* __LWM2MCORE_H__ */

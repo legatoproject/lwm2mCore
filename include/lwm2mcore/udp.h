@@ -134,34 +134,12 @@ bool lwm2mcore_UdpConnect
 //--------------------------------------------------------------------------------------------------
 /**
  * Send data on a socket
- * This function is called by the LWM2MCore and must be adapted to the platform
- * The aim of this function is to send data on a socket
- *
- * @return
- *      -
- *      - false on error
- *
- */
-//--------------------------------------------------------------------------------------------------
-ssize_t lwm2mcore_UdpSend
-(
-    int sockfd,                            ///< [IN] Socket file descriptor
-    const void* bufferPtr,                 ///< [IN] Data to send
-    size_t length,                         ///< [IN] Data size
-    int flags,                             ///< [IN] Flags argument. (see 'man send' for flags list)
-    const struct sockaddr *dest_addrPtr,   ///< [IN] Destination socket address pointer
-    socklen_t addrlen                      ///< [IN] Destination socket address length
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Send data on a socket
  * This function is called by the LwM2MCore and must be adapted to the platform
  * The aim of this function is to send data on a socket
  *
  * @return
- *      -
- *      - false on error
+ *      - Sent data length
+ *      - -1 on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -172,7 +150,7 @@ ssize_t lwm2mcore_UdpSend
     size_t length,                         ///< [IN] Buffer length to be sent
     int flags,                             ///< [IN] Flags
     const struct sockaddr *destAddrPtr,    ///< [IN] Destination address
-    socklen_t addrlen                      ///< [IN] destAddrPtr parameter length
+    socklen_t addrLen                      ///< [IN] destAddrPtr parameter length
 );
 
 /**

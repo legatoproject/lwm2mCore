@@ -165,14 +165,72 @@
  * :----------------------- | :-------- | :-------------------------------
  * SMS transport            | No        | Not supported
  * Bootstrap Interface      | Full      | Procedure defined in section 5.1.3 of \ref R1
- * Multiple server support  | No        | Will be supported later
- * Access Control List      | No        | Will be supported later
+ * Multiple server support  | Yes       | Supported
+ * Access Control List      | Yes       | Supported
  * SMS wakeup               | No        | To be managed by the client
- * Data format: Plain text  | Yes       | Supported
- * Data format: Opaque      | Yes       | Supported
- * Data format: TLV         | Yes       | Supported
- * Data format: JSON        | Yes       | Supported but not tested (needs to embed @c LWM2M_SUPPORT_JSON flag)
- * Observe                  | TBD       | @todo TBD
+ *
+ * @subsubsection subs_subs_registation Client Registration
+ * Feature                  | Support   | Comment
+ * :----------------------- | :-------- | :-------------------------------
+ * Register                 | Yes       | Supported
+ * Register update          | Yes       | Supported
+ * De-register              | Yes       | Supported if @c LWM2M_DEREGISTER compilation flag is used
+ *
+ * @subsubsection subs_subs_dm Device Management
+ * Feature                  | Support   | Comment
+ * :----------------------- | :-------- | :-------------------------------
+ * Read                     | Yes       | Supported
+ * Write                    | Yes       | Supported
+ * Execute                  | Yes       | Supported
+ * Create                   | Yes       | Supported
+ * Write attributes         | TBD       | Not tested
+ * Discover                 | TBD       | Not tested
+ *
+ * @subsubsection subs_subs_report Information reporting
+ * Feature                    | Support   | Comment
+ * :--------------------------| :-------- | :-------------------------------
+ * Observe                    | TBD       | Not tested
+ * Passive Cancel observation | TBD       | Not tested
+ * Active Cancel observation  | TBD       | Not tested
+ * Notify                     | TBD       | Not tested
+ *
+ * @subsubsection subs_subs_format Format
+ * Feature                    | Support   | Comment
+ * :--------------------------| :-------- | :-------------------------------
+ * Plain-text                 | Yes       | Supported
+ * Opaque                     | Yes       | Supported
+ * TLV                        | Yes       | Supported
+ * JSON                       | TBD       | Not tested, required to use the @c LWM2M_SUPPORT_JSON compilation flag
+ *
+ * @subsubsection subs_subs_resource Resource model
+ * Feature                    | Support   | Comment
+ * :--------------------------| :-------- | :-------------------------------
+ * Object                     | Yes       | Supported
+ * Object instance            | Yes       | Supported
+ * Single resource            | Yes       | Supported
+ * Multi-instance resource    | Yes       | Supported
+ * Object version             | No        | Not supported
+ *
+ * @subsubsection subs_subs_security Security
+ * Feature                    | Support   | Comment
+ * :--------------------------| :-------- | :-------------------------------
+ * No sec                     | No        | Not supported
+ * Pre-share key              | Yes       | Supported
+ * Raw-public key             | No        | Not supported
+ * X.509                      | No        | Not supported
+ *
+ * @subsubsection subs_subs_bootstrap Bootstrap
+ * Feature                    | Support   | Comment
+ * :--------------------------| :-------- | :-------------------------------
+ * Bootstrap request          | Yes       | Supported
+ * Discover request           | No        | Not supported
+ * Write request              | Yes       | Supported
+ * Delete request             | Yes       | Supported
+ * Bootstrap finished         | Yes       | Supported
+ * Bootstrap factory          | Yes       | Supported
+ * Bootstrap smartcard        | No        | Not supported
+ * Bootstrap Device Initiated | Yes       | Supported
+ * Bootstrap Server Initiated | No        | Not supported
  *
  * @subsection subs_supported_LwM2Mobjects Supported LwM2M objects
  * Non-exhaustive list of the most common LwM2M objects:
@@ -192,9 +250,7 @@
  * @note To be fully compliant with LwM2M 1.0 specification, the @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
  *
  * @subsection subs_restriction Restrictions
- * @warning Multiple DM servers are supported but object 2 (ACL) is not supported for the moment.
- * @warning tinyDTLS does not support DTLS resume. When a registration update message is sent to the
- * sever, a DTLS rehandshake is made.
+  * @warning tinyDTLS does not support DTLS resume. When a registration update message is sent to the server, a DTLS rehandshake is made.
  *
  * @page p_integration Integration
  * @tableofcontents
