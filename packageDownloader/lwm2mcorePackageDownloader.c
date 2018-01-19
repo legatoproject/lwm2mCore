@@ -234,6 +234,8 @@ typedef struct
     size_t                      processedLen;        ///< Length of data processed by last parsing
     uint32_t                    downloadProgress;    ///< Overall download progress
     uint64_t                    updateGap;           ///< Gap between update and downloader offsets
+    bool                        certifiedPackage;    ///< True if downloaded package presents a
+                                                     ///< correct CRC and signature
 }
 PackageDownloaderObj_t;
 
@@ -867,6 +869,7 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
     {
         LOG_ARG("Incorrect CRC: expected 0x%08x, computed 0x%08x",
                 DwlParserObj.packageCRC, DwlParserObj.computedCRC);
+        PkgDwlObj.certifiedPackage = false;
         SetUpdateResult(PKG_DWL_ERROR_VERIFY);
         return DWL_FAULT;
     }
@@ -878,15 +881,12 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
                                                         PkgDwlObj.processedLen))
     {
         LOG("Incorrect package signature");
+        PkgDwlObj.certifiedPackage = false;
         SetUpdateResult(PKG_DWL_ERROR_VERIFY);
         return DWL_FAULT;
     }
 
-    // Notify the application of the signature validation
-    if (NULL != PkgDwlPtr)
-    {
-        PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, PkgDwlPtr);
-    }
+    PkgDwlObj.certifiedPackage = true;
 
     return DWL_OK;
 }
@@ -1905,6 +1905,12 @@ static void PkgDwlEnd
         if (DWL_OK != result)
         {
             LOG("Unable to set update state");
+        }
+
+        // Notify that downloaded package presents a correct CRC and signature
+        if (PkgDwlObj.certifiedPackage)
+        {
+            PkgDwlEvent(PKG_DWL_EVENT_SIGN_OK, PkgDwlPtr);
         }
     }
 
