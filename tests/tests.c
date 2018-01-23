@@ -273,7 +273,8 @@ void test_lwm2m_connect_server
     dataPtr->securityObjPtr->instanceList = LWM2M_LIST_ADD(dataPtr->securityObjPtr->instanceList,
                                                            instancePtr);
 
-    TEST_ASSERT(lwm2m_connect_server(1, dataPtr->lwm2mHPtr->userData) != NULL);
+    // Connection configuration is not available: connection is not possible
+    TEST_ASSERT(lwm2m_connect_server(1, dataPtr->lwm2mHPtr->userData) == NULL);
 }
 
 //-------------------------------------------------------------------------------------------------
