@@ -177,6 +177,20 @@ int dtls_Rehandshake
     dtls_Connection_t* connPtr,         ///< [IN] DTLS connection structure
     bool sendCloseNotify                ///< [IN] Flag to send a DTLS_STATE_CLOSED
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to resume a DTLS session
+ *
+ * @return
+ *  - 0 in case of success (or DTLS is not activated on the connection)
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+int dtls_Resume
+(
+    dtls_Connection_t* connPtr          ///< [IN] DTLS connection structure
+);
 /**
   * @}
   */

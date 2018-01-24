@@ -358,7 +358,7 @@ static int GetPskInfo
                    lwm2m_free(identityPtr);
                 }
 
-                LOG("cannot set psk_identity -- buffer too small");
+                LOG("Cannot set psk_identity -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
@@ -381,7 +381,7 @@ static int GetPskInfo
                    lwm2m_free(keyPtr);
                 }
 
-                LOG("cannot set psk -- buffer too small");
+                LOG("Cannot set psk -- buffer too small");
                 return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
             }
 
@@ -390,7 +390,7 @@ static int GetPskInfo
             return keyLen;
         }
         default:
-            LOG_ARG("unsupported request type: %d", type);
+            LOG_ARG("Unsupported request type: %d", type);
         break;
     }
 
@@ -514,7 +514,7 @@ static int dtlsEventCb
 
         default:
         {
-            LOG_ARG("dtlsEventCb unsupported DTLS event %d", code);
+            LOG_ARG("DtlsEventCb unsupported DTLS event %d", code);
         }
         break;
     }
@@ -657,7 +657,7 @@ static int SockaddrCmp
     else
     {
         // unknown address type
-        LOG("non IPV4 or IPV6 address");
+        LOG("Non IPV4 or IPV6 address");
         return 0;
     }
 }
@@ -898,27 +898,41 @@ static int ConnectionSend
         if ( 0 != SendData(connPtr, bufferPtr, length))
         {
             LOG("ConnectionSend SendData != 0");
-            return -1 ;
+            return -1;
         }
     }
     else
     {
         time_t timeFromLastData = lwm2m_gettime() - connPtr->lastSend;
         LOG_ARG("now - connP->lastSend %d", timeFromLastData);
-        if (firstBlock
-         && (0 < DTLS_NAT_TIMEOUT)
-         && ((DTLS_NAT_TIMEOUT < timeFromLastData)
+
+        if (firstBlock)
+        {
             // If difference is negative, a time update could have been made on platform side.
             // In this case, do a rehandshake
-          || (timeFromLastData < 0)))
-        {
-            // We need to rehandhake because our source IP/port probably changed for the server
-            if (0 != dtls_Rehandshake(connPtr, false))
+            if (timeFromLastData < 0)
             {
-                LOG("can't send due to rehandshake error");
-                return -1;
+                // We need to rehandhake because our source IP/port probably changed for the server
+                if (0 != dtls_Rehandshake(connPtr, false))
+                {
+                    LOG("Unable to perform rehandshake");
+                    return -1;
+                }
+            }
+            else if ((0 < DTLS_NAT_TIMEOUT) && (DTLS_NAT_TIMEOUT < timeFromLastData))
+            {
+                if (0 != dtls_Resume(connPtr))
+                {
+                    LOG("Unable to resume. Fall-back to a rehandshake");
+                    if (0 != dtls_Rehandshake(connPtr, false))
+                    {
+                        LOG("Unable to perform rehandshake");
+                        return -1;
+                    }
+                }
             }
         }
+
         LOG_ARG("ConnectionSend SEC length %d", length);
         if (-1 == dtls_write(connPtr->dtlsContextPtr,
                              connPtr->dtlsSessionPtr,
@@ -959,14 +973,14 @@ int dtls_HandlePacket
                                          numBytes);
         if (0 != result)
         {
-             LOG_ARG("error DTLS handling message %d",result);
+             LOG_ARG("Error DTLS handling message %d",result);
         }
         return result;
     }
     else
     {
         // no security, just give the plaintext buffer to liblwm2m
-        lwm2mcore_DataDump("received bytes in no sec", bufferPtr, numBytes);
+        lwm2mcore_DataDump("Received bytes in no sec", bufferPtr, numBytes);
         lwm2m_handle_packet(connPtr->lwm2mHPtr, bufferPtr, numBytes, (void*)connPtr);
         return 0;
     }
@@ -991,7 +1005,8 @@ int dtls_Rehandshake
     dtls_peer_t* peer;
     int result;
 
-    LOG("Entering");
+    LOG("Initiate a DTLS rehandshake");
+
     // if not a dtls connection we do nothing
     if (NULL == connPtr->dtlsSessionPtr)
     {
@@ -1013,7 +1028,40 @@ int dtls_Rehandshake
     result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
     if (0 != result)
     {
-         LOG_ARG("error DTLS reconnection %d",result);
+         LOG_ARG("Error DTLS reconnection %d",result);
+    }
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to resume a DTLS session
+ *
+ * @return
+ *  - 0 in case of success (or DTLS is not activated on the connection)
+ *  - -1 in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+int dtls_Resume
+(
+    dtls_Connection_t* connPtr  ///< [IN] DTLS connection structure
+)
+{
+    int result;
+
+    LOG("Initiate a DTLS resume");
+
+    // if not a dtls connection we do nothing
+    if (NULL == (connPtr->dtlsSessionPtr))
+    {
+        return 0;
+    }
+
+    // start a resume
+    result = dtls_resume(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
+    if (result)
+    {
+         LOG_ARG("Error DTLS resume %d",result);
     }
     return result;
 }
@@ -1042,13 +1090,13 @@ uint8_t lwm2m_buffer_send
 
     if (NULL == connPtr)
     {
-        LOG_ARG("#> failed sending %lu bytes, missing connection", length);
+        LOG_ARG("#> Failed sending %lu bytes, missing connection", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 
     if (-1 == ConnectionSend(connPtr, bufferPtr, length, firstBlock))
     {
-        LOG_ARG("#> failed sending %lu bytes", length);
+        LOG_ARG("#> Failed sending %lu bytes", length);
         return COAP_500_INTERNAL_SERVER_ERROR ;
     }
 

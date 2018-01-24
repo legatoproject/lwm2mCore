@@ -109,3 +109,14 @@ int dtls_connect
     (void)dst;
     return -1;
 }
+
+int dtls_resume
+(
+    dtls_context_t *ctx,
+    const session_t *dst
+)
+{
+    (void)ctx;
+    (void)dst;
+    return -1;
+};
