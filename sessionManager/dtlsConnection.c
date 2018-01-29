@@ -332,8 +332,8 @@ static int GetPskInfo
     LOG_ARG("GetPskInfo type %d", type);
     // find connection
     cnxPtr = dtls_FindConnection((dtls_Connection_t*) ctxPtr->app,
-                                                &(sessionPtr->addr.st),
-                                                sessionPtr->size);
+                                 &(sessionPtr->addr.st),
+                                 sessionPtr->size);
     if (NULL == cnxPtr)
     {
         LOG("GET PSK session not found");
@@ -415,10 +415,17 @@ static int SendToPeer
     size_t len                          ///< [IN] Buffer length
 )
 {
+    dtls_Connection_t* cnxPtr;
+
+    if ((!ctxPtr) || (!sessionPtr) || (!dataPtr))
+    {
+        return -1;
+    }
+
     // find connection
-    dtls_Connection_t* cnxPtr = dtls_FindConnection((dtls_Connection_t*) ctxPtr->app,
-                                                &(sessionPtr->addr.st),
-                                                sessionPtr->size);
+    cnxPtr = dtls_FindConnection((dtls_Connection_t*) ctxPtr->app,
+                                 &(sessionPtr->addr.st),
+                                 sessionPtr->size);
     if (NULL != cnxPtr)
     {
         // send data to peer
@@ -580,22 +587,28 @@ static dtls_context_t* GetDtlsContext
 //--------------------------------------------------------------------------------------------------
 static int GetPort
 (
-    struct sockaddr *x      ///< [IN] Socket information
+    struct sockaddr* x      ///< [IN] Socket information
 )
 {
-   if (x->sa_family == AF_INET)
-   {
-       return ((struct sockaddr_in *)(void*)x)->sin_port;
-   }
-   else if (x->sa_family == AF_INET6)
-   {
-       return ((struct sockaddr_in6 *)(void*)x)->sin6_port;
-   }
-   else
-   {
-       LOG("non IPV4 or IPV6 address");
-       return  -1;
-   }
+    if (!x)
+    {
+        LOG("Invalid parameter");
+        return -1;
+    }
+
+    if (x->sa_family == AF_INET)
+    {
+        return ((struct sockaddr_in *)(void*)x)->sin_port;
+    }
+    else if (x->sa_family == AF_INET6)
+    {
+        return ((struct sockaddr_in6 *)(void*)x)->sin6_port;
+    }
+    else
+    {
+        LOG("non IPV4 or IPV6 address");
+        return  -1;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -613,11 +626,20 @@ static int SockaddrCmp
     struct sockaddr *y      ///< [IN] Socket information 2
 )
 {
-    int portX = GetPort(x);
-    int portY = GetPort(y);
+    int portX;
+    int portY;
+
+    if ((!x) || (!y))
+    {
+        LOG("Invalid parameter");
+        return -1;
+    }
+
+    portX = GetPort(x);
+    portY = GetPort(y);
 
     // if the port is invalid of different
-    if (( -1 == portX) || (portX != portY))
+    if ((-1 == portX) || (portX != portY))
     {
         return 0;
     }
@@ -678,8 +700,17 @@ dtls_Connection_t* dtls_FindConnection
     size_t addrLen                          ///< [IN] Socket address structure length
 )
 {
-    dtls_Connection_t* connPtr = connListPtr;
+    dtls_Connection_t* connPtr;
+
+    if (!addrPtr)
+    {
+        return NULL;
+    }
+
     (void)addrLen;
+
+    connPtr = connListPtr;
+
     while (NULL != connPtr)
     {
        if (SockaddrCmp((struct sockaddr*) (&connPtr->addr), (struct sockaddr*) addrPtr))
@@ -710,9 +741,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
     size_t addrLen                      ///< [IN] Socket address structure length
 )
 {
-    dtls_Connection_t* connPtr;
-
-    connPtr = (dtls_Connection_t*)lwm2m_malloc(sizeof(dtls_Connection_t));
+    dtls_Connection_t* connPtr = (dtls_Connection_t*)lwm2m_malloc(sizeof(dtls_Connection_t));
     if (NULL != connPtr)
     {
         connPtr->sock = sock;
@@ -825,7 +854,7 @@ dtls_Connection_t* dtls_CreateConnection
             lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
         }
 
-        // do we need to start tinydtls?
+        // Do we need to start tinydtls?
         if (NULL != connPtr)
         {
             connPtr->securityObjPtr = securityObjPtr;
@@ -870,6 +899,22 @@ void dtls_FreeConnection
         }
         lwm2m_free(connListPtr);
         connListPtr = nextPtr;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to update DTLS connection list
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_UpdateDtlsList
+(
+    dtls_Connection_t* connListPtr      ///< [IN] DTLS connection structure
+)
+{
+    if (DtlsContextPtr)
+    {
+        DtlsContextPtr->app = connListPtr;
     }
 }
 

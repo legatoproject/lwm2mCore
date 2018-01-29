@@ -121,12 +121,12 @@ void* lwm2m_connect_server
     dtls_Connection_t* newConnPtr = NULL;
     dataPtr = (smanager_ClientData_t*)userDataPtr;
 
-    if (NULL != dataPtr)
+    if (dataPtr)
     {
         lwm2m_object_t* securityObjPtr = dataPtr->securityObjPtr;
 
         instancePtr = LWM2M_LIST_FIND(dataPtr->securityObjPtr->instanceList, secObjInstID);
-        if (NULL == instancePtr)
+        if (!instancePtr)
         {
             return NULL;
         }
@@ -146,6 +146,7 @@ void* lwm2m_connect_server
             }
             return NULL;
         }
+
         dataPtr->connListPtr = newConnPtr;
     }
 
@@ -190,6 +191,7 @@ void lwm2m_close_connection
                 lwm2m_free(targetPtr);
             }
         }
+        dtls_UpdateDtlsList(appDataPtr->connListPtr);
     }
 }
 
@@ -1259,7 +1261,9 @@ bool smanager_IsBootstrapConnection
 )
 {
     if (BootstrapSession)
+    {
         return true;
+    }
 
     return false;
 }

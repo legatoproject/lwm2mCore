@@ -130,6 +130,16 @@ void dtls_FreeConnection
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to update DTLS connection list
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_UpdateDtlsList
+(
+    dtls_Connection_t* connListPtr      ///< [IN] DTLS connection structure
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Function to send data in a specific connection.
  * This function checks if DTLS is activated on the connection.
  *
