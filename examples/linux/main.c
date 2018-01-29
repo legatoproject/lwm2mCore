@@ -176,7 +176,6 @@ static int StatusHandler
 
         case LWM2MCORE_EVENT_SESSION_FAILED:
             printf("The session with the server failed\n");
-            StopConnection();
             break;
 
         case LWM2MCORE_EVENT_SESSION_FINISHED:

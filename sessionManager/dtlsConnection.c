@@ -59,7 +59,7 @@ static char* SecurityGetUri
 {
     int size = 1;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
-    uint8_t test;
+    uint8_t result;
     if (!dataPtr)
     {
        LOG("Memory not allocated for dataPtr");
@@ -67,12 +67,13 @@ static char* SecurityGetUri
     }
     dataPtr->id = LWM2M_SECURITY_URI_ID;
 
-    test = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
-    LOG_ARG("security_get_uri readFunc return %d", test);
+    result = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
 
-    if ((NULL != dataPtr) &&
-        (LWM2M_TYPE_STRING == dataPtr->type) &&
-        (0 < dataPtr->value.asBuffer.length))
+    if ( (COAP_205_CONTENT == result)
+      && (NULL != dataPtr)
+      && (LWM2M_TYPE_STRING == dataPtr->type)
+      && (0 < dataPtr->value.asBuffer.length))
+
     {
         if((size_t)bufferSize > dataPtr->value.asBuffer.length)
         {
@@ -112,6 +113,7 @@ static int64_t SecurityGetMode
 {
     int64_t mode;
     int size = 1;
+    uint8_t result;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
     if (!dataPtr)
     {
@@ -120,8 +122,9 @@ static int64_t SecurityGetMode
     }
     dataPtr->id = LWM2MCORE_SECURITY_MODE_RID;
 
-    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
-    if (0 != lwm2m_data_decode_int(dataPtr,&mode))
+    result = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if ( (COAP_205_CONTENT == result)
+      && (0 != lwm2m_data_decode_int(dataPtr,&mode)))
     {
         lwm2m_data_free(size, dataPtr);
         return mode;
@@ -149,6 +152,7 @@ static char* SecurityGetPublicId
 )
 {
     int size = 1;
+    uint8_t result;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
     if (!dataPtr)
     {
@@ -157,9 +161,11 @@ static char* SecurityGetPublicId
     }
     dataPtr->id = LWM2MCORE_SECURITY_PKID_RID;
 
-    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
-    if ((NULL != dataPtr)
-    && (LWM2M_TYPE_OPAQUE == dataPtr->type))
+    result = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if ( (COAP_205_CONTENT == result)
+      && (NULL != dataPtr)
+      && (LWM2M_TYPE_OPAQUE == dataPtr->type)
+      && (dataPtr->value.asBuffer.length))
     {
         char* buffPtr;
 
@@ -173,10 +179,9 @@ static char* SecurityGetPublicId
 
         return buffPtr;
     }
-    else
-    {
-        return NULL;
-    }
+
+    lwm2m_data_free(size, dataPtr);
+    return NULL;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -196,6 +201,7 @@ static char* SecurityGetSecretKey
 )
 {
     int size = 1;
+    uint8_t result;
     lwm2m_data_t* dataPtr = lwm2m_data_new(size);
     if (!dataPtr)
     {
@@ -204,9 +210,11 @@ static char* SecurityGetSecretKey
     }
     dataPtr->id = LWM2MCORE_SECURITY_SECRET_KEY_RID;
 
-    objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
-    if ((NULL != dataPtr)
-    && (LWM2M_TYPE_OPAQUE == dataPtr->type))
+    result = objPtr->readFunc(instanceId, &size, &dataPtr, objPtr);
+    if ( (COAP_205_CONTENT == result)
+      && (NULL != dataPtr)
+      && (LWM2M_TYPE_OPAQUE == dataPtr->type)
+      && (dataPtr->value.asBuffer.length))
     {
         char * buffPtr;
 
@@ -220,10 +228,9 @@ static char* SecurityGetSecretKey
 
         return buffPtr;
     }
-    else
-    {
-        return NULL;
-    }
+
+    lwm2m_data_free(size, dataPtr);
+    return NULL;
 }
 
 //--------------------------------------------------------------------------------------------------

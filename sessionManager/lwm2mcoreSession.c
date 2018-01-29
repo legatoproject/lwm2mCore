@@ -123,7 +123,7 @@ void* lwm2m_connect_server
 
     if (NULL != dataPtr)
     {
-        lwm2m_object_t  * securityObj = dataPtr->securityObjPtr;
+        lwm2m_object_t* securityObjPtr = dataPtr->securityObjPtr;
 
         instancePtr = LWM2M_LIST_FIND(dataPtr->securityObjPtr->instanceList, secObjInstID);
         if (NULL == instancePtr)
@@ -132,14 +132,18 @@ void* lwm2m_connect_server
         }
 
         newConnPtr = dtls_CreateConnection(dataPtr->connListPtr,
-                                       dataPtr->sock,
-                                       securityObj,
-                                       instancePtr->id,
-                                       dataPtr->lwm2mHPtr,
-                                       dataPtr->addressFamily);
-        if (NULL == newConnPtr)
+                                           dataPtr->sock,
+                                           securityObjPtr,
+                                           instancePtr->id,
+                                           dataPtr->lwm2mHPtr,
+                                           dataPtr->addressFamily);
+        if ((!newConnPtr) || !(newConnPtr->dtlsContextPtr))
         {
             LOG("Connection creation failed");
+            if (newConnPtr)
+            {
+                lwm2m_free(newConnPtr);
+            }
             return NULL;
         }
         dataPtr->connListPtr = newConnPtr;
@@ -1255,7 +1259,9 @@ bool smanager_IsBootstrapConnection
 )
 {
     if (BootstrapSession)
+    {
         return true;
+    }
 
     return false;
 }
