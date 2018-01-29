@@ -200,6 +200,7 @@ static void test_lwm2mcore_Free
 )
 {
     lwm2mcore_Free(Lwm2mcoreRef);
+    Lwm2mcoreRef = NULL;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -366,6 +367,37 @@ static void test_lwm2mcore_SetLifetime
     TEST_ASSERT(lwm2mcore_SetLifetime(8600) == LWM2MCORE_ERR_INVALID_STATE);
 }
 
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for lwm2mcore_UpdateSwList API
+ */
+//--------------------------------------------------------------------------------------------------
+static void test_lwm2mcore_UpdateSwList
+(
+    void
+)
+{
+    int i = 0;
+    char emptyList[] = "";
+    char objectsList[256] = {0};
+    int offset = 0;
+
+    for (i = 0; i < 10; i++)
+    {
+        // Add an object instance each loop
+        offset += snprintf(objectsList + offset, sizeof(objectsList) - offset, "</lwm2m/9/%d>", i);
+        TEST_ASSERT(offset>0);
+
+        // At this point, Lwm2mcoreRef is NULL
+        TEST_ASSERT(lwm2mcore_UpdateSwList(Lwm2mcoreRef, objectsList, strlen(objectsList)) == true);
+
+        test_lwm2mcore_Init();
+
+        TEST_ASSERT(lwm2mcore_UpdateSwList(Lwm2mcoreRef, emptyList, strlen(emptyList)) == true);
+
+        test_lwm2mcore_Free();
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -408,6 +440,9 @@ int main
 
     printf("======== test of lwm2mcore_SetLifetime() ========\n");
     test_lwm2mcore_SetLifetime();
+
+    printf("======== test of lwm2mcore_UpdateSwList() ========\n");
+    test_lwm2mcore_UpdateSwList();
 
     printf("======== UnitTest of lwm2mcore ends with SUCCESS ========\n");
 

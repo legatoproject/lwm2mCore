@@ -1926,9 +1926,13 @@ static bool UpdateSwListWakaama
 
         // Search in SwApplicationListPtr list if object instance is not in Wakaama list
         wakaamaInstancePtr = targetPtr->instanceList;
+        lwm2m_list_t* nextPtr;
         while (NULL != wakaamaInstancePtr)
         {
             LOG_ARG("wakaamaInstancePtr /9/%d", wakaamaInstancePtr->id);
+
+            nextPtr = wakaamaInstancePtr->next;
+
             if (NULL == LWM2M_LIST_FIND(SwApplicationListPtr, wakaamaInstancePtr->id))
             {
                 LOG_ARG("Oiid %d not registered in SwApplicationListPtr --> remove in Wakaama",
@@ -1944,7 +1948,7 @@ static bool UpdateSwListWakaama
                         wakaamaInstancePtr->id);
             }
 
-            wakaamaInstancePtr = wakaamaInstancePtr->next;
+            wakaamaInstancePtr = nextPtr;
         }
     }
 
