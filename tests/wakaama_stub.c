@@ -298,7 +298,7 @@ void lwm2m_close
 
 void lwm2m_set_push_callback
 (
-    lwm2mcore_PushAckCallback_t callbackP
+    lwm2m_push_ack_callback_t callbackP
 )
 {
     (void)callbackP;

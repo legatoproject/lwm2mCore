@@ -699,16 +699,6 @@ void lwm2mcore_SetPushCallback
     lwm2mcore_PushAckCallback_t callbackP  ///< [IN] push callback pointer
 );
 
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief Function to set the push callback
- */
-//--------------------------------------------------------------------------------------------------
-void lwm2m_set_push_callback
-(
-    lwm2mcore_PushAckCallback_t callbackP   ///< [IN] push callback pointer
-);
-
 /**
   * @}
   */

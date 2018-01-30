@@ -55,6 +55,13 @@ static lwm2mcore_StatusCb_t StatusCb = NULL;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *  Callback for data push events
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_PushAckCallback_t PushCb = NULL;
+
+//--------------------------------------------------------------------------------------------------
+/**
  *  Static boolean for bootstrap notification
  */
 //--------------------------------------------------------------------------------------------------
@@ -99,6 +106,37 @@ static lwm2mcore_context_t* InitContext
     LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
     memset(dataPtr->lwm2mcoreCtxPtr, 0, sizeof(lwm2mcore_context_t));
     return dataPtr->lwm2mcoreCtxPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Callback function called when CoAP data push is acknowledged or timed out
+ */
+//--------------------------------------------------------------------------------------------------
+static void PushCallbackHandler
+(
+    lwm2m_ack_result_t result,    ///< [IN] Acknowledge result
+    uint16_t mid                  ///< [IN] Message Identifier
+)
+{
+    lwm2mcore_AckResult_t ack;
+    switch (result)
+    {
+        case LWM2M_ACK_RECEIVED:
+            ack = LWM2MCORE_ACK_RECEIVED;
+            break;
+        case LWM2M_ACK_TIMEOUT:
+            ack = LWM2MCORE_ACK_TIMEOUT;
+            break;
+        default:
+            LOG("Unrecognized acknowledge type");
+            return;
+    }
+
+    if (PushCb)
+    {
+        PushCb(ack, mid);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1113,7 +1151,8 @@ void lwm2mcore_SetPushCallback
     lwm2mcore_PushAckCallback_t callbackP  ///< [IN] push callback pointer
 )
 {
-    lwm2m_set_push_callback(callbackP);
+    PushCb = callbackP;
+    lwm2m_set_push_callback(PushCallbackHandler);
 }
 
 //--------------------------------------------------------------------------------------------------
