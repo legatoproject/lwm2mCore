@@ -1488,6 +1488,10 @@ static void PkgDwlInit
             PkgDwlObj.state = PKG_DWL_END;
             return;
 
+        case DWL_SUSPEND:
+            PkgDwlObj.state = PKG_DWL_SUSPEND;
+            return;
+
         default:
             LOG("Error during download initialization");
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
@@ -1514,6 +1518,7 @@ static void PkgDwlInit
             PkgDwlObj.state = PKG_DWL_ERROR;
             return;
     }
+
     if (DWL_OK != PkgDwlObj.result)
     {
         LOG("Unable to set update result");
@@ -1547,6 +1552,10 @@ static void PkgDwlGetInfo
             // Download is aborted, just stop the package downloader without returning an error
             PkgDwlObj.result = DWL_OK;
             PkgDwlObj.state = PKG_DWL_END;
+            return;
+
+        case DWL_SUSPEND:
+            PkgDwlObj.state = PKG_DWL_SUSPEND;
             return;
 
         default:
