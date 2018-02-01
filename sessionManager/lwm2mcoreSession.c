@@ -851,31 +851,40 @@ bool omanager_UpdateRequest
     /* Check that the device is registered to DM server */
     if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
     {
-        int iresult;
-        /* Retrieve the serverID from list */
-        lwm2m_server_t * targetPtr = dataPtr->lwm2mHPtr->serverList;
+        bool schedule = false;
+        lwm2m_server_t* targetPtr = dataPtr->lwm2mHPtr->serverList;
         if (NULL == targetPtr)
         {
             LOG("serverList is NULL");
             return false;
         }
 
-        LOG_ARG("shortServerId %d", targetPtr->shortID);
-        iresult = lwm2m_update_registration(dataPtr->lwm2mHPtr, targetPtr->shortID, withObjects);
-        LOG_ARG("lwm2m_update_registration return %d", iresult);
-        if (!iresult)
+        while (targetPtr)
+        {
+            LOG_ARG("shortServerId %d", targetPtr->shortID);
+            if (COAP_NO_ERROR != lwm2m_update_registration(dataPtr->lwm2mHPtr,
+                                                           targetPtr->shortID,
+                                                           withObjects))
+            {
+                LOG_ARG("Error while sending update registration on server %d", targetPtr->shortID);
+            }
+            else
+            {
+                schedule = true;
+            }
+            targetPtr = targetPtr->next;
+        }
+
+        if (schedule)
         {
             /* Stop the timer and launch it */
-            if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP) )
+            if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
             {
                 LOG("Error to stop the step timer");
             }
 
-            /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second
-               to treat the update request */
-            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
-                                            1,
-                                            Lwm2mClientStepHandler))
+            /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the update request */
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 1, Lwm2mClientStepHandler))
             {
                 LOG("ERROR to launch the step timer for registration update");
             }
