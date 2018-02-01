@@ -97,8 +97,15 @@ static lwm2mcore_Sid_t BuildVelocity
     hsID = lwm2mcore_GetHorizontalSpeed(&hSpeed);
     if (LWM2MCORE_ERR_COMPLETED_OK != hsID)
     {
-        /* We need at least the horizontal speed to build the velocity */
-        return LWM2MCORE_ERR_GENERAL_ERROR;
+        if (LWM2MCORE_ERR_INVALID_STATE == hsID)
+        {
+            return hsID;
+        }
+        else
+        {
+            /* We need at least the horizontal speed to build the velocity */
+            return LWM2MCORE_ERR_GENERAL_ERROR;
+        }
     }
 
     /* Velocity initialization */
