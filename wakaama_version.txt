@@ -1,2 +1,0 @@
-https://github.com/eclipse/wakaama/commit/804118d60ccd9eafcdd78fc32ce4afa263759213
-June 12th, 2017

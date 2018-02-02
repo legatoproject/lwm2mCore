@@ -106,7 +106,7 @@ void lwm2mcore_ReportUdpErrorCode
     info.code = (uint8_t)code;
     snprintf(info.str, COMM_INFO_STR_MAX_LEN, "%s", UdpErrorToStr(code));
 
-    lwm2m_printf("UDP err is %d: %s\n", code, UdpErrorToStr(code));
+    printf("UDP err is %d: %s\n", code, UdpErrorToStr(code));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -124,5 +124,5 @@ void lwm2mcore_ReportCoapResponseCode
     info.code = (uint8_t)code;
     snprintf(info.str, COMM_INFO_STR_MAX_LEN, "CoAP %d.%.2d", CLASS(code), DETAILS(code));
 
-    lwm2m_printf("Received response code %d: %s\n", info.code, info.str);
+    printf("Received response code %d: %s\n", info.code, info.str);
 }

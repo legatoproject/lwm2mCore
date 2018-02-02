@@ -251,7 +251,6 @@ uint8_t lwm2m_report_coap_status
     {
         fileName = (char*)file;
     }
-
     LOG_ARG("[%s:%s] %d.%.2d", fileName, func, (code >> 5), (code & 0x1f));
 
     lwm2mcore_ReportCoapResponseCode(code);
@@ -264,6 +263,7 @@ uint8_t lwm2m_report_coap_status
  * Update bootstrap state and backup security object if bootstrap succeeded.
  */
 //--------------------------------------------------------------------------------------------------
+#ifdef LWM2M_BOOTSTRAP
 static void UpdateBootstrapInfo
 (
     lwm2m_client_state_t* previousBsStatePtr,   ///< [IN] Bootstrap state
@@ -301,6 +301,7 @@ static void UpdateBootstrapInfo
         }
     }
 }
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -373,7 +374,9 @@ static void Lwm2mClientStepHandler
         LOG("ERROR to launch the step timer");
     }
 
+#ifdef LWM2M_BOOTSTRAP
     UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mHPtr);
+#endif
 
     LOG("LwM2M step completed.");
 }

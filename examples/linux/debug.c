@@ -18,6 +18,7 @@
  * Adaptation function for log
  */
 //--------------------------------------------------------------------------------------------------
+#if LWM2M_WITH_LOGS
 void lwm2m_printf(const char * format, ...)
 {
     va_list ap;
@@ -25,6 +26,7 @@ void lwm2m_printf(const char * format, ...)
     vprintf(format, ap);
     va_end(ap);
 }
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**

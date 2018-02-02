@@ -830,7 +830,10 @@ dtls_Connection_t* dtls_CreateConnection
             {
                 *(portPtr - 1) = 0;
             }
-            return NULL;
+            else
+            {
+                return NULL;
+            }
         }
         // split strings
         *portPtr = 0;

@@ -121,26 +121,32 @@
  * @c wakaama           | Wakaama source code
  *
  * @subsection subs_compilation_flags Compilation flags
- * The following flags need to be used to compile LwM2MCore:
- * Flag                                         | Description
- * :------------------------------------------- | :------------------------------------------------
- * @c LWM2M_CLIENT_MODE                         | Enable LwM2M Client interfaces
- * @c LWM2M_BOOTSTRAP                           | Enable LwM2M Bootstrap support in a LwM2M Client
- * @c LWM2M_LITTLE_ENDIAN or @c LWM2M_BIG_ENDIAN| Choose according to your platform
- * @c LWM2M_WITH_LOGS and @c WITH_LOGS          | Enable logs in Wakaama
- * @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT          | Enable old content-type field value (IANA updates)
- * @c WITH_TINYDTLS                             | Support DTLS
- * @c SIERRA                                    | Include Sierra Wireless updates in Wakaama and tinyDTLS
- * Other compilation flags which could be used but not tested
- * Flag                                         | Description
- * :------------------------------------------- | :------------------------------------------------
- * @c LWM2M_SUPPORT_JSON                        | Enable JSON payload support
- * @c LWM2M_DEREGISTER                          | Send a DEREGISTER message to the server when the device disconects from the server
- * @c LWM2M_LOCATION_FLOAT                      | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
- * Extra compilation flags
- * Flag                                         | Description
- * :------------------------------------------- | :------------------------------------------------
- * @c DELIMITER                                 | Change default COAP URI delimiter
+ * Compilation flags
+ * Flag                                         | Usage       | Description
+ * :------------------------------------------- | :---------- | :------------------------------------------------
+ * @c LWM2M_CLIENT_MODE                         | Mandatory   | Enable LwM2M Client interfaces
+ * @c LWM2M_BOOTSTRAP                           | Optional    | Enable LwM2M Bootstrap support in a LwM2M Client
+ * @c LWM2M_LITTLE_ENDIAN or @c LWM2M_BIG_ENDIAN| Optional    | Choose according to your platform
+ * @c LWM2M_WITH_LOGS and @c WITH_LOGS          | Optional    | Enable logs in Wakaama
+ * @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT          | Recommended | Enable old content-type field value (IANA updates)
+ * @c WITH_TINYDTLS                             | Mandatory   | Support DTLS
+ * @c SIERRA                                    | Mandatory   | Include Sierra Wireless updates in Wakaama and tinyDTLS
+ * @c LWM2M_SUPPORT_JSON                        | Optional    | Enable JSON payload support
+ * @c LWM2M_DEREGISTER                          | Optional    | Send a DEREGISTER message to the server when the device disconects from the server
+ * @c LWM2M_LOCATION_FLOAT                      | Optional    | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
+ * @c DELIMITER                                 | Optional    | Change default CoAP URI delimiter
+ *
+ * The recommended compilation flags to be used are:
+ * - @c LWM2M_CLIENT_MODE
+ * - @c LWM2M_BOOTSTRAP
+ * - @c LWM2M_LITTLE_ENDIAN or @c LWM2M_BIG_ENDIAN
+ * - @c LWM2M_WITH_LOGS
+ * - @c WITH_LOGS
+ * - @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT
+ * - @c WITH_TINYDTLS
+ * - @c SIERRA
+ * - @c LWM2M_DEREGISTER (but depends on the server behavior)
+ * - @c LWM2M_LOCATION_FLOAT if the server supports the last v1.0 LwM2M specification or newer version
  *
  * @subsection subs_compilation Compilation
  * To compile the LwM2MCore Linux client: \n
