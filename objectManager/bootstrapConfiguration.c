@@ -773,15 +773,6 @@ void omanager_DeleteDmCredentials
 
     while (securityInformationPtr)
     {
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
-                                   securityInformationPtr->data.serverId);
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,
-                                   securityInformationPtr->data.serverId);
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
-                                   securityInformationPtr->data.serverId);
-        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
-                                   securityInformationPtr->data.serverId);
-
         /* Delete bootstrap information related to DM servers */
         if (false == (securityInformationPtr->data.isBootstrapServer))
         {
@@ -806,6 +797,16 @@ void omanager_DeleteDmCredentials
     while (NULL != serverInformationPtr)
     {
         ConfigServerObject_t* nextPtr = serverInformationPtr->nextPtr;
+
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
+                                   serverInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SERVER_PUBLIC_KEY,
+                                   serverInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_SECRET_KEY,
+                                   serverInformationPtr->data.serverId);
+        lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_ADDRESS,
+                                   serverInformationPtr->data.serverId);
+
         lwm2m_free(serverInformationPtr);
         serverInformationPtr = nextPtr;
         BsConfigList.serverObjectNumber--;
