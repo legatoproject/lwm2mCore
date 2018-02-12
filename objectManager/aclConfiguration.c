@@ -242,6 +242,7 @@ static bool LoadAclConfiguration
     uint32_t loop;
     uint32_t loop2;
     uint32_t fileSize;
+    size_t fileReadSize = 0;
     size_t len = sizeof(fileSize);
     AclObjectInstance_t* aclObjectInstanceListPtr;
     uint8_t* rawData;
@@ -259,11 +260,13 @@ static bool LoadAclConfiguration
 
     rawData = (uint8_t*)lwm2m_malloc(fileSize);
     LWM2MCORE_ASSERT(rawData);
+    fileReadSize = (size_t)fileSize;
     /* Get the ACL information file */
-    sid = lwm2mcore_GetParam(LWM2MCORE_ACCESS_RIGHTS_PARAM, rawData, (size_t*)((void*)&fileSize));
-    LOG_ARG("Read ACL configuration: len %d result %d", fileSize, sid);
+    sid = lwm2mcore_GetParam(LWM2MCORE_ACCESS_RIGHTS_PARAM, rawData, &fileReadSize);
+    LOG_ARG("Read ACL configuration: len %ld result %d", fileReadSize, sid);
 
-    if (LWM2MCORE_ERR_COMPLETED_OK != sid)
+    if ((LWM2MCORE_ERR_COMPLETED_OK != sid)
+     || (fileSize != fileReadSize))
     {
         lwm2m_free(rawData);
         /* Set a default configuration */
@@ -289,7 +292,7 @@ static bool LoadAclConfiguration
     LOG_ARG("Object 2: number of object instances: %d", aclConfigPtr->instanceNumber);
 
     /* Allocate object instances and copy related data */
-    for (loop = 0; loop < aclConfigPtr->instanceNumber; loop++)
+    for (loop = 0; loop < (aclConfigPtr->instanceNumber); loop++)
     {
         if (fileSize >= (lenWritten + sizeof(AclObjectInstanceStorage_t)))
         {
@@ -321,7 +324,7 @@ static bool LoadAclConfiguration
         }
 
         for (loop2 = 0;
-             loop2 < aclObjectInstanceListPtr->aclObjectData.aclInstanceNumber;
+             loop2 < (aclObjectInstanceListPtr->aclObjectData.aclInstanceNumber);
              loop2++)
         {
             if (fileSize >= (lenWritten + sizeof(AclStorage_t)))

@@ -88,7 +88,7 @@ static void SetDefaultBootstrapConfiguration
     }
 
     FreeBootstrapInformation(configPtr);
-    memset(configPtr, 0, sizeof(ConfigSecurityObject_t));
+    memset(configPtr, 0, sizeof(ConfigBootstrapFile_t));
     configPtr->version = BS_CONFIG_VERSION;
 
     /* Allocation security object for bootstrap server */
@@ -491,7 +491,7 @@ bool omanager_LoadBootstrapConfiguration
     uint32_t lenWritten = 0;
     uint32_t loop;
     uint32_t fileSize = 0;
-    uint32_t fileReadSize = 0;
+    size_t fileReadSize = 0;
     size_t len = sizeof(fileSize);
     ConfigSecurityObject_t*     securityPtr;
     ConfigServerObject_t*       serverPtr;
@@ -526,10 +526,10 @@ bool omanager_LoadBootstrapConfiguration
 
     rawData = (uint8_t*)lwm2m_malloc(fileSize);
     LWM2MCORE_ASSERT(rawData);
-    fileReadSize = fileSize;
+    fileReadSize = (size_t)fileSize;
     /* Get the bootstrap information file */
-    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, rawData, (size_t*)((void*)&fileReadSize));
-    LOG_ARG("Read BS configuration: fileReadSize %d result %d", fileReadSize, sid);
+    sid = lwm2mcore_GetParam(LWM2MCORE_BOOTSTRAP_PARAM, rawData, &fileReadSize);
+    LOG_ARG("Read BS configuration: fileReadSize %ld result %d", fileReadSize, sid);
 
     if (LWM2MCORE_ERR_COMPLETED_OK != sid)
     {
