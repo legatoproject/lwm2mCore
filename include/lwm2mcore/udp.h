@@ -26,10 +26,13 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Maximum size of packet that can be received on UDP socket.
+ * Maximum size of packet that can be received on UDP socket. The maximum size is calculated based
+ * on 1024 bytes of CoAP payload, DTLS header, CoAP Header and CoAP options. Note that the CoAP
+ * overhead can vary based on the CoAP options in the received message. For instance the CoAP URI
+ * can be a maximum of 256 bytes. Hence it is better to use the MTU size of ethernet.
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_UDP_MAX_PACKET_SIZE   1024
+#define LWM2MCORE_UDP_MAX_PACKET_SIZE   1500
 
 //--------------------------------------------------------------------------------------------------
 /**
