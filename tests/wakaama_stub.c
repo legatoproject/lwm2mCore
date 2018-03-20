@@ -325,6 +325,14 @@ int lwm2m_data_push
     return COAP_NO_ERROR;
 }
 
+void lwm2m_end_push
+(
+    void
+)
+{
+    return;
+}
+
 bool lwm2m_async_response
 (
     lwm2m_context_t* contextP,
