@@ -591,6 +591,25 @@ uint16_t lwm2mcore_ObjectRegister
     void* const servicePtr                  ///< [IN] Client service API table
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Read a resource from the object table
+ *
+ * @return
+ *      - @c true if resource is found and read succeeded
+ *      - else @c false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceRead
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [OUT] Array of requested resources to be read
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
+);
+
 /**
   * @}
   */

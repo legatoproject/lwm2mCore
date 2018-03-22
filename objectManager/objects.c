@@ -1968,6 +1968,120 @@ static bool UpdateSwListWakaama
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Read a resource from the object table
+ *
+ * @return
+ *      - true if resource is found and read succeeded
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceRead
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [OUT] Array of requested resources to be read
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
+)
+{
+    lwm2mcore_Uri_t uri;
+    lwm2mcore_Handler_t* lwm2mHandlersPtr = NULL;
+    lwm2mcore_Resource_t* resourcePtr = NULL;
+    char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN] = {0};
+    size_t dataBufferSize;
+    int i, j;
+
+    if ((!dataPtr) || (!dataSizePtr))
+    {
+        return false;
+    }
+
+    // Get the data buffer size
+    dataBufferSize = *dataSizePtr;
+
+    memset(&uri, 0, sizeof(uri));
+    uri.oid = objectId;
+    uri.oiid = objectInstanceId;
+    uri.rid = resourceId;
+    uri.riid = resourceInstanceId;
+    uri.op = LWM2MCORE_OP_READ;
+
+    lwm2mHandlersPtr = omanager_GetHandlers();
+
+    if (!lwm2mHandlersPtr)
+    {
+        return false;
+    }
+
+    // Search for the resource in the object table
+    for (i = 0; i < (lwm2mHandlersPtr->objCnt); i++)
+    {
+        if (uri.oid == (lwm2mHandlersPtr->objects[i].id))
+        {
+            for (j = 0; j < (lwm2mHandlersPtr->objects[i].resCnt); j++)
+            {
+                if (uri.rid == (lwm2mHandlersPtr->objects[i].resources[j].id))
+                {
+                    resourcePtr = &lwm2mHandlersPtr->objects[i].resources[j];
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!resourcePtr)
+    {
+        LOG("Requested ressource not found");
+        return false;
+    }
+
+    if (!resourcePtr->read)
+    {
+        LOG("Requested resource cannot be read");
+        return false;
+    }
+
+    // Execute the read function
+    if (LWM2MCORE_ERR_COMPLETED_OK != resourcePtr->read(&uri, asyncBuf, dataSizePtr, NULL))
+    {
+        return false;
+    }
+
+    // Format result and store it in dataPtr
+    switch (resourcePtr->type)
+    {
+        case LWM2MCORE_RESOURCE_TYPE_INT:
+        case LWM2MCORE_RESOURCE_TYPE_TIME:
+        {
+            int64_t value;
+            value = omanager_BytesToInt(asyncBuf, *dataSizePtr);
+            *dataSizePtr = snprintf(dataPtr, dataBufferSize - 1, "%lld", (long long)value);
+        }
+        break;
+
+        case LWM2MCORE_RESOURCE_TYPE_BOOL:
+            *dataSizePtr = snprintf(dataPtr, dataBufferSize - 1, "%d", asyncBuf[0]);
+            break;
+
+        case LWM2MCORE_RESOURCE_TYPE_FLOAT:
+        {
+            double value;
+            memcpy(&value, asyncBuf, sizeof(double));
+            *dataSizePtr = snprintf(dataPtr, dataBufferSize - 1, "%lf", value);
+        }
+        break;
+
+        default:
+            memcpy(dataPtr, asyncBuf, *dataSizePtr);
+            break;
+    }
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Register the object table and service API
  *
  * @note If handlerPtr parameter is NULL, LwM2MCore registers it's own "standard" object list
