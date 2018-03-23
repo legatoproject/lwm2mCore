@@ -364,7 +364,7 @@ static void test_lwm2mcore_SetLifetime
     TEST_ASSERT(lwm2mcore_SetLifetime(0) == LWM2MCORE_ERR_INCORRECT_RANGE);
 
     /* No DM servers */
-    TEST_ASSERT(lwm2mcore_SetLifetime(8600) == LWM2MCORE_ERR_INVALID_STATE);
+    TEST_ASSERT(lwm2mcore_SetLifetime(8600) == LWM2MCORE_ERR_COMPLETED_OK);
 }
 
 //-------------------------------------------------------------------------------------------------

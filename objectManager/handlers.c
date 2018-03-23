@@ -177,6 +177,67 @@ static lwm2mcore_Sid_t BuildVelocity
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Update lifetime in the server object and store it to file system
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Sid_t UpdateLifetime
+(
+    ConfigBootstrapFile_t* bsConfigPtr,     ///< [IN] Config pointer
+    uint32_t lifetime,                      ///< [IN] Lifetime
+    bool storage                            ///< [IN] Should be stored to filesystem?
+)
+{
+    ConfigServerObject_t* serverInformationPtr;
+    if (!bsConfigPtr)
+    {
+        LOG("Invalid bootstrap configuration");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    serverInformationPtr = bsConfigPtr->serverPtr;
+    if (!serverInformationPtr)
+    {
+        /* Create new serverInformationPtr (Dummy to configure lifetime in factory) */
+        serverInformationPtr = (ConfigServerObject_t*)lwm2m_malloc(sizeof(ConfigServerObject_t));
+        LWM2MCORE_ASSERT(serverInformationPtr);
+        memset(serverInformationPtr, 0, sizeof(ConfigServerObject_t));
+
+        bsConfigPtr->serverObjectNumber++;
+        omanager_AddBootstrapConfigurationServer(bsConfigPtr, serverInformationPtr);
+    }
+    else
+    {
+        /* Set lifetime for all servers */
+        while (serverInformationPtr)
+        {
+            serverInformationPtr->data.lifetime = lifetime;
+            serverInformationPtr = serverInformationPtr->nextPtr;
+        }
+    }
+
+    if (false == storage)
+    {
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+
+    /* Save bootstrap configuration */
+    if (omanager_StoreBootstrapConfiguration(bsConfigPtr))
+    {
+        LOG("Lifetime update successful");
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+
+    return LWM2MCORE_ERR_GENERAL_ERROR;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                                  OBJECT 0: SECURITY
  */
 //--------------------------------------------------------------------------------------------------
@@ -1004,7 +1065,6 @@ int omanager_ReadServerObj
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *      - LWM2MCORE_ERR_INCORRECT_RANGE if the lifetime is not correct
- *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
@@ -1015,88 +1075,54 @@ lwm2mcore_Sid_t omanager_SetLifetime
 )
 {
     ConfigBootstrapFile_t* bsConfigPtr;
-    ConfigServerObject_t* serverInformationPtr;
+    lwm2mcore_Sid_t result;
 
-    bsConfigPtr = omanager_GetBootstrapConfiguration();
-    if (!bsConfigPtr)
-    {
-        return LWM2MCORE_ERR_GENERAL_ERROR;
-    }
-
-    serverInformationPtr = bsConfigPtr->serverPtr;
-    LOG_ARG("omanager_SetLifetime %d sec", lifetime);
-
+    LOG_ARG("Set Lifetime to %d sec", lifetime);
     if (lwm2mcore_CheckLifetimeLimit(lifetime) != true)
     {
         LOG("Lifetime not in good range");
         return LWM2MCORE_ERR_INCORRECT_RANGE;
     }
 
-    LOG_ARG("bsConfigPtr->version %d", bsConfigPtr->version);
-
-    if (!(bsConfigPtr->version) || (BS_CONFIG_VERSION != (bsConfigPtr->version)))
+    /* Change the configuration entry in file system */
+    if (storage)
     {
-        /* Load configuration */
+        /* Allocate memory to read config file */
+        bsConfigPtr = (ConfigBootstrapFile_t*)lwm2m_malloc(sizeof(ConfigBootstrapFile_t));
+        LWM2MCORE_ASSERT(bsConfigPtr);
+        memset(bsConfigPtr, 0, sizeof(ConfigBootstrapFile_t));
+
+        /* Load configuration from file system */
         if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, false))
         {
             return LWM2MCORE_ERR_GENERAL_ERROR;
         }
 
-        serverInformationPtr = bsConfigPtr->serverPtr;
-        if (!serverInformationPtr)
-        {
-            /* No DM server configuration */
-            LOG("No DM server configuration");
-            return LWM2MCORE_ERR_INVALID_STATE;
-        }
+        /* Update lifetime in file system */
+        result = UpdateLifetime(bsConfigPtr, lifetime, storage);
 
-        /* Set lifetime for all servers */
-        while (serverInformationPtr)
-        {
-            serverInformationPtr->data.lifetime = lifetime;
-            serverInformationPtr = serverInformationPtr->nextPtr;
-        }
+        /* Free memory allocated */
+        lwm2m_free(bsConfigPtr);
 
-        if (false == storage)
+        if (LWM2MCORE_ERR_COMPLETED_OK != result)
         {
-            return LWM2MCORE_ERR_COMPLETED_OK;
-        }
-
-        /* Save bootstrap configuration */
-        if (omanager_StoreBootstrapConfiguration(bsConfigPtr))
-        {
-            return LWM2MCORE_ERR_COMPLETED_OK;
+            LOG("Failed to update lifetime in storage");
+            return result;
         }
     }
-    else
+
+    /* Change the lifetime entry of server object in memory */
+    bsConfigPtr = omanager_GetBootstrapConfiguration();
+
+    result = UpdateLifetime(bsConfigPtr, lifetime, false);
+
+    if (LWM2MCORE_ERR_COMPLETED_OK != result)
     {
-        if (!serverInformationPtr)
-        {
-            /* No DM server configuration */
-            LOG("No DM server configuration");
-            return LWM2MCORE_ERR_INVALID_STATE;
-        }
-
-        /* Set lifetime for all servers */
-        while (serverInformationPtr)
-        {
-            serverInformationPtr->data.lifetime = lifetime;
-            serverInformationPtr = serverInformationPtr->nextPtr;
-        }
-
-        if (false == storage)
-        {
-            return LWM2MCORE_ERR_COMPLETED_OK;
-        }
-        /* Save bootstrap configuration */
-        if (omanager_StoreBootstrapConfiguration(bsConfigPtr))
-        {
-            return LWM2MCORE_ERR_COMPLETED_OK;
-        }
+        LOG("Failed to update lifetime in memory");
+        return result;
     }
 
-    LOG("Failed to store lifetime");
-    return LWM2MCORE_ERR_GENERAL_ERROR;
+    return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
 
@@ -1106,7 +1132,6 @@ lwm2mcore_Sid_t omanager_SetLifetime
  *
  * @return
  *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
  *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
@@ -1117,42 +1142,31 @@ lwm2mcore_Sid_t omanager_GetLifetime
 {
     ConfigBootstrapFile_t* bsConfigPtr;
 
-    bsConfigPtr = omanager_GetBootstrapConfiguration();
-    if (!bsConfigPtr)
+    /* Allocate memory to read config file */
+    bsConfigPtr = (ConfigBootstrapFile_t*)lwm2m_malloc(sizeof(ConfigBootstrapFile_t));
+    LWM2MCORE_ASSERT(bsConfigPtr);
+    memset(bsConfigPtr, 0, sizeof(ConfigBootstrapFile_t));
+
+    /* Read the configuration from file system */
+    if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, false))
     {
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
-    if (!(bsConfigPtr->version) || (BS_CONFIG_VERSION != (bsConfigPtr->version)))
+    if (!(bsConfigPtr->serverPtr))
     {
-        memset(bsConfigPtr, 0, sizeof(ConfigBootstrapFile_t));
-        if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, true))
-        {
-            return LWM2MCORE_ERR_GENERAL_ERROR;
-        }
+        /* No DM server configuration */
+        LOG("No DM server configuration");
 
-        if (!(bsConfigPtr->serverPtr))
-        {
-            /* No DM server configuration */
-            LOG("No DM server configuration");
-            return LWM2MCORE_ERR_INVALID_STATE;
-        }
-        *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
+        /* Default state is disabled */
+        *lifetimePtr = LWM2MCORE_LIFETIME_VALUE_DISABLED;
     }
     else
     {
-        ConfigServerObject_t* serverInformationPtr = bsConfigPtr->serverPtr;
-        if (!serverInformationPtr)
-        {
-            /* No DM server configuration */
-            LOG("No DM server configuration");
-            return LWM2MCORE_ERR_INVALID_STATE;
-        }
-
-        /* Set lifetime to default (disabled) */
-        *lifetimePtr = serverInformationPtr->data.lifetime;
+        *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
     }
 
+    lwm2m_free(bsConfigPtr);
 
     LOG_ARG("Lifetime is %d seconds", *lifetimePtr);
     return LWM2MCORE_ERR_COMPLETED_OK;

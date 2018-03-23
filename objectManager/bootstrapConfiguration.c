@@ -521,7 +521,9 @@ bool omanager_LoadBootstrapConfiguration
         {
             omanager_StoreBootstrapConfiguration(configPtr);
         }
-        return false;
+
+        LOG("Loaded default BS configuration");
+        return true;
     }
 
     rawData = (uint8_t*)lwm2m_malloc(fileSize);
