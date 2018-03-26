@@ -6,8 +6,8 @@ cmake_minimum_required (VERSION 3.0)
 project (lwm2mcoreclient C CXX)
 
 set(LWM2MCORE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-include(${LWM2MCORE_ROOT_DIR}/wakaama.cmake)
-include(${LWM2MCORE_ROOT_DIR}/tinydtls.cmake)
+include(${LWM2MCORE_ROOT_DIR}/3rdParty/tinydtls.cmake)
+include(${LWM2MCORE_ROOT_DIR}/3rdParty/wakaama.cmake)
 include(${LWM2MCORE_ROOT_DIR}/lwm2mcore.cmake)
 
 # Enable all warnings for this test build

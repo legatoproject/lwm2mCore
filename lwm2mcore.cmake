@@ -30,9 +30,9 @@ include_directories(${LWM2MCORE_SOURCES_DIR}/examples/linux/
                     ${LWM2MCORE_SOURCES_DIR}/objectManager/
                     ${LWM2MCORE_SOURCES_DIR}/packageDownload/
                     ${LWM2MCORE_SOURCES_DIR}/sessionManager/
-                    ${LWM2MCORE_SOURCES_DIR}/tinydtls/
-                    ${LWM2MCORE_SOURCES_DIR}/wakaama/core/
-                    ${LWM2MCORE_SOURCES_DIR}/wakaama/core/er-coap-13/)
+                    ${LWM2MCORE_SOURCES_DIR}/3rdParty/tinydtls/
+                    ${LWM2MCORE_SOURCES_DIR}/3rdParty/wakaama/core/
+                    ${LWM2MCORE_SOURCES_DIR}/3rdParty/wakaama/core/er-coap-13/)
 
 set(LWM2MCORE_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/objectManager/aclConfiguration.c

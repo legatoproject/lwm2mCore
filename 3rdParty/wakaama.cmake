@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.0)
 set(LWM2MCORE_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/)
 
 # Set Wakaama source dir
-set(WAKAAMA_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/wakaama/core)
+set(WAKAAMA_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/3rdParty/wakaama/core)
 
 set(EXT_SOURCES ${WAKAAMA_SOURCES_DIR}/er-coap-13/er-coap-13.c)
 

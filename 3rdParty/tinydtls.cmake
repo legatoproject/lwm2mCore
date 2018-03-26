@@ -9,7 +9,7 @@ cmake_minimum_required (VERSION 3.0)
 set(LWM2MCORE_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/)
 
 # Set tinyDTLS source file
-set(TINYDTLS_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/tinydtls)
+set(TINYDTLS_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/3rdParty/tinydtls)
 set(TINYDTLS_SOURCES
     ${TINYDTLS_SOURCES_DIR}/dtls.h
     ${TINYDTLS_SOURCES_DIR}/dtls.c
