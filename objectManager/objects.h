@@ -380,8 +380,9 @@ typedef enum
     LWM2MCORE_SUBSCRIPTION_IDENTITY_RID,            ///< Subscription identity (MEID/ESN/IMSI)
     LWM2MCORE_SUBSCRIPTION_MSISDN_RID,              ///< Subscription phone number (MSISDN)
     LWM2MCORE_SUBSCRIPTION_SIM_MODE_RID,            ///< Change SIM mode
-    LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_RID,         ///< Currently selected SIM card
-    LWM2MCORE_SUBSCRIPTION_SWITCH_SIM_RID           ///< Switch SIM state
+    LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_RID,         ///< Current SIM card
+    LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_MODE_RID,    ///< Current SIM mode
+    LWM2MCORE_SUBSCRIPTION_SIM_SWITCH_STATUS_RID    ///< Last SIM switch status
 }lwm2mcore_subscriptionResource_t;
 
 //--------------------------------------------------------------------------------------------------

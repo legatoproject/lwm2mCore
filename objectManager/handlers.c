@@ -2948,7 +2948,7 @@ int omanager_ReadSubscriptionObj
         /* Resource 5: Currently used SIM */
         case LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_RID:
         {
-            int currentSim = 0;
+            uint8_t currentSim = 0;
             sID = lwm2mcore_GetCurrentSimCard(&currentSim);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
@@ -2960,11 +2960,26 @@ int omanager_ReadSubscriptionObj
         }
         break;
 
-        /* Resource 6: Switch SIM */
-        case LWM2MCORE_SUBSCRIPTION_SWITCH_SIM_RID:
+        /* Resource 6: SIM current mode */
+        case LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_MODE_RID:
         {
-            int status = 0;
-            sID = lwm2mcore_GetSimSwitchStatus(&status);
+            uint8_t mode = 0;
+            sID = lwm2mcore_GetCurrentSimMode(&mode);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &mode,
+                                                      sizeof(mode),
+                                                      false);
+            }
+        }
+        break;
+
+        /* Resource 7: Last SIM switch status */
+        case LWM2MCORE_SUBSCRIPTION_SIM_SWITCH_STATUS_RID:
+        {
+            uint8_t status = 0;
+            sID = lwm2mcore_GetLastSimSwitchStatus(&status);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,

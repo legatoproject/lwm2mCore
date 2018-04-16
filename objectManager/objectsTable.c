@@ -758,7 +758,15 @@ static lwm2mcore_Resource_t SubscriptionResources[] =
         NULL,                                       //.exec
     },
     {
-        LWM2MCORE_SUBSCRIPTION_SWITCH_SIM_RID,      //.id
+        LWM2MCORE_SUBSCRIPTION_CURRENT_SIM_MODE_RID,//.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadSubscriptionObj,               //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_SUBSCRIPTION_SIM_SWITCH_STATUS_RID,//.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
         1,                                          //.maxResInstCnt
         omanager_ReadSubscriptionObj,               //.read

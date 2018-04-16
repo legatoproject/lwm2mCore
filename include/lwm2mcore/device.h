@@ -220,7 +220,7 @@ lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
 (
-    int*   currentSimPtr  ///< [OUT]    Currently used SIM card
+    uint8_t*   currentSimPtr  ///< [OUT]    Currently used SIM card
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -243,6 +243,23 @@ lwm2mcore_Sid_t lwm2mcore_SetSimMode
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Retrieve the current SIM mode
+ * This API needs to have a procedural treatment
+ *
+ * @note
+ *      This function is stubbed
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
+(
+    uint8_t*   simModePtr  ///< [OUT]    SIM mode pointer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Retrieve the SIM switch status
  * This API needs to have a procedural treatment
  *
@@ -253,9 +270,9 @@ lwm2mcore_Sid_t lwm2mcore_SetSimMode
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetSimSwitchStatus
+lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
 (
-    int*   switchStatusPtr  ///< [OUT]    SIM switch status
+    uint8_t*   switchStatusPtr  ///< [OUT]    SIM switch status
 );
 
 //--------------------------------------------------------------------------------------------------
