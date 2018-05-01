@@ -30,4 +30,4 @@ examples/linux/update.c: manage APIs for package update download and install.<br
 
 Coding rules
 ============
-See [Legato's C Language Standards](http://legato.io/legato-docs/latest/ccodingStdsMain.html)
+See [Legato's C Language Standards](https://docs.legato.io/latest/ccodingStdsMain.html)
