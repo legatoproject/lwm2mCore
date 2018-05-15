@@ -126,23 +126,23 @@
  * Each DWL section is composed of one or more subsections
  */
 //--------------------------------------------------------------------------------------------------
-#define DWL_SUB_PROLOG        0x00    ///< DLW prolog
-#define DWL_SUB_COMMENTS      0x01    ///< DLW comments
-#define DWL_SUB_HEADER        0x02    ///< DLW header
-#define DWL_SUB_BINARY        0x03    ///< DLW binary data
-#define DWL_SUB_PADDING       0x04    ///< DLW padding data
-#define DWL_SUB_SIGNATURE     0x05    ///< DLW signature
+#define DWL_SUB_PROLOG        0x00    ///< DWL prolog
+#define DWL_SUB_COMMENTS      0x01    ///< DWL comments
+#define DWL_SUB_HEADER        0x02    ///< DWL header
+#define DWL_SUB_BINARY        0x03    ///< DWL binary data
+#define DWL_SUB_PADDING       0x04    ///< DWL padding data
+#define DWL_SUB_SIGNATURE     0x05    ///< DWL signature
 
 //--------------------------------------------------------------------------------------------------
 /**
  * Possible types of Update Package
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_UPCK_TYPE_FW      0x00000001
-#define LWM2MCORE_UPCK_TYPE_OAT     0x00000002
-#define LWM2MCORE_UPCK_TYPE_AMSS    0x00000003
-#define LWM2MCORE_UPCK_TYPE_HYPER   0x00000004
-#define LWM2MCORE_UPCK_TYPE_BOOT    0x00000005
+#define LWM2MCORE_UPCK_TYPE_FW      0x00000001  ///< Firmware update package
+#define LWM2MCORE_UPCK_TYPE_OAT     0x00000002  ///< Old format update package
+#define LWM2MCORE_UPCK_TYPE_AMSS    0x00000003  ///< Modem update package
+#define LWM2MCORE_UPCK_TYPE_HYPER   0x00000004  ///< Hyper update package
+#define LWM2MCORE_UPCK_TYPE_BOOT    0x00000005  ///< Bootloader update package
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -292,7 +292,7 @@ typedef union
         uint32_t srcCks;                            ///< Source checksum
         uint32_t dstCks;                            ///< Destination checksum
         uint32_t dstBaseAddress;                    ///< Destination base address
-    } structHeader;
+    } structHeader;                                 ///< Header structure
     uint8_t rawHeader[LWM2MCORE_UPCK_HEADER_SIZE];  ///< Raw UPCK header
 }
 UpckHeader_t;

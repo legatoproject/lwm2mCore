@@ -12,13 +12,20 @@
 
 #include <lwm2mcore/lwm2mcore.h>
 
+/**
+  * @addtogroup lwm2mcore_server_IFS
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to check if the lifetime is within acceptable limits
  *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
  * @return
- *      - true if lifetime is within limits
- *      - false else
+ *  - @c true if lifetime is within limits
+ *  - @c false else
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_CheckLifetimeLimit

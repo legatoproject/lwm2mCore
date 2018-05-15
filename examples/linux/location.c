@@ -20,9 +20,9 @@
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLatitude
@@ -56,9 +56,9 @@ lwm2mcore_Sid_t lwm2mcore_GetLatitude
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLongitude
@@ -92,9 +92,9 @@ lwm2mcore_Sid_t lwm2mcore_GetLongitude
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetAltitude
@@ -128,8 +128,8 @@ lwm2mcore_Sid_t lwm2mcore_GetAltitude
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDirection
@@ -153,8 +153,8 @@ lwm2mcore_Sid_t lwm2mcore_GetDirection
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
@@ -179,8 +179,8 @@ lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
@@ -205,8 +205,8 @@ lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLocationTimestamp

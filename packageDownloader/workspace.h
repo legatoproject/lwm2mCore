@@ -14,20 +14,25 @@
 #include <lwm2mcore/paramStorage.h>
 #include "lwm2mcorePackageDownloader.h"
 
+/**
+  * @addtogroup lwm2mcore_workspace_int
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 // Symbol and Enum definitions
 //--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Supported version for package downloader workspace
+ * @brief Supported version for package downloader workspace
  */
 //--------------------------------------------------------------------------------------------------
 #define PKGDWL_WORKSPACE_VERSION    1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximal size of the SHA-1 context
+ * @brief Maximal size of the SHA-1 context
  */
 //--------------------------------------------------------------------------------------------------
 #define SHA1_CTX_MAX_SIZE   512
@@ -38,7 +43,7 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Package downloader workspace structure
+ * @brief Package downloader workspace structure
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -64,11 +69,11 @@ PackageDownloaderWorkspace_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read the package downloader workspace from platform memory
+ * @brief Function to read the package downloader workspace from platform memory
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_DwlResult_t ReadPkgDwlWorkspace
@@ -78,11 +83,11 @@ lwm2mcore_DwlResult_t ReadPkgDwlWorkspace
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to write the package downloader workspace in platform memory
+ * @brief Function to write the package downloader workspace in platform memory
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_DwlResult_t WritePkgDwlWorkspace
@@ -92,16 +97,20 @@ lwm2mcore_DwlResult_t WritePkgDwlWorkspace
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to delete the package downloader workspace in platform memory
+ * @brief Function to delete the package downloader workspace in platform memory
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_DwlResult_t DeletePkgDwlWorkspace
 (
     void
 );
+
+/**
+  * @}
+  */
 
 #endif /* __WORKSPACE_H__ */

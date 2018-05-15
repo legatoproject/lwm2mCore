@@ -38,8 +38,8 @@ lwm2mcore_SocketConfig_t LinuxSocketConfig;
  * Create a socket
  *
  * @return
- *      - socket id on success
- *      - -1 on error
+ *  - socket id on success
+ *  - -1 on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -93,8 +93,8 @@ static int CreateSocket
  * The aim of this function is to create a socket and fill the configPtr structure
  *
  * @return
- *      - true on success
- *      - false on error
+ *  - true on success
+ *  - false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -140,8 +140,8 @@ bool lwm2mcore_UdpOpen
  * The aim of this function is to close a socket
  *
  * @return
- *      - true on success
- *      - false on error
+ *  - true on success
+ *  - false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -162,8 +162,8 @@ bool lwm2mcore_UdpClose
  * The aim of this function is to send data on a socket
  *
  * @return
- *      -
- *      - false on error
+ *  - Sent data length
+ *  - -1 on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -212,8 +212,8 @@ ssize_t lwm2mcore_UdpSend
  * The aim of this function is to send data on a socket
  *
  * @return
- *      - true  on success
- *      - false on error
+ *  - true  on success
+ *  - false on error
  *
  */
 //--------------------------------------------------------------------------------------------------

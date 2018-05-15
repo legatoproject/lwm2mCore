@@ -12,30 +12,34 @@
 
 #include <lwm2mcore/lwm2mcore.h>
 
+/**
+  * @addtogroup lwm2mcore_update_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
- * Define the maximum length for a package URI
+ * @brief Define the maximum length for a package URI
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PACKAGE_URI_MAX_LEN               255
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define the maximum bytes number for a package URI, including the null-terminator
+ * @brief Define the maximum bytes number for a package URI, including the null-terminator
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PACKAGE_URI_MAX_BYTES             (LWM2MCORE_PACKAGE_URI_MAX_LEN + 1)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define the maximum length for the software objects
+ * @brief Define the maximum length for the software objects
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN   4032
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration to indicates if an update is linked to a firmware update or a software update
+ * @brief Enumeration to indicates if an update is linked to a firmware update or a software update
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -47,8 +51,9 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for firmware update state (object 5 (firmware update), resource 3)
- * These values are defined in the LWM2M specification
+ * @brief Enumeration for firmware update state (object 5 (firmware update), resource 3)
+ *
+ * @note These values are defined in the LWM2M specification
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -69,8 +74,9 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for firmware update result (object 5 (firmware update), resource 5)
- * These values are defined in the LWM2M specification
+ * @brief Enumeration for firmware update result (object 5 (firmware update), resource 5)
+ *
+ * @note These values are defined in the LWM2M specification
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -98,8 +104,9 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for software update state (object 9 (firmware update), resource 7)
- * These values are defined in the LWM2M specification
+ * @brief Enumeration for software update state (object 9 (firmware update), resource 7)
+ *
+ *  @note These values are defined in the LWM2M specification
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -121,8 +128,9 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enumeration for software update result (object 9 (firmware update), resource 9)
- * These values are defined in the LWM2M specification
+ * @brief Enumeration for software update result (object 9 (firmware update), resource 9)
+ *
+ *  @note These values are defined in the LWM2M specification
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -151,16 +159,18 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server pushes a package to the LWM2M client
+ * @brief The server pushes a package to the LWM2M client
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
@@ -173,16 +183,18 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server sends a package URI to the LWM2M client
+ * @brief The server sends a package URI to the LWM2M client
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
@@ -195,16 +207,19 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the current package URI stored in the LWM2M client
+ * @brief The server requires the current package URI stored in the LWM2M client
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
@@ -218,16 +233,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requests to launch an update
+ * @brief The server requests to launch an update
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
@@ -240,16 +257,18 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the update state
+ * @brief The server requires the update state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateState
@@ -261,16 +280,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateState
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the update result
+ * @brief The server requires the update result
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
@@ -282,16 +303,18 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the package name
+ * @brief The server requires the package name
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
@@ -304,16 +327,19 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the package version
+ * @brief The server requires the package version
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
@@ -326,16 +352,17 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server sets the "update supported objects" field for software update
+ * @brief The server sets the "update supported objects" field for software update
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
@@ -346,16 +373,18 @@ lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the "update supported objects" field for software update
+ * @brief The server requires the "update supported objects" field for software update
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
@@ -366,16 +395,18 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the activation state for one embedded application
+ * @brief The server requires the activation state for one embedded application
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
@@ -386,16 +417,18 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires an embedded application to be uninstalled (only for software update)
+ * @brief The server requires an embedded application to be uninstalled (only for software update)
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
@@ -407,17 +440,19 @@ lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires an embedded application to be activated or deactivated (only for software
- * update)
+ * @brief The server requires an embedded application to be activated or deactivated (only for
+ * software update)
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
@@ -430,16 +465,17 @@ lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server request to create or delete an object instance of object 9
+ * @brief The server request to create or delete an object instance of object 9
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
@@ -450,16 +486,16 @@ lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Resume a package download if necessary
+ * @brief Resume a package download if necessary
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
@@ -469,17 +505,23 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Suspend a package download if necessary
+ * @brief Suspend a package download if necessary
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
 (
     void
 );
+
+/**
+  * @}
+  */
 
 #endif /* __LWM2MCORE_UPDATE_H__ */
 

@@ -14,19 +14,15 @@
 #include <platform/inet.h>
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_udp_IFS UDP
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for UDP
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_udp_IFS
   * @{
   */
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum size of packet that can be received on UDP socket. The maximum size is calculated based
+ * @brief Maximum size of packet that can be received on UDP socket.
+ *
+ * @details The maximum size is calculated based
  * on 1024 bytes of CoAP payload, DTLS header, CoAP Header and CoAP options. Note that the CoAP
  * overhead can vary based on the CoAP options in the received message. For instance the CoAP URI
  * can be a maximum of 256 bytes. Hence it is better to use the MTU size of ethernet.
@@ -39,16 +35,16 @@
  *  UDP error codes
  */
 //--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_UDP_NO_ERR            0x00    ///< No error
-#define LWM2MCORE_UDP_OPEN_ERR          0x01    ///< Failed to open UDP connection
-#define LWM2MCORE_UDP_CLOSE_ERR         0x02    ///< Failed to close UDP connection
-#define LWM2MCORE_UDP_SEND_ERR          0x03    ///< Error occured during UDP send
-#define LWM2MCORE_UDP_RECV_ERR          0x04    ///< Error occured during UDP receive
-#define LWM2MCORE_UDP_CONNECT_ERR       0x05    ///< UDP connection failure
+#define LWM2MCORE_UDP_NO_ERR            0x00    ///< UDP error codes: No error
+#define LWM2MCORE_UDP_OPEN_ERR          0x01    ///< UDP error codes: Failed to open UDP connection
+#define LWM2MCORE_UDP_CLOSE_ERR         0x02    ///< UDP error codes: Failed to close UDP connection
+#define LWM2MCORE_UDP_SEND_ERR          0x03    ///< UDP error codes: Error occured during UDP send
+#define LWM2MCORE_UDP_RECV_ERR          0x04    ///< UDP error codes: Error occured during UDP receive
+#define LWM2MCORE_UDP_CONNECT_ERR       0x05    ///< UDP error codes: UDP connection failure
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback for data receipt
+ * @brief Callback for data receipt
  */
 //--------------------------------------------------------------------------------------------------
 typedef void (*lwm2mcore_UdpCb_t)
@@ -62,8 +58,9 @@ typedef void (*lwm2mcore_UdpCb_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback for data receipt
- * This function is defined in LwM2MCore
+ * @brief Callback for data receipt
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_UdpReceiveCb
@@ -77,13 +74,15 @@ void lwm2mcore_UdpReceiveCb
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Open a socket to the server
- * This function is called by the LwM2MCore and must be adapted to the platform
- * The aim of this function is to create a socket and fill the configPtr structure
+ * @brief Open a socket to the server
+ *
+ * @details The aim of this function is to create a socket and fill the @c configPtr structure
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true on success
- *      - false on error
+ *  - @c true on success
+ *  - @c false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -96,13 +95,15 @@ bool lwm2mcore_UdpOpen
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Close the socket
- * This function is called by the LWM2MCore and must be adapted to the platform
- * The aim of this function is to close a socket
+ * @brief Close the socket
+ *
+ * @details The aim of this function is to close a socket
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true on success
- *      - false on error
+ *  - @c true on success
+ *  - @c false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -114,12 +115,14 @@ bool lwm2mcore_UdpClose
 //--------------------------------------------------------------------------------------------------
 /**
  * Connect to the server
- * This function is called by the LwM2MCore and must be adapted to the platform
- * The aim of this function is to connect
+ *
+ * @details The aim of this function is to connect
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true on success
- *      - false on error
+ *  - @c true on success
+ *  - @c false on error
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -136,13 +139,15 @@ bool lwm2mcore_UdpConnect
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Send data on a socket
- * This function is called by the LwM2MCore and must be adapted to the platform
- * The aim of this function is to send data on a socket
+ * @brief Send data on a socket
+ *
+ * @details The aim of this function is to send data on a socket
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - Sent data length
- *      - -1 on error
+ *  - Sent data length
+ *  - @c -1 on error
  *
  */
 //--------------------------------------------------------------------------------------------------

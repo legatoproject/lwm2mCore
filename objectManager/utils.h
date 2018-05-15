@@ -79,7 +79,7 @@ size_t omanager_FormatValueToBytes
  * @brief Function to convert bytes(in network byte order) to unsigned 16 bits integer
  *
  * @return
- *      - converted data
+ *  - converted data
  */
 //--------------------------------------------------------------------------------------------------
 uint16_t omanager_BytesToUint16
@@ -92,7 +92,7 @@ uint16_t omanager_BytesToUint16
  * @brief Function to convert bytes(in network byte order) to unsigned 32 bits integer
  *
  * @return
- *      - converted data
+ *  - converted data
  */
 //--------------------------------------------------------------------------------------------------
 uint32_t omanager_BytesToUint32
@@ -105,7 +105,7 @@ uint32_t omanager_BytesToUint32
  * @brief Function to convert bytes(in network byte order) to unsigned 64 bits integer
  *
  * @return
- *      - converted data
+ *  - converted data
  */
 //--------------------------------------------------------------------------------------------------
 uint64_t omanager_BytesToUint64
@@ -118,7 +118,7 @@ uint64_t omanager_BytesToUint64
  * @brief Function to convert bytes(in network byte order) to integer
  *
  * @return
- *      - converted data
+ *  - converted data
  */
 //--------------------------------------------------------------------------------------------------
 int64_t omanager_BytesToInt

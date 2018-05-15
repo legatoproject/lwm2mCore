@@ -13,12 +13,6 @@
 #include <platform/inet.h>
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_socket_IFS Socket
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for socket
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_socket_IFS
   * @{
   */

@@ -12,53 +12,58 @@
 
 #include <lwm2mcore/lwm2mcore.h>
 
+/**
+  * @addtogroup lwm2mcore_security_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
- * Define for server address maximum length
+ * @brief Define for server address maximum length (including the terminating null byte (@c '\0'))
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_SERVERADDR_LEN            256
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define value for PSK ID maximum length
+ * @brief Define value for PSK ID maximum length
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PSKID_LEN                 32
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define value for PSK secret maximum length
+ * @brief Define value for PSK secret maximum length
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PSK_LEN                   16
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Define value for public key maximum length
+ * @brief Define value for public key maximum length
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_PUBLICKEY_LEN             1024
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximal length of the security error string
+ * @brief Maximal length of the security error string
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_ERROR_STR_MAX_LEN         128
 
 //--------------------------------------------------------------------------------------------------
 /**
- * This define value is used in lwm2mcore_GetCredential, lwm2mcore_SetCredential,
- * lwm2mcore_CheckCredential APIs to indicate that the credential is linked to the bootstrap server.
+ * @brief This define value is used in @ref lwm2mcore_GetCredential, @ref lwm2mcore_SetCredential,
+ * @ref lwm2mcore_CheckCredential APIs to indicate that the credential is linked to the bootstrap
+ * server.
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BS_SERVER_ID              0
 
 //--------------------------------------------------------------------------------------------------
 /**
- * This define value is used in lwm2mcore_GetCredential, lwm2mcore_SetCredential,
- * lwm2mcore_CheckCredential APIs to indicate that the credential is not linked to server.
+ * @brief This define value is used in @ref lwm2mcore_GetCredential, @ref lwm2mcore_SetCredential,
+ * @ref lwm2mcore_CheckCredential APIs to indicate that the credential is not linked to server.
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_NO_SERVER_ID              0
@@ -71,18 +76,24 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Retrieve a credential.
+ * @brief Retrieve a credential.
  * This API treatment needs to have a procedural treatment.
  *
+ * @details Since the LwM2MCore is able to connect to several Device Management servers, the
+ * Device Management server Id is indicated in parameters (this field is useless if the credential
+ * Id concerns a bootstrap server credential).
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCredential
@@ -99,15 +110,20 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
  * Set a credential
  * This API treatment needs to have a procedural treatment
  *
+ * @details Since the LwM2MCore is able to connect to several Device Management servers, the
+ * Device Management server Id is indicated in parameters (this field is useless if the credential
+ * Id concerns a bootstrap server credential).
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetCredential
@@ -120,16 +136,16 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Get the status of credentials provisioned on the device
+ * @brief Get the status of credentials provisioned on platform.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *     LWM2MCORE_NO_CREDENTIAL_PROVISIONED
- *          - If neither Bootstrap nor Device Management credential is provisioned.
- *     LWM2MCORE_BS_CREDENTIAL_PROVISIONED
- *          - If Bootstrap credential is provisioned but Device Management credential is
-              not provisioned.
- *     LWM2MCORE_DM_CREDENTIAL_PROVISIONED
- *          - If Device Management credential is provisioned.
+ *  - @ref LWM2MCORE_NO_CREDENTIAL_PROVISIONED if neither Bootstrap nor Device Management
+ *                                              credentials are provisioned.
+ *  - @ref LWM2MCORE_BS_CREDENTIAL_PROVISIONED if Bootstrap credentials are provisioned but Device
+ *                                              Management credentials are not provisioned.
+ *  - @ref LWM2MCORE_DM_CREDENTIAL_PROVISIONED if Device Management credentials are provisioned.
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
@@ -139,11 +155,17 @@ lwm2mcore_CredentialStatus_t lwm2mcore_GetCredentialStatus
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to check if one credential is present in platform storage
+ * @brief Function to check if one credential is present in platform non-volatile storage.
+ *
+ * @details Since the LwM2MCore is able to connect to several Device Management servers, the
+ * Device Management server Id is indicated in parameters (this field is useless if the credential
+ * Id concerns a bootstrap server credential).
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true if the credential is present
- *      - false else
+ *  - @c true if the credential is present
+ *  - @c false else
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -155,11 +177,17 @@ bool lwm2mcore_CheckCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
- * This function erases one credential from platform storage
+ * @brief This function erases one credential from platform non-volatile storage.
+ *
+ * @details Since the LwM2MCore is able to connect to several Device Management servers, the
+ * Device Management server Id is indicated in parameters (this field is useless if the credential
+ * Id concerns a bootstrap server credential).
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true if the credential is deleted
- *      - false else
+ *  - @c true if the credential is deleted
+ *  - @c false else
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_DeleteCredential
@@ -176,7 +204,9 @@ bool lwm2mcore_DeleteCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Compute and update CRC32 with data buffer passed as an argument
+ * @brief Compute and update CRC32 with data buffer passed as an argument.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return Updated CRC32
  */
@@ -190,11 +220,13 @@ uint32_t lwm2mcore_Crc32
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Initialize the SHA1 computation
+ * @brief Initialize the SHA1 computation.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_StartSha1
@@ -204,11 +236,13 @@ lwm2mcore_Sid_t lwm2mcore_StartSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Compute and update SHA1 digest with the data buffer passed as an argument
+ * @brief Compute and update SHA1 digest with the data buffer passed as an argument.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ProcessSha1
@@ -220,11 +254,13 @@ lwm2mcore_Sid_t lwm2mcore_ProcessSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Finalize SHA1 digest and verify the package signature
+ * @brief Finalize SHA1 digest and verify the package signature.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_EndSha1
@@ -237,12 +273,14 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Copy the SHA1 context in a buffer
+ * @brief Copy the SHA1 context in a buffer.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_CopySha1
@@ -254,12 +292,14 @@ lwm2mcore_Sid_t lwm2mcore_CopySha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Restore the SHA1 context from a buffer
+ * @brief Restore the SHA1 context from a buffer.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_RestoreSha1
@@ -271,11 +311,13 @@ lwm2mcore_Sid_t lwm2mcore_RestoreSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Cancel and reset the SHA1 computation
+ * @brief Cancel and reset the SHA1 computation.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_CancelSha1
@@ -285,15 +327,17 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Update SSL Certificate
+ * @brief Update SSL Certificate.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @note To delete the saved certificate, set the length to 0
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
@@ -301,4 +345,8 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
     char*  certPtr,    ///< [IN] Certificate
     size_t len         ///< [IN] Certificate len
 );
+
+/**
+  * @}
+  */
 #endif /* __LWM2MCORE_SECURITY_H__ */

@@ -22,9 +22,9 @@
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceManufacturer
@@ -58,9 +58,9 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceManufacturer
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceModelNumber
@@ -94,10 +94,10 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceModelNumber
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if client configuration is not available
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if client configuration is not available
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
@@ -137,9 +137,9 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceFirmwareVersion
@@ -173,8 +173,8 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceFirmwareVersion
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
@@ -199,8 +199,8 @@ lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
@@ -224,10 +224,10 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if client configuration is not available
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if client configuration is not available
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
@@ -267,9 +267,9 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetIccid
@@ -303,9 +303,9 @@ lwm2mcore_Sid_t lwm2mcore_GetIccid
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
@@ -341,8 +341,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
  * @note
  *      This function is stubbed
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
@@ -367,8 +367,8 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
  * @note
  *      This function is stubbed
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetSimMode
@@ -391,8 +391,8 @@ lwm2mcore_Sid_t lwm2mcore_SetSimMode
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
@@ -417,8 +417,8 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
  * @note
  *      This function is stubbed
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
@@ -441,9 +441,9 @@ lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetMsisdn
@@ -477,8 +477,8 @@ lwm2mcore_Sid_t lwm2mcore_GetMsisdn
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceTemperature
@@ -502,8 +502,8 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTemperature
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceUnexpectedResets
@@ -527,8 +527,8 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceUnexpectedResets
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
@@ -552,13 +552,13 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
  * This API needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_RebootDevice

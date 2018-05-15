@@ -25,7 +25,7 @@
  * @brief Maximum length of the COAP path (URI).
  */
 //--------------------------------------------------------------------------------------------------
-#define COAP_PATH_MAX_LENGTH (256)
+#define COAP_PATH_MAX_LENGTH 256
 
 
 //--------------------------------------------------------------------------------------------------
@@ -108,6 +108,8 @@ typedef void (*coap_request_handler_t)
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to register a handler for CoAP requests
+ *
+ * @remark Public function which can be called by the client.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_SetCoapEventHandler
@@ -120,8 +122,10 @@ void lwm2mcore_SetCoapEventHandler
 /**
  * @brief Function to get URI from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - URI from request
+ *  - URI from request
  */
 //--------------------------------------------------------------------------------------------------
 const char* lwm2mcore_GetRequestUri
@@ -134,11 +138,13 @@ const char* lwm2mcore_GetRequestUri
 /**
  * @brief Function to get method from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - COAP_GET
- *      - COAP_POST
- *      - COAP_PUT
-*       - COAP_DELETE
+ *  - COAP_GET
+ *  - COAP_POST
+ *  - COAP_PUT
+ *  - COAP_DELETE
  */
 //--------------------------------------------------------------------------------------------------
 coap_method_t lwm2mcore_GetRequestMethod
@@ -151,8 +157,10 @@ coap_method_t lwm2mcore_GetRequestMethod
 /**
  * @brief Function to get payload from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - payload from request
+ *  - payload from request
  */
 //--------------------------------------------------------------------------------------------------
 const uint8_t* lwm2mcore_GetRequestPayload
@@ -165,8 +173,10 @@ const uint8_t* lwm2mcore_GetRequestPayload
 /**
  * @brief Function to get payload length from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - payload length from request
+ *  - payload length from request
  */
 //--------------------------------------------------------------------------------------------------
 size_t lwm2mcore_GetRequestPayloadLength
@@ -179,8 +189,10 @@ size_t lwm2mcore_GetRequestPayloadLength
 /**
  * @brief Function to get token from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - token from request
+ *  - token from request
  */
 //--------------------------------------------------------------------------------------------------
 const uint8_t* lwm2mcore_GetToken
@@ -193,8 +205,10 @@ const uint8_t* lwm2mcore_GetToken
 /**
  * @brief Function to get token length from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - token length from request
+ *  - token length from request
  */
 //--------------------------------------------------------------------------------------------------
 size_t lwm2mcore_GetTokenLength
@@ -207,9 +221,11 @@ size_t lwm2mcore_GetTokenLength
 /**
  * @brief Function to get content type from request
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if an async response is initiated
- *      - else @c false
+ *  - @c true if an async response is initiated
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 unsigned int lwm2mcore_GetContentType
@@ -221,9 +237,11 @@ unsigned int lwm2mcore_GetContentType
 /**
  * @brief Function to send an asynchronous response to server.
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if an asynchronous response is initiated
- *      - else @c false
+ *  - @c true if an asynchronous response is initiated
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_SendAsyncResponse

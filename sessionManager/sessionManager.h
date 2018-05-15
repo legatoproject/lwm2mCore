@@ -74,7 +74,8 @@ typedef enum
     EVENT_TYPE_REG_UPDATE,      ///< Registration update event: started, succeeded or failed
     EVENT_TYPE_DEREG,           ///< Deregistration event: started, succeeded or failed
     EVENT_TYPE_AUTHENTICATION,  ///< Authentication event: started, succeeded or failed
-    EVENT_TYPE_RESUMING,        ///< DTLS resuming/re-authentication event: started, succeeded or failed
+    EVENT_TYPE_RESUMING,        ///< DTLS resuming/re-authentication event: started, succeeded or
+                                ///< failed
     EVENT_SESSION,              ///< Session event: started or done with success or failure
     EVENT_TYPE_MAX = 0xFF,      ///< Internal usage
 }smanager_EventType_t;
@@ -103,11 +104,11 @@ void smanager_SendSessionEvent
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to check if the client is connected to a bootstrap server
+ * @brief Function to check if the client is connected to a bootstrap server
  *
  * @return
- *      - true if the client is connected to a bootstrap server
- *      - else false
+ *  - @c true if the client is connected to a bootstrap server
+ *  - @c else false
  */
 //--------------------------------------------------------------------------------------------------
 bool smanager_IsBootstrapConnection

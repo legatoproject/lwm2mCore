@@ -21,9 +21,9 @@
 /**
  * @brief Retrieves the registered coap request handler and returns the coap request details
  *
- *  * @return
- *      - CoAP error code from user application
- *      - COAP_501_NOT_IMPLEMENTED if there is no registered handler found.
+ * @return
+ *  - CoAP error code from user application
+ *  - COAP_501_NOT_IMPLEMENTED if there is no registered handler found.
  */
 //--------------------------------------------------------------------------------------------------
 coap_status_t lwm2mcore_CallCoapEventHandler

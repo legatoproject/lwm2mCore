@@ -14,19 +14,13 @@
 #include <platform/types.h>
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_timer_IFS Timer
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for timer
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_timer_IFS
   * @{
   */
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Timer definitions
+ * @brief Timer definitions
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -38,7 +32,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Adaptation API for timer launch
+ * @brief Callback when a timer expires
  */
 //--------------------------------------------------------------------------------------------------
 typedef void (*lwm2mcore_TimerCallback_t)
@@ -48,11 +42,13 @@ typedef void (*lwm2mcore_TimerCallback_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Adaptation function for timer launch
+ * @brief Adaptation function for timer start
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true  on success
- *      - false on failure
+ *  - @c true  on success
+ *  - @c false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerSet
@@ -64,11 +60,13 @@ bool lwm2mcore_TimerSet
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Adaptation function for timer stop
+ * @brief Adaptation function for timer stop
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true  on success
- *      - false on failure
+ *  - @c true  on success
+ *  - @c false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerStop
@@ -78,11 +76,13 @@ bool lwm2mcore_TimerStop
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Adaptation function for timer state
+ * @brief Adaptation function for timer state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - true  if the timer is running
- *      - false if the timer is stopped
+ *  - @c true  if the timer is running
+ *  - @c false if the timer is stopped
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerIsRunning

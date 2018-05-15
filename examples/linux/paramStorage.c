@@ -40,9 +40,9 @@
  * Write parameter in platform memory
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetParam
@@ -94,9 +94,9 @@ lwm2mcore_Sid_t lwm2mcore_SetParam
  * Read parameter from platform memory
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetParam
@@ -162,9 +162,9 @@ lwm2mcore_Sid_t lwm2mcore_GetParam
  * Delete parameter from platform memory
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_DeleteParam

@@ -10,30 +10,35 @@
 #ifndef __BS_CONFIG_H__
 #define __BS_CONFIG_H__
 
+/**
+  * @addtogroup lwm2mcore_bootstrap_int
+  * @{
+  */
+
 //--------------------------------------------------------------------------------------------------
 /**
- * Bootstrap file version 1
+ * @brief Bootstrap file version 1
  */
 //--------------------------------------------------------------------------------------------------
 #define BS_CONFIG_VERSION_1         1
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Bootstrap file version 2
+ * @brief Bootstrap file version 2
  */
 //--------------------------------------------------------------------------------------------------
 #define BS_CONFIG_VERSION_2         2
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Supported version for bootstrap file
+ * @brief Supported version for bootstrap file
  */
 //--------------------------------------------------------------------------------------------------
 #define BS_CONFIG_VERSION           BS_CONFIG_VERSION_2
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Enum for security mode for LWM2M connection (object 0 (security); resource 2)
+ * @brief Enum for security mode for LWM2M connection (object 0 (security); resource 2)
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -48,7 +53,7 @@ SecurityMode_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for the security object (object 0) for bootstrap configuration file version 1
+ * @brief Structure for the security object (object 0) for bootstrap configuration file version 1
  * Serveur URI and credentials (PSKID, PSK) are managed as credentials
  * SMS parameters are not supported
  *
@@ -67,7 +72,7 @@ ConfigSecurityObjectV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for the server object (object 1) for bootstrap configuration file version 1
+ * @brief Structure for the server object (object 1) for bootstrap configuration file version 1
  *
  * @note Concerns bootstrap file version 1
  */
@@ -87,7 +92,7 @@ ConfigServerObjectV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for bootstrap configuration file version 1 to be stored in platform storage
+ * @brief Structure for bootstrap configuration file version 1 to be stored in platform storage
  *
  * @note Concerns bootstrap file version 1
  */
@@ -102,8 +107,8 @@ ConfigBootstrapFileV01_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for security objects (object 0) for bootstrap configuration file version 2 which are
- * stored in platform memory
+ * @brief Structure for security objects (object 0) for bootstrap configuration file version 2 which
+ * are stored in platform memory
  *
  * @note Concerns bootstrap file version 2
  */
@@ -121,8 +126,8 @@ struct ConfigSecurityToStoreV02_t
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for server objects (object 1) for bootstrap configuration file version 2 which are
- * stored in platform memory
+ * @brief Structure for server objects (object 1) for bootstrap configuration file version 2 which
+ * are stored in platform memory
  *
  * @note Concerns bootstrap file version 2
  */
@@ -143,7 +148,7 @@ struct ConfigServerToStoreV02_t
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for the security object (object 0)
+ * @brief Structure for the security object (object 0)
  * Serveur URI and credentials (PSKID, PSK) are managed as credentials
  * SMS parameters are not supported
  *
@@ -163,7 +168,7 @@ struct ConfigSecurityObjectV02_t
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for the server object (object 1)
+ * @brief Structure for the server object (object 1)
  *
  * @note Concerns bootstrap file version 2
  */
@@ -176,7 +181,7 @@ struct ConfigServerObjectV02_t
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Structure for bootstrap configuration file (version 2) to be stored in platform storage
+ * @brief Structure for bootstrap configuration file (version 2) to be stored in platform storage
  *
  * @note Concerns bootstrap file version 2
  */
@@ -193,44 +198,44 @@ struct ConfigBootstrapFileV02_t
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Generic structure for bootstrap configuration to be stored in platform storage
+ * @brief Generic structure for bootstrap configuration to be stored in platform storage
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct ConfigBootstrapFileV02_t     ConfigBootstrapFile_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Generic structure for security objects for bootstrap configuration
+ * @brief Generic structure for security objects for bootstrap configuration
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct ConfigSecurityObjectV02_t    ConfigSecurityObject_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Generic structure for server objects for bootstrap configuration
+ * @brief Generic structure for server objects for bootstrap configuration
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct ConfigServerObjectV02_t      ConfigServerObject_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Generic structure for data linked to security objects for bootstrap configuration to be stored
- * in the platform memory
+ * @brief Generic structure for data linked to security objects for bootstrap configuration to be
+ * stored in the platform memory
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct ConfigSecurityToStoreV02_t   ConfigSecurityToStore_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Generic structure for data linked to server objects for bootstrap configuration to be stored
- * in the platform memory
+ * @brief Generic structure for data linked to server objects for bootstrap configuration to be
+ * stored in the platform memory
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct ConfigServerToStoreV02_t     ConfigServerToStore_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get the bootstrap information from RAM
+ * @brief Function to get the bootstrap information from RAM
  *
  * @return
  *  - Boostrap configuration structure pointer
@@ -243,11 +248,11 @@ ConfigBootstrapFile_t* omanager_GetBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to read the bootstrap configuration from platform memory
+ * @brief Function to read the bootstrap configuration from platform memory
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *  - @c true in case of success
+ *  - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_LoadBootstrapConfiguration
@@ -259,7 +264,7 @@ bool omanager_LoadBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to add an object instance of object 0 (security) in bootstrap information list
+ * @brief Function to add an object instance of object 0 (security) in bootstrap information list
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_AddBootstrapConfigurationSecurity
@@ -270,7 +275,7 @@ void omanager_AddBootstrapConfigurationSecurity
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to add an object instance of object 1 (server) in bootstrap information list
+ * @brief Function to add an object instance of object 1 (server) in bootstrap information list
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_AddBootstrapConfigurationServer
@@ -281,12 +286,12 @@ void omanager_AddBootstrapConfigurationServer
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get the bootstrap information for a specific object instance Id of object 0
+ * @brief Function to get the bootstrap information for a specific object instance Id of object 0
  * (security)
  *
  * @return
  *  - pointer on object instance structure on success
- *  - NULL if the object instance Id does not exist
+ *  - @c NULL if the object instance Id does not exist
  */
 //--------------------------------------------------------------------------------------------------
 ConfigSecurityObject_t* omanager_GetBootstrapConfigurationSecurityInstance
@@ -297,12 +302,12 @@ ConfigSecurityObject_t* omanager_GetBootstrapConfigurationSecurityInstance
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get the bootstrap information for a specific object instance Id of object 1
+ * @brief Function to get the bootstrap information for a specific object instance Id of object 1
  * (server)
  *
  * @return
  *  - pointer on ConfigServerObject_t
- *  - NULL if the object instance Id does not exist
+ *  - @c NULL if the object instance Id does not exist
  */
 //--------------------------------------------------------------------------------------------------
 ConfigServerObject_t* omanager_GetBootstrapConfigurationServerInstance
@@ -313,11 +318,11 @@ ConfigServerObject_t* omanager_GetBootstrapConfigurationServerInstance
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to save the bootstrap configuration in platform memory
+ * @brief Function to save the bootstrap configuration in platform memory
  *
  * @return
- *      - true in case of success
- *      - false in case of failure
+ *  - @c true in case of success
+ *  - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_StoreBootstrapConfiguration
@@ -327,7 +332,7 @@ bool omanager_StoreBootstrapConfiguration
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to free the bootstrap information list
+ * @brief Function to free the bootstrap information list
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_FreeBootstrapInformation
@@ -337,7 +342,7 @@ void omanager_FreeBootstrapInformation
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Delete all device management credentials
+ * @brief Delete all device management credentials
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_DeleteDmCredentials
@@ -347,11 +352,11 @@ void omanager_DeleteDmCredentials
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to get the number of security and server objects in the bootstrap information
+ * @brief Function to get the number of security and server objects in the bootstrap information
  *
  * @return
- *  - true on success
- *  - false on failure
+ *  - @c true on success
+ *  - @c false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_GetBootstrapConfigObjectsNumber
@@ -367,8 +372,8 @@ bool omanager_GetBootstrapConfigObjectsNumber
  * @brief Function to read the bootstrap configuration from platform memory
  *
  * @return
- *      - @c true in case of success
- *      - @c false in case of failure
+ *  - @c true in case of success
+ *  - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_LoadBootstrapConfigurationFile
@@ -381,13 +386,16 @@ bool omanager_LoadBootstrapConfigurationFile
  * @brief Function to save the bootstrap configuration in platform memory
  *
  * @return
- *      - @c true in case of success
- *      - @c false in case of failure
+ *  - @c true in case of success
+ *  - @c false in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_SetBootstrapConfiguration
 (
     void
 );
+/**
+  * @}
+  */
 
 #endif /* __BS_CONFIG_H__ */

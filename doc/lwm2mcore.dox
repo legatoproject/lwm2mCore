@@ -1,20 +1,28 @@
 /*!@mainpage LwM2MCore porting guide
  *
  * @author Sierra Wireless
- * @version 0.1
+ * @version 1.0
  * @copyright Sierra Wireless Inc.
  *
  * Copyright (C) Sierra Wireless Inc.
  *
  * @tableofcontents
  *
- * @section s_description LwM2MCore description
+ * @section LwM2MCore_desc LwM2MCore Description
  *
- * @subsection subs_abbreviaiton Abbreviations and acronyms
+ * @subsection LwM2MCore_sub_history History
+ * Version  | Meaning
+ * :------- | :--------------------------------
+ * 0.1      | Initial version
+ * 1.0      | Add details on all functions and parameters
+ *
+ * @subsection LwM2MCore_subs_abbreviation Abbreviations and Acronyms
  * Acronym  | Meaning
  * :------- | :--------------------------------
  * AOTA     | Application update Over The Air
+ * BS       | Bootstrap
  * CoAP     | Constrained Application Protocol
+ * DM       | Device Management
  * FOTA     | Firmware update Over The Air
  * FW       | Firmware
  * DTLS     | Datagram Transport Layer Security
@@ -25,12 +33,12 @@
  * SOTA     | Software update Over The Air
  * SW       | Software
  *
- * @subsection subs_definitions Definitions
+ * @subsection LwM2MCore_subs_definitions Definitions
  * Term   | Meaning
  * :------| :----------------------------------------------------------------
  * Client | Entity which integrates LwM2MCore and calls LwM2MCore public APIs
  *
- * @subsection subs_description Description
+ * @subsection LwM2MCore_subs_description Description
  * LwM2MCore is a LwM2M agent which integrates Wakaama open source code and provides essential
  * LwM2M connectivity to any LwM2M server.@n
  * It handles LwM2M / CoAP / DTLS protocols with the support of the platform dependent OS services.
@@ -70,7 +78,7 @@
  *  }
  * @enddot
  *
- * @section s_documentation Documentation
+ * @section LwM2MCore_documentation Documentation
  *
  * LwM2M specifications are available on OMA website:
  * http://member.openmobilealliance.org/ftp/Public_documents/DM/LightweightM2M/Permanent_documents/
@@ -80,9 +88,9 @@
  * @anchor R1 R1    | LwM2M technical specification | OMA-TS-LightweightM2M-V1_0-20170208-A
  * @anchor R2 R2    | Software update Over-The-Air  | OMA-TS-LWM2M_SwMgmt-V1_0-20151201-C
  *
- * @section s_code_structure Code structure
+ * @section LwM2MCore_code_structure Code Structure
  *
- * @subsection subs_code How to get the code?
+ * @subsection LwM2MCore_subs_code How to get the code?
  * The LwM2MCore source code is available using git.\n
  * Get LwM2MCore source code:
  * @code
@@ -93,23 +101,30 @@
  *
  * Get wakaama (master-swi) source code:
  * @code
+ * cd 3rdParty
  * git clone https://github.com/legatoproject/wakaama.git
  * cd wakaama
  * git checkout master-swi
- * cd ..
+ * cd ../..
  * @endcode
  *
  * Get tinyDTLS (master-swi) source code:
  * @code
+ * cd 3rdParty
  * git clone https://github.com/legatoproject/tinydtls.git
- * cd tinydtls/
+ * cd tinydtls
  * git checkout master-swi
- * cd ..
+ * cd ../..
  * @endcode
  *
- * @subsection subs_code_structure Source code structure
+ * @subsection LwM2MCore_subs_code_structure Source Code Structure
  * Folder               | Description
  * :------------------- | :-----------------------------------------------------------------
+ * @c 3rdParty          | 3rdParty source code
+ * @c 3rdParty/tinyhttp | tinyhttp source code
+ * @c 3rdParty/tinydtls | tinyDTLS source code
+ * @c 3rdParty/wakaama  | Wakaama source code
+ * @c doc               | Documentation
  * @c examples/linux    | Linux specific implementation that provides OS adaptation services
  * @c include           | Public platform independent headers
  * @c objectManager     | LwM2M object manager (client can register its own objects table)
@@ -117,10 +132,8 @@
  * @c security          | Credential management
  * @c sessionManager    | LwM2MCore connectivity
  * @c tests             | Tests
- * @c tinydtls          | tinyDTLS source code to support DTLS
- * @c wakaama           | Wakaama source code
  *
- * @subsection subs_compilation_flags Compilation flags
+ * @subsection LwM2MCore_subs_compilation_flags Compilation Flags
  * Compilation flags
  * Flag                                         | Usage       | Description
  * :------------------------------------------- | :---------- | :------------------------------------------------
@@ -130,7 +143,7 @@
  * @c LWM2M_WITH_LOGS and @c WITH_LOGS          | Optional    | Enable logs in Wakaama
  * @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT          | Recommended | Enable old content-type field value (IANA updates)
  * @c WITH_TINYDTLS                             | Mandatory   | Support DTLS
- * @c SIERRA                                    | Mandatory   | Include Sierra Wireless updates in Wakaama and tinyDTLS
+ * @c SIERRA                                    | Mandatory   | Include Sierra Wireless updates in Wakaama and tinyDTLS and support of Sierra proprietary objects
  * @c LWM2M_SUPPORT_JSON                        | Optional    | Enable JSON payload support
  * @c LWM2M_DEREGISTER                          | Optional    | Send a DEREGISTER message to the server when the device disconects from the server
  * @c LWM2M_LOCATION_FLOAT                      | Optional    | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
@@ -146,9 +159,10 @@
  * - @c WITH_TINYDTLS
  * - @c SIERRA
  * - @c LWM2M_DEREGISTER (but depends on the server behavior)
- * - @c LWM2M_LOCATION_FLOAT if the server supports the last v1.0 LwM2M specification or newer version
+ * - @c LWM2M_LOCATION_FLOAT if the server supports the last v1.0 LwM2M specification or newer
+ *   version
  *
- * @subsection subs_compilation Compilation
+ * @subsection LwM2MCore_subs_compilation Compilation
  * To compile the LwM2MCore Linux client: \n
  * - Create @c build folder in @c examples/linux
  * - Go to @c examples/linux/build folder
@@ -156,16 +170,16 @@
  * - @c make
  * - Launch the Linux client: <tt>./lwm2mcoreclient</tt>
  *
- * @subsection subs_unit_tests Tests (unitary/integration tests)
+ * @subsection LwM2MCore_subs_unit_tests Tests (unitary/integration tests)
  * Unitary tests are available. @n
  * Please read the README.md file in @c tests folder for further information.
  *
- * @section s_LWM2M_specification LwM2M specification compliance
+ * @section LwM2MCore_LWM2M_specification LwM2M Specification Compliance
  *
- * @subsection subs_compliance High Level Standard Compliance
+ * @subsection LwM2MCore_subs_compliance High Level Standard Compliance
  * LwM2MCore is compliant with LwM2M specification 1.0 version.@n
  * The specification can be retrieved from OMA website:
- * see @link s_documentation Documentation @endlink @n
+ * see @link LwM2MCore_documentation Documentation @endlink @n
  * The table below summarizes the compliance to the standard.
  * Feature                  | Support   | Comment
  * :----------------------- | :-------- | :-------------------------------
@@ -175,14 +189,14 @@
  * Access Control List      | Yes       | Supported
  * SMS wakeup               | No        | To be managed by the client
  *
- * @subsubsection subs_subs_registation Client Registration
+ * @subsubsection LwM2MCore_subs_subs_registation Client Registration
  * Feature                  | Support   | Comment
  * :----------------------- | :-------- | :-------------------------------
  * Register                 | Yes       | Supported
  * Register update          | Yes       | Supported
  * De-register              | Yes       | Supported if @c LWM2M_DEREGISTER compilation flag is used
  *
- * @subsubsection subs_subs_dm Device Management
+ * @subsubsection LwM2MCore_subs_subs_dm Device Management
  * Feature                  | Support   | Comment
  * :----------------------- | :-------- | :-------------------------------
  * Read                     | Yes       | Supported
@@ -192,7 +206,7 @@
  * Write attributes         | TBD       | Not tested
  * Discover                 | TBD       | Not tested
  *
- * @subsubsection subs_subs_report Information reporting
+ * @subsubsection LwM2MCore_subs_subs_report Information Reporting
  * Feature                    | Support   | Comment
  * :--------------------------| :-------- | :-------------------------------
  * Observe                    | TBD       | Not tested
@@ -200,7 +214,7 @@
  * Active Cancel observation  | TBD       | Not tested
  * Notify                     | TBD       | Not tested
  *
- * @subsubsection subs_subs_format Format
+ * @subsubsection LwM2MCore_subs_subs_format Format
  * Feature                    | Support   | Comment
  * :--------------------------| :-------- | :-------------------------------
  * Plain-text                 | Yes       | Supported
@@ -208,7 +222,7 @@
  * TLV                        | Yes       | Supported
  * JSON                       | TBD       | Not tested, required to use the @c LWM2M_SUPPORT_JSON compilation flag
  *
- * @subsubsection subs_subs_resource Resource model
+ * @subsubsection LwM2MCore_subs_subs_resource Resource Model
  * Feature                    | Support   | Comment
  * :--------------------------| :-------- | :-------------------------------
  * Object                     | Yes       | Supported
@@ -217,7 +231,7 @@
  * Multi-instance resource    | Yes       | Supported
  * Object version             | No        | Not supported
  *
- * @subsubsection subs_subs_security Security
+ * @subsubsection LwM2MCore_subs_subs_security Security
  * Feature                    | Support   | Comment
  * :--------------------------| :-------- | :-------------------------------
  * No sec                     | No        | Not supported
@@ -225,7 +239,7 @@
  * Raw-public key             | No        | Not supported
  * X.509                      | No        | Not supported
  *
- * @subsubsection subs_subs_bootstrap Bootstrap
+ * @subsubsection LwM2MCore_subs_subs_bootstrap Bootstrap
  * Feature                    | Support   | Comment
  * :--------------------------| :-------- | :-------------------------------
  * Bootstrap request          | Yes       | Supported
@@ -238,7 +252,7 @@
  * Bootstrap Device Initiated | Yes       | Supported
  * Bootstrap Server Initiated | No        | Not supported
  *
- * @subsection subs_supported_LwM2Mobjects Supported LwM2M objects
+ * @subsection LwM2MCore_supported_LwM2Mobjects Supported LwM2M Objects
  * Non-exhaustive list of the most common LwM2M objects:
  * Object Id    | Description
  * :----------- | :---------------------------------------
@@ -252,18 +266,16 @@
  * 7            | Connectivity statistics
  * 9            | Software management
  *
- * @subsection subs_lwm2m_version Remark on LwM2M specification version
- * @note To be fully compliant with LwM2M 1.0 specification, the @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
- *
- * @subsection subs_restriction Restrictions
-  * @warning tinyDTLS does not support DTLS resume. When a registration update message is sent to the server, a DTLS rehandshake is made.
+ * @subsection LwM2MCore_subs_lwm2m_version Remark On LwM2M Specification Version
+ * @note To be fully compliant with LwM2M 1.0 specification or newer versions, the
+ * @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
  *
  * @page p_integration Integration
  * @tableofcontents
  *
- * @section s_requirements Requirements
+ * @section LwM2MCore_requirements Requirements
  *
- * @subsection subs_req_basic Basic OS services requirement
+ * @subsection LwM2MCore_subs_req_basic Basic OS Services Requirement
  *
  * - LWM2MCORE_BASIC_REQ_1: The integrator shall provide platform specific implementation of all the
  *                          APIs declared in the following header files.
@@ -278,13 +290,13 @@
  * @c udp.h                 | No                        | UDP service
  * @todo memory and str
  *
- * @page Schematics
+ * @page Schematics Schematics
  *
  * @tableofcontents
  *
  * @if plantuml
  *
- * @section s_lwm2mcore_init LwM2MCore Initialization
+ * @section LwM2MCore_lwm2mcore_init LwM2MCore Initialization
  *
  * @startuml{lwm2mcore_initialization.png}
  * autonumber
@@ -308,7 +320,7 @@
  * client <-- lwm2mcore: Return instance reference
  * @enduml
  *
- * @section s_lwm2mcore_configuration LwM2MCore configuration
+ * @section LwM2MCore_lwm2mcore_configuration LwM2MCore Configuration
  *
  * @startuml{lwm2mcore_configuration.png}
  * autonumber
@@ -343,7 +355,7 @@
  * client <-- lwm2mcore: Return registered LWM2M object number
  * @enduml
  *
- * @section s_lwm2mcore_connection LwM2MCore connection
+ * @section LwM2MCore_lwm2mcore_connection LwM2MCore Connection
  *
  * @startuml{lwm2mcore_connection.png}
  * autonumber
@@ -405,7 +417,7 @@
  * end
  * @enduml
  *
- * @section s_lwm2mcore_disconnection LwM2MCore disconnection
+ * @section LwM2MCore_lwm2mcore_disconnection LwM2MCore Disconnection
  *
  * @startuml{lwm2mcore_disconnection.png}
  * autonumber
@@ -443,7 +455,7 @@
  *
  * Note: * -> To be defined later in package downloader documentation
  *
- * @section s_lwm2mcore_free LwM2MCore Free
+ * @section LwM2MCore_lwm2mcore_free LwM2MCore Free
  *
  * @startuml{lwm2mcore_free.png}
  * autonumber
@@ -465,7 +477,7 @@
  * lwm2mcore -> lwm2mcore: Free contextes
  * @enduml
  *
- * @section s_lwm2mcore_read Monitoring
+ * @section LwM2MCore_lwm2mcore_read Monitoring
  *
  * @startuml{lwm2mcore_read_resource.png}
  * autonumber
@@ -550,7 +562,7 @@
  * wakaama --> Dm: Contents
  * @enduml
  *
- * @section s_lwm2mcore_write Provisioning
+ * @section LwM2MCore_lwm2mcore_write Provisioning
  *
  * @startuml{lwm2mcore_write.png}
  * autonumber
@@ -577,7 +589,7 @@
  * wakaama --> Dm: Response
  * @enduml
  *
- * @section s_lwm2mcore_authentication_failure Authentication failure: rebootstrap
+ * @section LwM2MCore_lwm2mcore_authentication_failure Authentication Failure: Rebootstrap
  *
  * @startuml{lwm2mcore_authentication_failure.png}
  * autonumber
@@ -683,7 +695,7 @@
  * end
  * @enduml
  *
- * @section s_lwm2mcore_update Registration update
+ * @section LwM2MCore_lwm2mcore_update Registration Update
  *
  * @startuml{lwm2mcore_registration_update.png}
  * autonumber
@@ -718,11 +730,11 @@
  * wakaama <- Dm: CoAP CHANGED (2.04)
  * @enduml
  *
- * @section s_lwm2mcore_fota FOTA: Firmware update Over-The-Air
+ * @section LwM2MCore_lwm2mcore_fota FOTA: Firmware Update Over-The-Air
  *
  * @todo Schematics for FOTA needs to be created
  *
- * @section s_lwm2mcore_sota SOTA: Software update Over-The-Air
+ * @section LwM2MCore_lwm2mcore_sota SOTA: Software Update Over-The-Air
  *
  * @todo Schematics for SOTA needs to be created
  *
@@ -731,10 +743,13 @@
  *
  *
  * @defgroup lwm2mcore_public_IFS LwM2MCore public interface
- * @brief LwM2MCore public interface
+ * @brief LwM2MCore APIs which can be called by the client.
  *
  * @defgroup lwm2mcore_platform_adaptor_IFS Platform adaptor
- * @brief Adaptation layer
+ * @brief LwM2MCore APIs which needs to be defined on client side.<br>Some examples can be retrieved in @c examples/linux folder.
+ *
+ * @defgroup lwm2mcore_internal_IFS LwM2MCore internal interface
+ * @brief LwM2MCore internal interface
  *
  * @defgroup lwm2mcore_init_IFS Initialization and free
  * @ingroup lwm2mcore_public_IFS
@@ -752,10 +767,6 @@
  * @ingroup lwm2mcore_public_IFS
  * @brief Asset Data management
  *
- * @defgroup lwm2mcore_log_IFS Log
- * @ingroup lwm2mcore_public_IFS
- * @brief Log
- *
  * @defgroup lwm2mcore_sota_IFS Application definition
  * @ingroup lwm2mcore_public_IFS
  * @brief Embedded applications management
@@ -764,29 +775,102 @@
  * @ingroup lwm2mcore_public_IFS
  * @brief CoAP handlers
  *
- * @defgroup lwm2mcore_internal_IFS LwM2MCore internal interface
- * @brief LwM2MCore internal interface
+ * @defgroup lwm2mcore_package_downloader_IFS Package downloader interface
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Package downloader interface
  *
- * @defgroup lwm2mcore_objects_int Object internal functions
+ * @defgroup lwm2mcore_acl_int Access Control Lists
  * @ingroup lwm2mcore_internal_IFS
- * @brief LwM2MCore objects management
+ * @brief LwM2MCore ACL management
  *
- * @defgroup lwm2mcore_sessionManager_int Handlers internal functions
+ * @defgroup lwm2mcore_bootstrap_int Bootstrap management
  * @ingroup lwm2mcore_internal_IFS
- * @brief LwM2MCore handlers management
+ * @brief LwM2MCore bootstrap management
  *
  * @defgroup lwm2mcore_coaphandler_int CoAP handler internal functions
  * @ingroup lwm2mcore_internal_IFS
  * @brief LwM2MCore CoAP handler management
  *
- * @defgroup lwm2mcore_utils_int Tool internal functions
- * @ingroup lwm2mcore_internal_IFS
- * @brief LwM2MCore tool APIs
- *
  * @defgroup lwm2mcore_dtlsconnection_int DTLS internal functions
  * @ingroup lwm2mcore_internal_IFS
  * @brief LwM2MCore DTLS internal APIs
  *
+ * @defgroup lwm2mcore_objects_int Object internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore objects management
+ *
+ * @defgroup lwm2mcore_handlers_int Resource handlers management
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore resource handlers management
+ *
+ * @defgroup lwm2mcore_sessionManager_int Session internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore session management
+ *
+ * @defgroup lwm2mcore_utils_int Tool internal functions
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore tool APIs
+ *
+ * @defgroup lwm2mcore_workspace_int Workspace management
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief LwM2MCore workspace management
+ *
+ *
+ * @defgroup lwm2mcore_connectivity_monitoring_IFS Connectivity monitoring
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Connectivity monitoring
+ *
+ * @defgroup lwm2mcore_device_monitoring_IFS Device monitoring
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Device monitoring
+ *
+ * @defgroup lwm2mcore_location_monitoring_IFS Location monitoring
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Location monitoring
+ *
+ * @defgroup lwm2mcore_log_IFS Log
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for Log
+ *
+ * @defgroup lwm2mcore_security_IFS Credentials and certificate interfaces
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Credentials and certificate interfaces
+ *
+ * @defgroup lwm2mcore_platform_adaptor_memory_IFS Memory
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for memory management
+ *
+ * @defgroup lwm2mcore_platform_adaptor_mutex_IFS Mutex
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for mutex (Not used)
+ *
+ * @defgroup lwm2mcore_platform_adaptor_storage_IFS Parameter storage
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for parameter storage
+ *
+ * @defgroup lwm2mcore_platform_adaptor_semaphore_IFS Semaphore
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for semaphore
+ *
+ * @defgroup lwm2mcore_server_IFS Server interface
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Server interface
+ *
+ *
+ * @defgroup lwm2mcore_platform_adaptor_socket_IFS Socket
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for socket
+ *
+ * @defgroup lwm2mcore_platform_adaptor_timer_IFS Timer
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for timer
+ *
+ * @defgroup lwm2mcore_platform_adaptor_udp_IFS UDP
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for UDP
+ *
+ * @defgroup lwm2mcore_update_IFS Update interface
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Update interface
+ *
  */
-
-

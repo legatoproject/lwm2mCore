@@ -21,8 +21,8 @@
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetNetworkBearer
@@ -46,8 +46,8 @@ lwm2mcore_Sid_t lwm2mcore_GetNetworkBearer
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetAvailableNetworkBearers
@@ -76,8 +76,8 @@ lwm2mcore_Sid_t lwm2mcore_GetAvailableNetworkBearers
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSignalStrength
@@ -101,8 +101,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSignalStrength
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLinkQuality
@@ -126,8 +126,8 @@ lwm2mcore_Sid_t lwm2mcore_GetLinkQuality
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetIpAddresses
@@ -156,8 +156,8 @@ lwm2mcore_Sid_t lwm2mcore_GetIpAddresses
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRouterIpAddresses
@@ -186,8 +186,8 @@ lwm2mcore_Sid_t lwm2mcore_GetRouterIpAddresses
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLinkUtilization
@@ -211,8 +211,8 @@ lwm2mcore_Sid_t lwm2mcore_GetLinkUtilization
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetAccessPointNames
@@ -239,8 +239,8 @@ lwm2mcore_Sid_t lwm2mcore_GetAccessPointNames
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCellId
@@ -264,8 +264,8 @@ lwm2mcore_Sid_t lwm2mcore_GetCellId
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetMncMcc
@@ -297,8 +297,8 @@ lwm2mcore_Sid_t lwm2mcore_GetMncMcc
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSignalBars
@@ -323,9 +323,9 @@ lwm2mcore_Sid_t lwm2mcore_GetSignalBars
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCellularTechUsed
@@ -359,8 +359,8 @@ lwm2mcore_Sid_t lwm2mcore_GetCellularTechUsed
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRoamingIndicator
@@ -385,8 +385,8 @@ lwm2mcore_Sid_t lwm2mcore_GetRoamingIndicator
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetEcIo
@@ -410,8 +410,8 @@ lwm2mcore_Sid_t lwm2mcore_GetEcIo
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRsrp
@@ -435,8 +435,8 @@ lwm2mcore_Sid_t lwm2mcore_GetRsrp
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRsrq
@@ -460,8 +460,8 @@ lwm2mcore_Sid_t lwm2mcore_GetRsrq
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRscp
@@ -485,8 +485,8 @@ lwm2mcore_Sid_t lwm2mcore_GetRscp
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLac
@@ -510,14 +510,14 @@ lwm2mcore_Sid_t lwm2mcore_GetLac
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetServingCellLteTracAreaCode
@@ -541,8 +541,8 @@ lwm2mcore_Sid_t lwm2mcore_GetServingCellLteTracAreaCode
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSmsTxCount
@@ -566,8 +566,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSmsTxCount
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSmsRxCount
@@ -591,8 +591,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSmsRxCount
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetTxData
@@ -616,8 +616,8 @@ lwm2mcore_Sid_t lwm2mcore_GetTxData
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetRxData
@@ -641,7 +641,7 @@ lwm2mcore_Sid_t lwm2mcore_GetRxData
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_StartConnectivityCounters
@@ -658,7 +658,7 @@ lwm2mcore_Sid_t lwm2mcore_StartConnectivityCounters
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_StopConnectivityCounters

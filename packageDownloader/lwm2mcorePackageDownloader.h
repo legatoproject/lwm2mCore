@@ -15,13 +15,19 @@
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/update.h>
 
+/**
+  * @addtogroup lwm2mcore_package_downloader_IFS
+  * @{
+  */
+
+
 //--------------------------------------------------------------------------------------------------
 // Symbol and Enum definitions
 //--------------------------------------------------------------------------------------------------
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Package downloader result codes
+ * @brief Package downloader result codes
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -33,9 +39,14 @@ typedef enum
 }
 lwm2mcore_DwlResult_t;
 
+
+//--------------------------------------------------------------------------------------------------
+// Data structures
+//--------------------------------------------------------------------------------------------------
+
 //--------------------------------------------------------------------------------------------------
 /**
- * Package downloader data structure
+ * @brief Package downloader data structure
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -50,14 +61,14 @@ lwm2mcore_PackageDownloaderData_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback for package download initialization
+ * @brief Callback for package download initialization
  *
  * This callback should prepare the download of a package located at the given URI.
  * The context pointer will then be transmitted in each other callbacks.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -70,14 +81,14 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_InitDownload_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to get information about the package to download
+ * @brief Callback to get information about the package to download
  *
  * This callback should fill the available information about the package to download.
  * This is currently limited to the package size.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -90,13 +101,13 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_GetPackageInfo_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to set the firmware update state
+ * @brief Callback to set the firmware update state
  *
  * This callback should set the new given firmware update state.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -108,13 +119,13 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateState_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to set the firmware update result
+ * @brief Callback to set the firmware update result
  *
  * This callback should set the new given firmware update result.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -126,13 +137,13 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetFwUpdateResult_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to set the software update state
+ * @brief Callback to set the software update state
  *
  * This callback should set the new given software update state.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -144,13 +155,13 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateState_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to set the software update result
+ * @brief Callback to set the software update result
  *
  * This callback should set the new given software update result.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -162,15 +173,15 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_SetSwUpdateResult_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to download a package
+ * @brief Callback to download a package
  *
  * This callback should download the package, starting at offset startOffset.
  * Downloaded data should then be sequentially transmitted to the package downloader using
  * the lwm2mcore_PackageDownloaderReceiveData() function.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -183,14 +194,14 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_Download_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback to store a package range after treatment
+ * @brief Callback to store a package range after treatment
  *
  * This callback should store the data given in the buffer for a firmware update.
  * bufSize indicates the length of the buffer to store.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -204,13 +215,13 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_StoreRange_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Callback for package download end
+ * @brief Callback for package download end
  *
  * This callback should end the download and clean up what is necessary after a download.
  *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  *
  * @warning This callback should be set to NULL if not implemented
  */
@@ -228,7 +239,7 @@ typedef lwm2mcore_DwlResult_t (*lwm2mcore_EndDownload_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Package downloader structure
+ * @brief Package downloader structure
  *
  * @warning Unimplemented callbacks should be explicitly set to NULL
  */
@@ -255,13 +266,15 @@ lwm2mcore_PackageDownloader_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Run the package downloader.
+ * @brief Run the package downloader.
  *
  * This function is called to launch the package downloader.
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
@@ -271,13 +284,15 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderRun
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Process the downloaded data.
+ * @brief Process the downloaded data.
  *
  * Downloaded data should be sequentially transmitted to the package downloader with this function.
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *  - DWL_OK    The function succeeded
- *  - DWL_FAULT The function failed
+ *  - @ref DWL_OK    The function succeeded
+ *  - @ref DWL_FAULT The function failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
@@ -288,15 +303,21 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Initialize the package downloader.
+ * @brief Initialize the package downloader.
  *
  * This function is called to initialize the package downloader: the associated workspace is
  * deleted if necessary to be able to start a new download.
+ *
+ * @remark Public function which can be called by the client.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_PackageDownloaderInit
 (
     void
 );
+
+/**
+  * @}
+  */
 
 #endif /* LWM2MCORE_PACKAGEDOWNLOADER_H */

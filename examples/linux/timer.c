@@ -72,8 +72,8 @@ static void TimerSigHandler
  * Adaptation function for timer launch
  *
  * @return
- *      - true  on success
- *      - false on failure
+ *  - true  on success
+ *  - false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerSet
@@ -163,8 +163,8 @@ bool lwm2mcore_TimerSet
  * Adaptation function for timer stop
  *
  * @return
- *      - true  on success
- *      - false on failure
+ *  - true  on success
+ *  - false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerStop
@@ -186,8 +186,8 @@ bool lwm2mcore_TimerStop
  * Adaptation function for timer state
  *
  * @return
- *      - true  if the timer is running
- *      - false if the timer is stopped
+ *  - true  if the timer is running
+ *  - false if the timer is stopped
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_TimerIsRunning

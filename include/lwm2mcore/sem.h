@@ -11,12 +11,6 @@
 #define __LWM2MCORE_SEM_H__
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_semaphore_IFS Semaphore
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for semaphore
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_semaphore_IFS
   * @{
   */
@@ -24,8 +18,11 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to initialize semaphores
- * @return:
+ * @brief Function to initialize semaphores
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
  *   - Reference to the created semaphore
  */
 //--------------------------------------------------------------------------------------------------
@@ -37,7 +34,9 @@ void* lwm2mcore_SemCreate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to post a semaphore
+ * @brief Function to post a semaphore
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_SemPost
@@ -47,7 +46,9 @@ void lwm2mcore_SemPost
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to wait for a semaphore
+ * @brief Function to wait for a semaphore
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_SemWait
@@ -57,7 +58,9 @@ void lwm2mcore_SemWait
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to delete a semaphore
+ * @brief Function to delete a semaphore
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_SemDelete

@@ -14,6 +14,10 @@
 #include <platform/types.h>
 #include <stddef.h>
 
+/**
+  * @addtogroup lwm2mcore_config_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Maximum length of a resource name
@@ -84,7 +88,14 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_LIFETIME_VALUE_DISABLED       630720000
+/**
+  * @}
+  */
 
+/**
+  * @addtogroup lwm2mcore_update_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * Specific defines for OMA FUMO (Firmware Update Management Object)
@@ -97,7 +108,14 @@
 #define LWM2MCORE_FUMO_INVALID_URI              411     ///< Invalid URI
 #define LWM2MCORE_FUMO_ALTERNATE_DL_ERROR       500     ///< Download error
 #define LWM2MCORE_FUMO_NO_SUFFICIENT_MEMORY     501     ///< Insufficient memory
+/**
+  * @}
+  */
 
+/**
+  * @addtogroup lwm2mcore_init_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  *  @brief Enumeration for handlers status ID code (returned value)
@@ -147,7 +165,14 @@ typedef enum
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
     LWM2MCORE_EVENT_LAST                           = 25     ///< Internal usage
 }lwm2mcore_StatusType_t;
+/**
+  * @}
+  */
 
+/**
+  * @addtogroup lwm2mcore_config_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Enumration for LWM2M operation
@@ -168,19 +193,6 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Enumeration for the status of credential provisioning
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_NO_CREDENTIAL_PROVISIONED   = 0x01,   ///< Neither DM nor BS key provisioned
-    LWM2MCORE_BS_CREDENTIAL_PROVISIONED   = 0x02,   ///< BS key provisioned
-    LWM2MCORE_DM_CREDENTIAL_PROVISIONED   = 0x03    ///< DM key provisioned
-
-}lwm2mcore_CredentialStatus_t;
-
-//--------------------------------------------------------------------------------------------------
-/**
  * @brief Enumeration for LWM2M resource data type
  */
 //--------------------------------------------------------------------------------------------------
@@ -194,6 +206,26 @@ typedef enum
     LWM2MCORE_RESOURCE_TYPE_TIME,           ///< Time resource type
     LWM2MCORE_RESOURCE_TYPE_UNKNOWN         ///< Unknown resource type
 }lwm2mcore_ResourceType_t;
+/**
+  * @}
+  */
+
+/**
+  * @addtogroup lwm2mcore_security_IFS
+  * @{
+  */
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Enumeration for the status of credential provisioning
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_NO_CREDENTIAL_PROVISIONED   = 0x01,   ///< Neither DM nor BS key provisioned
+    LWM2MCORE_BS_CREDENTIAL_PROVISIONED   = 0x02,   ///< BS key provisioned
+    LWM2MCORE_DM_CREDENTIAL_PROVISIONED   = 0x03    ///< DM key provisioned
+
+}lwm2mcore_CredentialStatus_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -215,7 +247,14 @@ typedef enum
     LWM2MCORE_CREDENTIAL_DM_ADDRESS,            ///< DM server address
     LWM2MCORE_CREDENTIAL_MAX                    ///< Internal usage
 }lwm2mcore_Credentials_t;
+/**
+  * @}
+  */
 
+/**
+  * @addtogroup lwm2mcore_init_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Enumeration for session type
@@ -238,11 +277,6 @@ typedef enum
     LWM2MCORE_PKG_FW,     ///< Package for firmware
     LWM2MCORE_PKG_SW      ///< Package for software
 }lwm2mcore_PkgDwlType_t;
-
-/**
-  * @addtogroup lwm2mcore_init_IFS
-  * @{
-  */
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -339,6 +373,10 @@ typedef struct
   * @}
   */
 
+/**
+  * @addtogroup lwm2mcore_init_IFS
+  * @{
+  */
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -378,6 +416,9 @@ typedef struct
         lwm2mcore_PkgDwlStatus_t    pkgStatus;  ///< Package download status
     }u;                                         ///< Union
 }lwm2mcore_Status_t;
+/**
+  * @}
+  */
 
 /**
   * @addtogroup lwm2mcore_config_IFS
@@ -388,8 +429,8 @@ typedef struct
  * @brief Function pointer of resource value changed callback function.
  *
  * @return
- *      - 0 on success
- *      - negative value on failure.
+ *  - @c 0 on success
+ *  - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
 typedef int (*valueChangedCallback_t)
@@ -404,9 +445,9 @@ typedef int (*valueChangedCallback_t)
  * @brief Function pointer of resource READ function.
  *
  * @return
- *      - 0 on success
- *      - negative value on failure
- *      - > 0 values for asynchronous operations
+ *  - @c 0 on success
+ *  - negative value on failure
+ *  - > @c 0 values for asynchronous operations
  */
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_ReadCallback_t)
@@ -424,9 +465,9 @@ typedef int (*lwm2mcore_ReadCallback_t)
  * @brief Function pointer of resource WRITE/OBSERVE function.
  *
  * @return
- *      - 0 on success
- *      - negative value on failure
- *      - > 0 values for asynchronous operations
+ *  - @c 0 on success
+ *  - negative value on failure
+ *  - > @c 0 values for asynchronous operations
  */
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_WriteCallback_t)
@@ -442,9 +483,9 @@ typedef int (*lwm2mcore_WriteCallback_t)
  * @brief Function pointer of resource EXECUTE function.
  *
  * @return
- *      - 0 on success
- *      - negative value on failure
- *      - > 0 values for asynchronous ops.
+ *  - @c 0 on success
+ *  - negative value on failure
+ *  - > @c 0 values for asynchronous ops.
  */
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_ExecuteCallback_t)
@@ -488,9 +529,9 @@ typedef struct
  * @brief Function pointer of resource READ/WRITE/OBSERVE function.
  *
  * @return
- *      - 0 on success
- *      - negative value on failure
- *      -  > 0 values for asynchronous ops.
+ *  - @c 0 on success
+ *  - negative value on failure
+ *  -  > @c 0 values for asynchronous ops.
 */
 //--------------------------------------------------------------------------------------------------
 typedef int (*genericReadWriteApi_t)
@@ -530,8 +571,8 @@ lwm2mcore_Handler_t;
  * @brief Callback for event status
  *
  * @return
- *      - 0 on success
- *      - negative value on failure.
+ *  - @c 0 on success
+ *  - negative value on failure.
  */
 //--------------------------------------------------------------------------------------------------
 typedef int (*lwm2mcore_StatusCb_t)
@@ -541,11 +582,13 @@ typedef int (*lwm2mcore_StatusCb_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Initialize the LWM2M core
+ * @brief Initialize LwM2MCore
+ *
+ * @remark Public function which can be called by the client.
  *
  * @return
  *  - instance reference
- *  - NULL in case of error
+ *  - @c NULL in case of error
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Ref_t lwm2mcore_Init
@@ -555,7 +598,9 @@ lwm2mcore_Ref_t lwm2mcore_Init
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Free the LWM2M core
+ * @brief Free LwM2MCore
+ *
+ * @remark Public function which can be called by the client.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_Free
@@ -578,8 +623,10 @@ void lwm2mcore_Free
  *
  * @note If handlerPtr parameter is NULL, LwM2MCore registers it's own "standard" object list
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - number of registered objects
+ *  - number of registered objects
  */
 //--------------------------------------------------------------------------------------------------
 uint16_t lwm2mcore_ObjectRegister
@@ -595,9 +642,11 @@ uint16_t lwm2mcore_ObjectRegister
 /**
  * Read a resource from the object table
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if resource is found and read succeeded
- *      - else @c false
+ *  - @c true if resource is found and read succeeded
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ResourceRead
@@ -614,7 +663,6 @@ bool lwm2mcore_ResourceRead
   * @}
   */
 
-
 /**
   * @addtogroup lwm2mcore_cnx_IFS
   * @{
@@ -624,9 +672,11 @@ bool lwm2mcore_ResourceRead
 /**
  * @brief LwM2M client entry point to initiate a connection
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if the treatment is launched
- *      - else @c false
+ *  - @c true if the treatment is launched
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Connect
@@ -638,9 +688,11 @@ bool lwm2mcore_Connect
 /**
  * @brief Function to close a connection
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if the treatment is launched
- *      - else @c false
+ *  - @c true if the treatment is launched
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Disconnect
@@ -655,9 +707,11 @@ bool lwm2mcore_Disconnect
  * This API can be used when the application wants to send a notification or during a firmware/app
  * update in order to be able to fully treat the scheduled update job
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if the treatment is launched
- *      - else @c false
+ *  - @c true if the treatment is launched
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Update
@@ -669,9 +723,11 @@ bool lwm2mcore_Update
 /**
  * @brief Function to retrieve the status and the type of the current connection
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if the device is connected to any server
- *      - else @c false
+ *  - @c true if the device is connected to any server
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ConnectionGetType
@@ -693,9 +749,11 @@ bool lwm2mcore_ConnectionGetType
 /**
  * @brief Function to push data to lwm2mCore
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if a data push transaction is initiated
- *      - else @c false
+ *  - @c true if a data push transaction is initiated
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_PushResult_t lwm2mcore_Push
@@ -730,9 +788,11 @@ void lwm2mcore_SetPushCallback
 /**
  * @brief Function to notify LwM2MCore of supported object instance list for software and asset data
  *
+ * @remark Public function which can be called by the client.
+ *
  * @return
- *      - @c true if the list was successfully treated
- *      - else @c false
+ *  - @c true if the list was successfully treated
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_UpdateSwList
@@ -755,6 +815,8 @@ bool lwm2mcore_UpdateSwList
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function for assert
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_Assert
@@ -774,6 +836,8 @@ void lwm2mcore_Assert
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Adaptation function for log: dump data
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_DataDump
@@ -795,10 +859,14 @@ void lwm2mcore_DataDump
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to read the lifetime from the server object.
+ * The lifetime is retrieved from the @ref LWM2MCORE_BOOTSTRAP_PARAM parameter (see @ref
+ * lwm2mcore_platform_adaptor_storage_IFS).
+ *
+ * @remark Public function which can be called by the client.
  *
  * @return
- *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetLifetime
@@ -809,12 +877,16 @@ lwm2mcore_Sid_t lwm2mcore_GetLifetime
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to set the lifetime in the server object and save to platform storage.
+ * The lifetime is then stored in the @ref LWM2MCORE_BOOTSTRAP_PARAM parameter (see @ref
+ * lwm2mcore_platform_adaptor_storage_IFS).
+ *
+ * @remark Public function which can be called by the client.
  *
  * @return
- *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the lifetime is not correct
- *      - @ref LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
- *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the lifetime is not correct
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE if no device management server are configured
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetLifetime
@@ -825,6 +897,8 @@ lwm2mcore_Sid_t lwm2mcore_SetLifetime
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to report UDP error code.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_ReportUdpErrorCode
@@ -835,6 +909,8 @@ void lwm2mcore_ReportUdpErrorCode
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to report CoAP response code.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_ReportCoapResponseCode

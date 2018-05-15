@@ -11,19 +11,13 @@
 #define __PARAMSTORAGE_H__
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_storage_IFS Parameter storage
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for parameter storage
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_storage_IFS
   * @{
   */
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Parameter identities enumeration
+ * @brief Parameter identities enumeration
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -38,17 +32,18 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Write parameter in platform memory
+ * @brief Write parameter in platform non-volatile memory
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is
- *             incorrect
- *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetParam
@@ -60,17 +55,19 @@ lwm2mcore_Sid_t lwm2mcore_SetParam
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Read parameter from platform memory
+ * @brief Read parameter from platform non-volatile memory
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is
- *             incorrect
- *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetParam
@@ -82,17 +79,18 @@ lwm2mcore_Sid_t lwm2mcore_GetParam
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Delete parameter from platform memory
+ * @brief Delete parameter from platform non-volatile memory
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @return
- *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is
- *             incorrect
- *      - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *      - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_DeleteParam

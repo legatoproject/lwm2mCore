@@ -71,8 +71,8 @@ typedef struct _dtls_Connection_t
  * @brief Function to search if a DTLS connection is available
  *
  * @return
- *  - dtls_Connection_t pointer if the DTLS connection is available
- *  - NULL if the DTLS connection is not available in the indicated socket
+ *  - @c dtls_Connection_t pointer if the DTLS connection is available
+ *  - @c NULL if the DTLS connection is not available in the indicated socket
  */
 //--------------------------------------------------------------------------------------------------
 dtls_Connection_t* dtls_FindConnection
@@ -87,7 +87,7 @@ dtls_Connection_t* dtls_FindConnection
  * @brief Function to create a new DTLS connection
  *
  * @return
- *  - DTLS connection structure (dtls_Connection_t);
+ *  - DTLS connection structure (@c dtls_Connection_t);
  *  - @c NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
@@ -104,7 +104,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
  * Function to create a new connection to the server
  *
  * @return
- *  - DTLS connection pointer (dtls_Connection_t)
+ *  - DTLS connection pointer (@c dtls_Connection_t)
  *  - @c NULL in case of failure
  */
 //--------------------------------------------------------------------------------------------------
@@ -144,8 +144,8 @@ void dtls_UpdateDtlsList
  * This function checks if DTLS is activated on the connection.
  *
  * @return
- *  - 0 in case of success
- *  - -1 in case of failure
+ *  - @c 0 in case of success
+ *  - @c -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 int dtls_Send
@@ -161,8 +161,8 @@ int dtls_Send
  * This function checks if DTLS is activated on the connection.
  *
  * @return
- *  - 0 in case of success
- *  - negative value in case of failure (see dtls_alert_t)
+ *  - @c 0 in case of success
+ *  - negative value in case of failure (see @c dtls_alert_t)
  */
 //--------------------------------------------------------------------------------------------------
 int dtls_HandlePacket
@@ -178,8 +178,8 @@ int dtls_HandlePacket
  * Usefull when NAT timeout happens and client have a new IP/PORT
  *
  * @return
- *  - 0 in case of success (or DTLS is not activated on the connection)
- *  - -1 in case of failure
+ *  - @c 0 in case of success (or DTLS is not activated on the connection)
+ *  - @c -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 int dtls_Rehandshake
@@ -193,8 +193,8 @@ int dtls_Rehandshake
  * @brief Function to resume a DTLS session
  *
  * @return
- *  - 0 in case of success (or DTLS is not activated on the connection)
- *  - -1 in case of failure
+ *  - @c 0 in case of success (or DTLS is not activated on the connection)
+ *  - @c -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
 int dtls_Resume

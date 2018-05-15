@@ -19,8 +19,8 @@
  * The server pushes a package to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
@@ -51,8 +51,8 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
  * The server sends a package URI to the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
@@ -82,8 +82,8 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
  * The server requires the current package URI stored in the LWM2M client
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
@@ -114,8 +114,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
  * The server requests to launch an update
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
@@ -145,8 +145,8 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
  * The server requires the update state
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateState
@@ -174,8 +174,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateState
  * The server requires the update result
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
@@ -203,8 +203,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
  * The server requires the package name
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
@@ -234,8 +234,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageName
  * The server requires the package version
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
@@ -265,8 +265,8 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
  * The server sets the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
@@ -287,8 +287,8 @@ lwm2mcore_Sid_t lwm2mcore_SetSwUpdateSupportedObjects
  * The server requires the "update supported objects" field for software update
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
@@ -315,8 +315,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateSupportedObjects
  * The server requires the activation state for one embedded application
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
@@ -342,8 +342,8 @@ lwm2mcore_Sid_t lwm2mcore_GetSwUpdateActivationState
  * The server requires an embedded application to be uninstalled (only for software update)
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
@@ -372,8 +372,8 @@ lwm2mcore_Sid_t lwm2mcore_LaunchSwUpdateUninstall
  * update)
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handlerler
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handlerler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
@@ -402,7 +402,7 @@ lwm2mcore_Sid_t lwm2mcore_ActivateSoftware
  * The server request to create or delete an object instance of object 9
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
@@ -422,7 +422,7 @@ lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
  * Resume a package download if necessary
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
@@ -439,7 +439,7 @@ lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
  * Suspend a package download if necessary
  *
  * @return
- *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload

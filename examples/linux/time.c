@@ -16,7 +16,7 @@
  * Function to retreive the device time
  *
  * @return
- *      - device time (UNIX time: seconds since January 01, 1970)
+ *  - device time (UNIX time: seconds since January 01, 1970)
  */
 //--------------------------------------------------------------------------------------------------
 time_t lwm2m_gettime(void)

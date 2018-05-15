@@ -11,22 +11,18 @@
 #define __LWM2MCORE_THREAD_H__
 
 /**
-  @defgroup lwm2mcore_platform_adaptor_mutex_IFS Mutex
-  @ingroup lwm2mcore_platform_adaptor_IFS
-  @brief Adaptation layer for Mutex
-  */
-
-/**
   * @addtogroup lwm2mcore_platform_adaptor_mutex_IFS
   * @{
   */
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to create a mutex
+ * @brief Function to create a mutex
  *
- * @return:
- *   - 0 on success; error code otherwise
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *   - @c 0 on success; error code otherwise
  */
 //--------------------------------------------------------------------------------------------------
 void* lwm2mcore_MutexCreate
@@ -36,8 +32,9 @@ void* lwm2mcore_MutexCreate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to lock a mutex
+ * @brief Function to lock a mutex
  *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_MutexLock
@@ -47,8 +44,9 @@ void lwm2mcore_MutexLock
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to unlock a mutex
+ * @brief Function to unlock a mutex
  *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_MutexUnlock
@@ -59,7 +57,9 @@ void lwm2mcore_MutexUnlock
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to delete a mutex
+ * @brief Function to delete a mutex
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_MutexDelete

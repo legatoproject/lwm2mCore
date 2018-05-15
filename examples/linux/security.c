@@ -192,10 +192,10 @@ static int32_t StringToBinary
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetCredential
@@ -440,11 +440,11 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
  * This API treatment needs to have a procedural treatment
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *      - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_SetCredential
@@ -662,8 +662,8 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
  * Function to check if one credential is present in platform storage
  *
  * @return
- *      - true if the credential is present
- *      - false else
+ *  - true if the credential is present
+ *  - false else
  *
  */
 //--------------------------------------------------------------------------------------------------
@@ -724,8 +724,8 @@ bool lwm2mcore_CheckCredential
  * This function erases one credential from platform storage
  *
  * @return
- *      - true if the credential is deleted
- *      - false else
+ *  - true if the credential is deleted
+ *  - false else
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_DeleteCredential
@@ -851,9 +851,9 @@ static void PrintOpenSSLErrors
  * Initialize the SHA1 computation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_StartSha1
@@ -893,9 +893,9 @@ lwm2mcore_Sid_t lwm2mcore_StartSha1
  * Compute and update SHA1 digest with the data buffer passed as an argument
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_ProcessSha1
@@ -929,9 +929,9 @@ lwm2mcore_Sid_t lwm2mcore_ProcessSha1
  * Finalize SHA1 digest and verify the package signature
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_EndSha1
@@ -1092,9 +1092,9 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
  * Copy the SHA1 context in a buffer
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_CopySha1
@@ -1129,9 +1129,9 @@ lwm2mcore_Sid_t lwm2mcore_CopySha1
  * Restore the SHA1 context from a buffer
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_RestoreSha1
@@ -1172,9 +1172,9 @@ lwm2mcore_Sid_t lwm2mcore_RestoreSha1
  * Cancel and reset the SHA1 computation
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_CancelSha1
@@ -1200,8 +1200,8 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
  * Update SSL Certificate
  *
  * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
- *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate

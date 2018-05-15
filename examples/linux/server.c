@@ -36,8 +36,8 @@
  * Function to check if the lifetime is within aceptable limits
  *
  * @return
- *      - true if lifetime is within limits
- *      - false else
+ *  - true if lifetime is within limits
+ *  - false else
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_CheckLifetimeLimit

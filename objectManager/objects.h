@@ -20,7 +20,8 @@
   */
 
 //--------------------------------------------------------------------------------------------------
-/** Define entry for the list inside user data structure for list element
+/**
+ * @brief Define entry for the list inside user data structure for list element
  *
  * Example:
  *
@@ -35,7 +36,8 @@
 #define DLIST_ENTRY(type) struct { struct type *p_next, *p_prev; const void *p_head;}
 
 //--------------------------------------------------------------------------------------------------
-/** Define a new data type for the list head
+/**
+ * @brief Define a new data type for the list head
  *
  * Example:
  *
@@ -51,7 +53,8 @@
 #define DLIST_HEAD(name, type) struct name{ struct type *p_first, *p_last;}
 
 //--------------------------------------------------------------------------------------------------
-/** Macro to initialize the list
+/**
+ * @brief Macro to initialize the list
  *
  * @param[in] head pointer to the list head.
  */
@@ -59,7 +62,8 @@
 #define DLIST_INIT(head) ((head)->p_first = (head)->p_last = NULL)
 
 //--------------------------------------------------------------------------------------------------
-/** Insert new element into the tail of the list
+/**
+ * @brief Insert new element into the tail of the list
  *
  * @param[in] head pointer to the list head.
  * @param[in] new_elem element to be inserted.
@@ -76,7 +80,8 @@
 }while(0)
 
 //--------------------------------------------------------------------------------------------------
-/** Return first element from the list
+/**
+ * @brief Return first element from the list
  *
  * @param[in] head pointer to the list head.
  */
@@ -84,7 +89,8 @@
 #define DLIST_FIRST(head) ((head)->p_first)
 
 //--------------------------------------------------------------------------------------------------
-/** Return next element from the list
+/**
+ * @brief Return next element from the list
  *
  * @param[in] elem  pointer to the list element whose next element will be returned.
  * @param[in] field the field name of the user data structure used as link element.
@@ -93,7 +99,8 @@
 #define DLIST_NEXT(elem, field) ((elem)->field.p_next)
 
 //--------------------------------------------------------------------------------------------------
-/** Remove element from the list
+/**
+ * @brief Remove element from the list
  *
  * @param[in] head pointer to the list head.
  * @param[in] elem element to be removed.
@@ -108,7 +115,8 @@
 } while(0)
 
 //--------------------------------------------------------------------------------------------------
-/** Remove element from the head of the list
+/**
+ * @brief Remove element from the head of the list
  *
  * @param[in] head pointer to the list head.
  * @param[in] field the field name of the user data structure used as link element.
@@ -122,7 +130,7 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Macro for array size
+ * @brief Macro for array size
  */
 //--------------------------------------------------------------------------------------------------
 #if !defined(ARRAYSIZE)
@@ -131,14 +139,14 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Maximum buffer length from CoAP
+ * @brief Maximum buffer length from CoAP
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BUFFER_MAX_LEN 4096
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief   Enumeration for LwM2M objects
+ * @brief Enumeration for LwM2M objects
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -324,7 +332,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LwM2M object 7 (connectivity statistics) resources
+* @brief Enumeration for LwM2M object 7 (connectivity statistics) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -342,7 +350,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LwM2M object 9 (software update) resources
+* @brief Enumeration for LwM2M object 9 (software update) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -370,7 +378,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LwM2M object 10241 (subscription) resources
+* @brief Enumeration for LwM2M object 10241 (subscription) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -387,7 +395,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LwM2M object 10242 (extended connectivity statistics) resources
+* @brief Enumeration for LwM2M object 10242 (extended connectivity statistics) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -408,7 +416,7 @@ typedef enum
 
 //--------------------------------------------------------------------------------------------------
 /**
-* Enumeration for LwM2M object 10243 (SSL certificates) resources
+* @brief Enumeration for LwM2M object 10243 (SSL certificates) resources
  */
 //--------------------------------------------------------------------------------------------------
 typedef enum
@@ -417,8 +425,8 @@ typedef enum
 } lwm2mcore_sslCertificateResource_t;
 
 //--------------------------------------------------------------------------------------------------
-/*! \struct lwm2m_attribute_t
- *  \brief data structure represent the attribute.
+/**
+ * @brief data structure represent the attribute.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct
@@ -433,8 +441,8 @@ typedef struct
 }lwm2m_attribute_t;
 
 //--------------------------------------------------------------------------------------------------
-/*! \struct lwm2mcore_internalResource_t
- *  \brief data structure represents a LwM2M resource.
+/**
+ * @brief data structure represents a LwM2M resource.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct _lwm2mcore_internalResource          /// See lwm2mcore_internalResource_t
@@ -443,23 +451,26 @@ typedef struct _lwm2mcore_internalResource          /// See lwm2mcore_internalRe
     uint16_t id;                                    ///< resource id
     uint16_t iid;                                   ///< resource instance id
     lwm2mcore_ResourceType_t type;                  ///< resource data type
-    uint16_t maxInstCount;                          ///< maximal number of instances for this resource
+    uint16_t maxInstCount;                          ///< maximal number of instances for this
+                                                    ///< resource
     lwm2m_attribute_t attr;                         ///< resource attributes
     lwm2mcore_ReadCallback_t read;                  ///< operation handler: read handler
     lwm2mcore_WriteCallback_t write;                ///< operation handler: write handler
     lwm2mcore_ExecuteCallback_t exec;               ///< operation handler: execute handler
-    char *cache;                                    ///< cache value for observer (asynchronous notification)
+    char *cache;                                    ///< cache value for observer (asynchronous
+                                                    ///< notification)
 }lwm2mcore_internalResource_t;
 
 //--------------------------------------------------------------------------------------------------
-/** LwM2M Core resource list data type
+/**
+ * @brief LwM2M Core resource list data type
  */
 //--------------------------------------------------------------------------------------------------
 DLIST_HEAD(_lwm2m_resource_list, _lwm2mcore_internalResource);
 
 //--------------------------------------------------------------------------------------------------
-/*! \struct lwm2mcore_internalObject_t
- *  \brief data structure represents a LwM2M object.
+/**
+ * @brief data structure represents a LwM2M object.
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct _lwm2mcore_internalObject            /// See lwm2mcore_internalObject_t
@@ -467,21 +478,22 @@ typedef struct _lwm2mcore_internalObject            /// See lwm2mcore_internalOb
     DLIST_ENTRY(_lwm2mcore_internalObject) list;    ///< list entry for object linked list
     uint16_t id;                                    ///< object id
     uint16_t iid;                                   ///< object instance id
-    bool multiple;                                  ///< flag indicate if this is single or multiple instances
+    bool multiple;                                  ///< flag indicate if this is single or multiple
+                                                    ///< instances
     lwm2m_attribute_t attr;                         ///< object attributes
     struct _lwm2m_resource_list resource_list;      ///< resource linked list
 }lwm2mcore_internalObject_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
- * LwM2M Core object list data type
+ * @brief LwM2M Core object list data type
  */
 //--------------------------------------------------------------------------------------------------
 DLIST_HEAD(_lwm2mcore_objectsList, _lwm2mcore_internalObject);
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LwM2MCore and Wakaama)
+ * @brief Free the registered objects and resources (LwM2MCore and Wakaama)
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_ObjectsFree
@@ -491,7 +503,7 @@ void omanager_ObjectsFree
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id
+ * @brief Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_FreeObjectById
@@ -501,8 +513,8 @@ void omanager_FreeObjectById
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id and
- * object instance Id
+ * @brief Free the registered objects and resources (LwM2MCore and Wakaama) for a specific object Id
+ * and object instance Id
  */
 //--------------------------------------------------------------------------------------------------
 void omanager_FreeObjectByInstanceId
@@ -513,11 +525,11 @@ void omanager_FreeObjectByInstanceId
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Private function to send an update message to the Device Management server
+ * @brief Private function to send an update message to the Device Management server
  *
  * @return
- *      - @c true if the treatment is launched
- *      - else @c false
+ *  - @c true if the treatment is launched
+ *  - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool omanager_UpdateRequest
@@ -529,10 +541,10 @@ bool omanager_UpdateRequest
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Get the registered objects and resources
+ * @brief Get the registered objects and resources
  *
  * @return
- *      - Registered handlers table
+ *  - Registered handlers table
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Handler_t* omanager_GetHandlers
@@ -542,6 +554,5 @@ lwm2mcore_Handler_t* omanager_GetHandlers
 /**
   * @}
   */
-
 
 #endif /* __OBJECTS_H__ */
