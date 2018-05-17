@@ -734,6 +734,7 @@ static uint8_t WriteCb
 {
     uint8_t result = COAP_400_BAD_REQUEST;
     int i;
+    bool isMalloc = false;
     int sid = 0;
     lwm2mcore_Uri_t uri;
     lwm2mcore_internalResource_t* resourcePtr = NULL;
@@ -775,7 +776,7 @@ static uint8_t WriteCb
     {
         uint16_t resList[50];
         int nbRes = 0;
-
+        isMalloc = true;
         /* Search the supported resources for the required object */
         i = 0;
         for (resourcePtr = DLIST_FIRST(&(objPtr->resource_list));
@@ -811,12 +812,20 @@ static uint8_t WriteCb
         if (!resourcePtr)
         {
             LOG("resource NULL");
+            if (isMalloc)
+            {
+                lwm2m_free(dataArrayPtr);
+            }
             return COAP_404_NOT_FOUND;
         }
 
         if (!(resourcePtr->write))
         {
             LOG("WRITE callback NULL");
+             if (isMalloc)
+            {
+                lwm2m_free(dataArrayPtr);
+            }
             return COAP_405_METHOD_NOT_ALLOWED;
         }
 
@@ -868,6 +877,11 @@ static uint8_t WriteCb
     } while ((i < numData) && ((COAP_204_CHANGED == result) || (COAP_NO_ERROR == result)));
 
     LOG_ARG("WriteCb result %d", result);
+
+    if (isMalloc)
+    {
+        lwm2m_free(dataArrayPtr);
+    }
     return result;
 }
 
