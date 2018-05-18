@@ -1150,6 +1150,7 @@ lwm2mcore_Sid_t omanager_GetLifetime
     /* Read the configuration from file system */
     if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, false))
     {
+        lwm2m_free(bsConfigPtr);
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
