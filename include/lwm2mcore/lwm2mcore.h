@@ -659,6 +659,25 @@ bool lwm2mcore_ResourceRead
     size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to notify change on an observed resource.
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @return
+ *      - @c true if the notify was processed
+ *      - else @c false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_NotifyResourceChange
+(
+    lwm2mcore_Ref_t instanceRef,       ///< [IN] instance reference
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId                ///< [IN] resource identifier
+);
+
 /**
   * @}
   */

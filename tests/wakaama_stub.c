@@ -287,6 +287,18 @@ int lwm2m_update_registration
     return COAP_NO_ERROR;
 }
 
+void lwm2m_resource_value_changed
+(
+    lwm2m_context_t* contextP,
+    lwm2m_uri_t * uriP
+)
+{
+    (void)contextP;
+    (void)uriP;
+
+    return;
+}
+
 void lwm2m_close
 (
     lwm2m_context_t* contextP

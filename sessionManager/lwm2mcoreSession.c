@@ -1057,6 +1057,68 @@ bool lwm2mcore_Update
 }
 
 //--------------------------------------------------------------------------------------------------
+ /**
+ * @brief Function to notify change on an observed resource.
+ *
+ * @return
+ *      - true if the notify was processed
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_NotifyResourceChange
+(
+    lwm2mcore_Ref_t instanceRef,       ///< [IN] instance reference
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId                ///< [IN] resource identifier
+)
+{
+    if (!instanceRef)
+    {
+        LOG("Null instance reference");
+        return false;
+    }
+
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)instanceRef;
+
+    /* Check that the device is registered to DM server */
+    bool registered = false;
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        lwm2m_server_t* targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
+        {
+            LOG("serverList is NULL");
+            return false;
+        }
+
+        lwm2m_uri_t uriP;
+        uriP.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID |
+                    LWM2M_URI_FLAG_RESOURCE_ID;
+        uriP.objectId = objectId;
+        uriP.instanceId = objectInstanceId;
+        uriP.resourceId = resourceId;
+
+        /* Notify observers */
+        while (targetPtr)
+        {
+            LOG_ARG("shortServerId %d", targetPtr->shortID);
+            lwm2m_resource_value_changed(dataPtr->lwm2mHPtr, &uriP);
+            targetPtr = targetPtr->next;
+        }
+    }
+
+    /* Do step */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, 0, Lwm2mClientStepHandler))
+    {
+        LOG("ERROR to launch the step timer");
+        return false;
+    }
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
 /**
  * Function to close a connection
  *
