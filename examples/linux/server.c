@@ -58,3 +58,26 @@ bool lwm2mcore_CheckLifetimeLimit
 
     return true;
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the Polling Timer interval
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE parameter out of range
+ *      - LWM2MCORE_ERR_GENERAL_ERROR other failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetPollingTimer
+(
+    uint32_t interval   ///< [IN] Polling Timer interval in seconds
+)
+{
+    if (false == lwm2mcore_CheckLifetimeLimit(interval))
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}

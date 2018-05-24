@@ -860,7 +860,7 @@ int omanager_WriteServerObj
             LOG_ARG("set lifetime %d", lifetime);
             if (!smanager_IsBootstrapConnection())
             {
-                sID = omanager_SetLifetime(lifetime, false);
+                sID = lwm2mcore_SetPollingTimer(lifetime);
                 if (LWM2MCORE_ERR_COMPLETED_OK == sID)
                 {
                     serverInformationPtr->data.lifetime = lifetime;
