@@ -220,8 +220,6 @@ lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
- * @note
- *      This function is stubbed
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
@@ -242,8 +240,6 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
- * @note
- *      This function is stubbed
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
@@ -265,8 +261,6 @@ lwm2mcore_Sid_t lwm2mcore_SetSimMode
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
- * @note
- *      This function is stubbed
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
@@ -287,8 +281,6 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
- * @note
- *      This function is stubbed
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
@@ -390,6 +382,10 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
  * This API needs to have a procedural treatment
  *
  * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @note When LwM2MCore receives a reboot request from the server (EXECUTE on /3/0/4), a 2-second
+ * timer is launched and this function is called by LwM2MCore when the timer expires. The client
+ * needs to manage the platform reboot by implementing this function.
  *
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
