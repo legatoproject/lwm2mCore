@@ -18,6 +18,7 @@
 #include <lwm2mcore/paramStorage.h>
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/location.h>
+#include <lwm2mcore/timer.h>
 #include "handlers.h"
 #include "sessionManager.h"
 #include "objects.h"
@@ -34,6 +35,14 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_GAD_VELOCITY_MAX_BYTES    7
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Reboot timer delay in seconds. On timer expiration, a reboot is executed.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_TIMER_REBOOT_DELAY    2
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1630,6 +1639,19 @@ int omanager_ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *  Called when the reboot timer expires.
+ */
+//--------------------------------------------------------------------------------------------------
+static void LaunchRebootTimerExpiryHandler
+(
+    void
+)
+{
+    lwm2mcore_RebootDevice();
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to execute a resource of object 3
  * Object: 3 - Device
  * Resource: All with execute operation
@@ -1676,7 +1698,18 @@ int omanager_ExecDeviceObj
     {
         /* Resource 4: Reboot */
         case LWM2MCORE_DEVICE_REBOOT_RID:
-            sID = lwm2mcore_RebootDevice();
+            /* Acknowledge the reboot request and launch the actual reboot later */
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_REBOOT,
+                                            LWM2MCORE_TIMER_REBOOT_DELAY,
+                                            LaunchRebootTimerExpiryHandler))
+            {
+                LOG("Error launching reboot timer");
+                sID = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
             break;
 
         default:
