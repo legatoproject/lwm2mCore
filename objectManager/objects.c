@@ -1737,7 +1737,7 @@ static bool UpdateSwListWakaama
     char aOnePath[ ONE_PATH_MAX_LEN ];
     char prefix[ LWM2MCORE_NAME_LEN + 1];
     char* aData = NULL;
-    char* cSavePtr = NULL;
+    char* cSavePtr;
     char* cSaveOnePathPtr = NULL;
     SwApplicationList_t* instancePtr;
     lwm2m_list_t* wakaamaInstancePtr;
