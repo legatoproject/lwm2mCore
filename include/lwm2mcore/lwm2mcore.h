@@ -771,8 +771,9 @@ bool lwm2mcore_ConnectionGetType
  * @remark Public function which can be called by the client.
  *
  * @return
- *  - @c true if a data push transaction is initiated
- *  - else @c false
+ *  - @ref LWM2MCORE_PUSH_INITIATED if data push transaction is initiated
+ *  - @ref LWM2MCORE_PUSH_BUSY if state machine is busy doing a block transfer
+ *  - @ref LWM2MCORE_PUSH_FAILED if data push transaction failed
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_PushResult_t lwm2mcore_Push

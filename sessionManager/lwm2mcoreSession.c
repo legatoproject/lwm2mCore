@@ -1238,6 +1238,7 @@ void lwm2mcore_SetPushCallback
  *
  * @return
  *      - LWM2MCORE_PUSH_INITIATED if data push transaction is initiated
+ *      - LWM2MCORE_PUSH_BUSY if state machine is busy doing a block transfer
  *      - LWM2MCORE_PUSH_FAILED if data push transaction failed
  */
 //--------------------------------------------------------------------------------------------------
