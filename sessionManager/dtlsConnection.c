@@ -1019,9 +1019,19 @@ int dtls_HandlePacket
                                          connPtr->dtlsSessionPtr,
                                          bufferPtr,
                                          numBytes);
+
+        if (DTLS_ALERT_NO_RENEGOTIATION == result)
+        {
+            if (0 != dtls_Rehandshake(connPtr, false))
+            {
+                LOG("Unable to perform rehandshake");
+                return -1;
+            }
+        }
+
         if (0 != result)
         {
-             LOG_ARG("Error DTLS handling message %d",result);
+            LOG_ARG("Error DTLS handling message %d",result);
         }
         return result;
     }
@@ -1030,8 +1040,9 @@ int dtls_HandlePacket
         // no security, just give the plaintext buffer to liblwm2m
         lwm2mcore_DataDump("Received bytes in no sec", bufferPtr, numBytes);
         lwm2m_handle_packet(connPtr->lwm2mHPtr, bufferPtr, numBytes, (void*)connPtr);
-        return 0;
     }
+
+    return 0;
 }
 
 //--------------------------------------------------------------------------------------------------
