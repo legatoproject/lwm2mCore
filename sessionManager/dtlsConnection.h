@@ -201,6 +201,19 @@ int dtls_Resume
 (
     dtls_Connection_t* connPtr          ///< [IN] DTLS connection structure
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to manage DTLS handshake retransmission
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_HandshakeRetransmission
+(
+    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS conection list
+    dtls_tick_t*        timerValue,         ///< [INOUT] Timer value for retransmission
+    bool*               isMaxReached        ///< [INOUT] Is maximum retransmission reached ?
+);
+
 /**
   * @}
   */

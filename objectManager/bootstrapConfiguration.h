@@ -343,9 +343,13 @@ void omanager_FreeBootstrapInformation
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Delete all device management credentials
+ *
+ * @return
+ *  - true if DM credentials were deleted
+ *  - false if DM were not present
  */
 //--------------------------------------------------------------------------------------------------
-void omanager_DeleteDmCredentials
+bool omanager_DeleteDmCredentials
 (
     void
 );

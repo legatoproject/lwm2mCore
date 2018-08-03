@@ -762,9 +762,13 @@ void omanager_FreeBootstrapInformation
 //--------------------------------------------------------------------------------------------------
 /**
  * Delete all device management credentials
+ *
+ * @return
+ *  - true if DM credentials were deleted
+ *  - false if DM were not present
  */
 //--------------------------------------------------------------------------------------------------
-void omanager_DeleteDmCredentials
+bool omanager_DeleteDmCredentials
 (
     void
 )
@@ -772,6 +776,7 @@ void omanager_DeleteDmCredentials
     ConfigSecurityObject_t* securityInformationPtr = BsConfigList.securityPtr;
     ConfigSecurityObject_t* newSecurityInformationPtr = NULL;
     ConfigServerObject_t* serverInformationPtr;
+    bool result = false;
 
     while (securityInformationPtr)
     {
@@ -799,6 +804,7 @@ void omanager_DeleteDmCredentials
     while (NULL != serverInformationPtr)
     {
         ConfigServerObject_t* nextPtr = serverInformationPtr->nextPtr;
+        result = true;
 
         lwm2mcore_DeleteCredential(LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY,
                                    serverInformationPtr->data.serverId);
@@ -821,4 +827,6 @@ void omanager_DeleteDmCredentials
 
     /* Store the new configuration */
     omanager_StoreBootstrapConfiguration(&BsConfigList);
+
+    return result;
 }

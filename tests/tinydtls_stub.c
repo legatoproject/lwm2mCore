@@ -120,3 +120,29 @@ int dtls_resume
     (void)dst;
     return -1;
 };
+
+void dtls_check_retransmit
+(
+    dtls_context_t *context,
+    clock_time_t *next,
+    bool* isMaxRetransmit
+)
+{
+    (void)context;
+    if(isMaxRetransmit)
+    {
+        *isMaxRetransmit = false;
+    }
+    if (next)
+    {
+        *next = 0;
+    }
+}
+
+void dtls_ticks
+(
+    dtls_tick_t *t
+)
+{
+    (void)t;
+}

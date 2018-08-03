@@ -429,8 +429,6 @@ static int SendToPeer
     if (NULL != cnxPtr)
     {
         // send data to peer
-
-        // TODO: nat expiration?
         int err = SendData(cnxPtr, dataPtr, len);
         if (COAP_NO_ERROR != err)
         {
@@ -1180,4 +1178,60 @@ bool lwm2m_session_is_equal
 {
     (void)userDataPtr;
     return (session1Ptr == session2Ptr);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to manage DTLS handshake retransmission
+*/
+//--------------------------------------------------------------------------------------------------
+void dtls_HandshakeRetransmission
+(
+    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS conection list
+    dtls_tick_t*        timerValue,         ///< [INOUT] Timer value for retransmission
+    bool*               isMaxReached        ///< [INOUT] Is maximum retransmission reached ?
+)
+{
+    dtls_Connection_t* parentPtr;
+
+    if ((!connListPtr) || (!timerValue) || (!isMaxReached))
+    {
+        return;
+    }
+
+    parentPtr = connListPtr;
+
+    // Manage retransmission
+    // If dtls_check_retransmit returns a positive value for timerValue, this means that a
+    // retransmission is needed. The timerValue value is the retransmission timer indicated by
+    // tinyDTLS
+    while(parentPtr)
+    {
+        dtls_check_retransmit(parentPtr->dtlsContextPtr, timerValue, isMaxReached);
+
+        if (*isMaxReached)
+        {
+            lwm2m_close_connection(parentPtr->dtlsContextPtr, parentPtr->lwm2mHPtr);
+        }
+        parentPtr = parentPtr->nextPtr;
+    }
+
+    if (*timerValue)
+    {
+        dtls_tick_t now;
+        dtls_ticks(&now);
+        if (now > *timerValue)
+        {
+            // This should not happen
+            *timerValue = 1;
+        }
+        else
+        {
+            // In order to be sure that DTLS is retransmitted at next call to dtls_check_retransmit,
+            // add 1 second (because of division by 1000)
+            *timerValue = (((*timerValue) - now) / 1000) + 1;
+        }
+    }
+
+    LOG_ARG("DTLS retransmission %d sec, isMaxReached %d", *timerValue, *isMaxReached);
 }

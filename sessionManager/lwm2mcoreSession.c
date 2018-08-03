@@ -263,51 +263,6 @@ uint8_t lwm2m_report_coap_status
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Update bootstrap state and backup security object if bootstrap succeeded.
- */
-//--------------------------------------------------------------------------------------------------
-#ifdef LWM2M_BOOTSTRAP
-static void UpdateBootstrapInfo
-(
-    lwm2m_client_state_t* previousBsStatePtr,   ///< [IN] Bootstrap state
-    lwm2m_context_t* contextPtr                 ///< [IN] Context
-)
-{
-    static bool bootstrapDone = false;
-
-    if (*previousBsStatePtr != contextPtr->state)
-    {
-        *previousBsStatePtr = contextPtr->state;
-        switch(contextPtr->state)
-        {
-            case STATE_BOOTSTRAPPING:
-            {
-                bootstrapDone = true;
-            }
-            break;
-
-            // if we go through bootstrap and registration succeeds, backup security object.
-            case STATE_READY:
-            {
-                if (bootstrapDone)
-                {
-                    LOG("Backup security object.");
-                    //TODO objSecurity_Backup(&context->objectList[0]);
-                }
-            }
-            break;
-
-            default:
-            {
-            }
-            break;
-        }
-    }
-}
-#endif
-
-//--------------------------------------------------------------------------------------------------
-/**
  *  LwM2M client inactivity timeout.
  */
 //--------------------------------------------------------------------------------------------------
@@ -341,6 +296,7 @@ static void Lwm2mClientStepHandler
 )
 {
     int result = 0;
+    uint32_t timerValue = 0;
 
     static struct timeval tv;
     tv.tv_sec = 60;
@@ -355,33 +311,65 @@ static void Lwm2mClientStepHandler
      *   (eg. retransmission) and the time between the next operation
      */
 
-    result = lwm2m_step(DataCtxPtr->lwm2mHPtr, &(tv.tv_sec));
-    if (result != 0)
+    if (DataCtxPtr->connListPtr)
     {
-       LOG_ARG("lwm2m_step() failed: 0x%X.", result);
+        bool isMaxRetransmissionReached = false;
+
+        // Manage DTLS handshake retransmission
+        dtls_HandshakeRetransmission(DataCtxPtr->connListPtr,
+                                     &timerValue,
+                                     &isMaxRetransmissionReached);
+
+        if(timerValue)
+        {
+            LOG_ARG("DTLS retransmission to be planned: %d sec", timerValue);
+        }
+        else if (isMaxRetransmissionReached)
+        {
+            LOG("All retransmission attempts failed");
+            // All retransmission attempts failed
+            // On tinyDTLS side, bufferized message are deleted
+            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);
+            // Delete DM credentials if present
+            if (omanager_DeleteDmCredentials())
+            {
+                // DM credentials were deleted: force connection to the bootstrap server.
+                DataCtxPtr->lwm2mHPtr->state = STATE_BOOTSTRAP_REQUIRED;
+            }
+            else
+            {
+                // Close the connection
+                smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_FAIL);
+                lwm2mcore_Disconnect((lwm2mcore_Ref_t)DataCtxPtr);
+                return;
+            }
+        }
+    }
+
+    if (!timerValue)
+    {
+        result = lwm2m_step(DataCtxPtr->lwm2mHPtr, &(tv.tv_sec));
+        if (result != 0)
+        {
+            LOG_ARG("lwm2m_step() failed: 0x%X.", result);
 #ifdef LWM2M_BOOTSTRAP
-       if (STATE_BOOTSTRAPPING == PreviousState)
-       {
+            if (STATE_BOOTSTRAPPING == PreviousState)
+            {
 #ifdef WITH_LOGS
-           LOG("[BOOTSTRAP] restore security and server objects.");
+                LOG("[BOOTSTRAP] restore security and server objects.");
 #endif
-           //prv_restore_objects(ClientCtxt.lwm2mH);
-           DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
-       }
+                DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+            }
 #endif
+        }
+        timerValue = tv.tv_sec;
     }
 
     /* Launch timer step */
-    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, tv.tv_sec, Lwm2mClientStepHandler))
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP, timerValue, Lwm2mClientStepHandler))
     {
         LOG("ERROR to launch the step timer");
     }
-
-#ifdef LWM2M_BOOTSTRAP
-    UpdateBootstrapInfo(&PreviousState, DataCtxPtr->lwm2mHPtr);
-#endif
-
-    LOG("LwM2M step completed.");
 }
 
 //--------------------------------------------------------------------------------------------------
