@@ -22,6 +22,7 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/hmac.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
 #include <sys/stat.h>
@@ -318,6 +319,10 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
             if (securityObjPtr)
             {
                 uint16_t pskLen = strlen((char*)securityObjPtr->secretKey) / 2;
+                if (*lenPtr < pskLen)
+                {
+                    return LWM2MCORE_ERR_OVERFLOW;
+                }
                 if( 0 > StringToBinary((char*)(securityObjPtr->secretKey),
                                         pskLen,
                                         bufferPtr,
@@ -381,7 +386,10 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
                 0xF9, 0x9E, 0x8D, 0xEC, 0xAA, 0xA8, 0x71, 0x47, 0x49, 0x02,
                 0x01, 0x03
             };
-
+            if (*lenPtr < sizeof(publicKeyFw))
+            {
+                return LWM2MCORE_ERR_OVERFLOW;
+            }
             memcpy(bufferPtr, publicKeyFw, sizeof(publicKeyFw));
             *lenPtr = sizeof(publicKeyFw);
             result = LWM2MCORE_ERR_COMPLETED_OK;
@@ -421,7 +429,10 @@ lwm2mcore_Sid_t lwm2mcore_GetCredential
                 0xD5, 0xE9, 0x0F, 0xE5, 0x48, 0xC1, 0x03, 0xBA, 0x6E, 0x47,
                 0x80, 0xA6, 0x87, 0x52, 0x33, 0x02, 0x01, 0x03
             };
-
+            if (*lenPtr < sizeof(publicKeySw))
+            {
+                return LWM2MCORE_ERR_OVERFLOW;
+            }
             memcpy(bufferPtr, publicKeySw, sizeof(publicKeySw));
             *lenPtr = sizeof(publicKeySw);
             result = LWM2MCORE_ERR_COMPLETED_OK;
@@ -818,6 +829,215 @@ uint32_t lwm2mcore_Crc32
 )
 {
     return crc32(crc, bufPtr, len);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Calculate the length of the data decoded from the Base64 format.
+ *
+ * @return decoded data length. 0 represents error.
+ */
+//--------------------------------------------------------------------------------------------------
+static size_t CalculateBase64DecodeLength
+(
+    const char* b64input    ///< [IN] Base64-encoded data
+)
+{
+    size_t len = strlen(b64input);
+    size_t padding = 0;
+
+    if (len < 4)
+    {
+        // minimum length of the encoded string is 4 bytes
+        return 0;
+    }
+    if (b64input[len - 1] == '=' && b64input[len - 2] == '=') // Last two chars are =
+    {
+        padding = 2;
+    }
+    else if (b64input[len - 1] == '=') // Last char is =
+    {
+        padding = 1;
+    }
+
+    return (len * 3) / 4 - padding;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Perform base64 data encoding.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OVERFLOW if buffer overflow occurs
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_Base64Encode
+(
+    const uint8_t*  src,    ///< [IN] Data to be encoded
+    size_t          srcLen, ///< [IN] Data length
+    char*           dst,    ///< [OUT] Base64-encoded string buffer
+    size_t*         dstLen  ///< [INOUT] Length of the base64-encoded string buffer
+)
+{
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+    lwm2mcore_Sid_t rc = LWM2MCORE_ERR_COMPLETED_OK;
+
+    if (!dstLen || !src || !dst || (0 == srcLen))
+    {
+        printf("Null pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); // Ignore newlines - write everything in one line
+    BIO_write(bio, src, srcLen);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+
+    // Check if the output buffer can hold encoded string + '\0'
+    if (*dstLen < strlen((*bufferPtr).data) + 1)
+    {
+        printf("Insufficient buffer size: %zu\n", *dstLen);
+        rc = LWM2MCORE_ERR_OVERFLOW;
+    }
+    else
+    {
+        memcpy(dst, (*bufferPtr).data, *dstLen);
+    }
+
+    BIO_free_all(bio);
+
+    return rc;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Decode base64-encoded data.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OVERFLOW if buffer overflow occurs
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if incorrect data range
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_Base64Decode
+(
+    char*       src,    ///< [IN] Base64-encoded data string
+    uint8_t*    dst,    ///< [OUT] Decoded data buffer
+    size_t*     dstLen  ///< [INOUT] Decoded data buffer length
+)
+{
+	BIO *bio, *b64;
+    size_t decodeLen;
+
+    if (!dstLen || !src || !dst)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+        printf("Null pointer provided\n");
+    }
+
+    decodeLen = CalculateBase64DecodeLength(src);
+    if (0 == decodeLen)
+    {
+        printf("Cannot calculate decoded data length");
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+    if (*dstLen < decodeLen)
+    {
+        printf("Insufficient buffer size: %zu < %zu\n", *dstLen, decodeLen);
+        return LWM2MCORE_ERR_OVERFLOW;
+    }
+
+    bio = BIO_new_mem_buf(src, -1);
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); // Do not use newlines to flush buffer
+    *dstLen = BIO_read(bio, dst, strlen(src));
+
+    BIO_free_all(bio);
+
+    // Check whether pre-calculated decoded length match the actual
+    if (*dstLen != decodeLen)
+    {
+        printf("Decoded length is different from expected: %zu %zu\n", *dstLen, decodeLen);
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Compute HMAC SHA256 digest using the given data and credential.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ComputeHmacSHA256
+(
+    uint8_t*                data,           ///< [IN] Data buffer
+    size_t                  dataLen,        ///< [IN] Data length
+    lwm2mcore_Credentials_t credId,         ///< [IN] Key type
+    uint8_t*                result,         ///< [OUT] Digest buffer
+    size_t*                 resultLenPtr    ///< [INOUT] Digest length
+)
+{
+    char key[LWM2MCORE_PSK_LEN];
+    size_t keyLen = sizeof(key);
+    unsigned int resultLen;
+    lwm2mcore_Sid_t rc = LWM2MCORE_ERR_COMPLETED_OK;
+
+    // Check the inputs
+    if (!data || !result || !resultLenPtr)
+    {
+        printf("Null pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+    resultLen = *resultLenPtr;
+    if ((0 == dataLen) || (0 == resultLen))
+    {
+        printf("Buffer length is zero\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Retrieve the encryption key
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetCredential(credId,
+                                                              LWM2MCORE_NO_SERVER_ID,
+                                                              key,
+                                                              &keyLen))
+    {
+        printf("Error while retrieving credentials %d\n", credId);
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // Calculate the digest
+    if (NULL == HMAC(EVP_sha256(), key, keyLen, data, dataLen, result, &resultLen))
+    {
+        printf("HMAC() returned NULL\n");
+        rc = LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+    else
+    {
+        *resultLenPtr = resultLen;
+        rc = LWM2MCORE_ERR_COMPLETED_OK;
+    }
+    // erase the key.
+    memset(key, 0, sizeof(key));
+
+    return rc;
 }
 
 //--------------------------------------------------------------------------------------------------

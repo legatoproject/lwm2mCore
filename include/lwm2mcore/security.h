@@ -220,6 +220,62 @@ uint32_t lwm2mcore_Crc32
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Perform base64 data encoding.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OVERFLOW if buffer overflow occurs
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_Base64Encode
+(
+    const uint8_t*  src,    ///< [IN] Data to be encoded
+    size_t          srcLen, ///< [IN] Data length
+    char*           dst,    ///< [OUT] Base64-encoded string buffer
+    size_t*         dstLen  ///< [INOUT] Length of the base64-encoded string buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Decode base64-encoded data.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OVERFLOW if buffer overflow occurs
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if incorrect data range
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_Base64Decode
+(
+    char*       src,    ///< [IN] Base64-encoded data string
+    uint8_t*    dst,    ///< [OUT] Decoded data buffer
+    size_t*     dstLen  ///< [INOUT] Decoded data buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Compute HMAC SHA256 digest using the given data and credential.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ComputeHmacSHA256
+(
+    uint8_t*                data,       ///< [IN] Data buffer
+    size_t                  dataLen,    ///< [IN] Data length
+    lwm2mcore_Credentials_t credId,     ///< [IN] Key type
+    uint8_t*                result,     ///< [OUT] Digest buffer
+    size_t*                 resultLen   ///< [INOUT] Digest buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Initialize the SHA1 computation.
  *
  * @remark Platform adaptor function which needs to be defined on client side.
