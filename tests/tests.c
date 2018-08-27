@@ -17,6 +17,7 @@
 #include <objectManager/objects.h>
 #include <sessionManager/sessionManager.h>
 #include <lwm2mcore/coapHandlers.h>
+#include "sampleConfig.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -399,6 +400,53 @@ static void test_lwm2mcore_UpdateSwList
     }
 }
 
+//-------------------------------------------------------------------------------------------------
+/**
+ * Test function for test_lwm2mcore_SetRegistrationID, lwm2mcore_GetRegistrationID and
+ * lwm2mcore_DeleteRegistrationID API
+ */
+//--------------------------------------------------------------------------------------------------
+static void test_lwm2mcore_SetRegistrationID
+(
+    void
+)
+{
+    int i = 0;
+    char registrationId[LWM2MCORE_REGISTRATION_ID_MAX_LEN] = {0};
+    char tmpId[LWM2MCORE_REGISTRATION_ID_MAX_LEN] = {0};
+
+    for (i = 1; i < 10; i++)
+    {
+        // Generate a registration ID using the index
+        memset(registrationId, 0x00, LWM2MCORE_REGISTRATION_ID_MAX_LEN);
+        snprintf(registrationId, LWM2MCORE_REGISTRATION_ID_MAX_LEN, "/rd/%d", i);
+
+        // Add a registration ID for the server ID
+        lwm2mcore_SetRegistrationID(i, registrationId);
+
+        // Check that the written registration ID is correct
+        TEST_ASSERT(true == lwm2mcore_GetRegistrationID(i, tmpId, sizeof(tmpId) - 1));
+        TEST_ASSERT(0 == strcmp(tmpId, registrationId));
+    }
+
+    // Check that delete function only deletes the regisgtration ID associated with the server ID
+    TEST_ASSERT(true == lwm2mcore_GetRegistrationID(1, tmpId,  sizeof(tmpId) - 1));
+    lwm2mcore_DeleteRegistrationID(1);
+    TEST_ASSERT(false == lwm2mcore_GetRegistrationID(1, tmpId,  sizeof(tmpId) - 1));
+    for (i = 2; i < 10; i++)
+    {
+        TEST_ASSERT(true == lwm2mcore_GetRegistrationID(i, tmpId, sizeof(tmpId) - 1));
+    }
+
+    // Delete all entries
+    lwm2mcore_DeleteRegistrationID(-1);
+    TEST_ASSERT(false == lwm2mcore_GetRegistrationID(2, tmpId,  sizeof(tmpId) - 1));
+    for (i = 1; i < 10; i++)
+    {
+        TEST_ASSERT(false == lwm2mcore_GetRegistrationID(i, tmpId, sizeof(tmpId) - 1));
+    }
+}
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  Unitary test entry point.
@@ -411,8 +459,13 @@ int main
 {
     printf("======== Start UnitTest of lwm2mcore ========\n");
 
+    CreateBsConfigurationFiles();
+
     printf("======== test of lwm2mcore_Init() ========\n");
     test_lwm2mcore_Init();
+
+    printf("======== test of lwm2mcore_SetRegistrationID() ========\n");
+    test_lwm2mcore_SetRegistrationID();
 
     printf("======== test of lwm2mcore_Connect() ========\n");
     test_lwm2mcore_Connect();

@@ -46,6 +46,15 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Maximum length of a registration ID string
+ *
+ * strlen("/rd/65534") + 1
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_REGISTRATION_ID_MAX_LEN       32
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Define values to indicate that an object can be supported without any defined ressource
  */
 //--------------------------------------------------------------------------------------------------
@@ -936,6 +945,43 @@ void lwm2mcore_ReportUdpErrorCode
 void lwm2mcore_ReportCoapResponseCode
 (
     int code    ///< [IN] CoAP error code as defined in RFC 7252 section 12.1.2
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to get the registration ID from internal storage
+ *
+ * @return
+ *  - @c true if the registation ID is successfully retrieved for the specified server ID
+ *  - @c else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_GetRegistrationID
+(
+    uint16_t shortID,            ///< [IN] Server ID
+    char*    registrationIdPtr,  ///< [INOUT] Registration ID pointer
+    size_t   len                 ///< [IN] Registration ID length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to save the registration in the internal storage
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetRegistrationID
+(
+    uint16_t    shortID,             ///< [IN] Server ID
+    const char* registrationIdPtr    ///< [IN] Registration ID pointer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to delete all registration IDs from the internal storage
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_DeleteRegistrationID
+(
+    int    shortID    ///< [IN] Server ID. Use -1 value to delete all servers registration ID.
 );
 
 /**

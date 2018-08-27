@@ -134,16 +134,17 @@ struct ConfigSecurityToStoreV02_t
 //--------------------------------------------------------------------------------------------------
 struct ConfigServerToStoreV02_t
 {
-    uint16_t    serverObjectInstanceId;                     ///< Object instance Id of object 1
-                                                            ///< (server)
-    uint16_t    serverId;                                   ///< Short server ID
-    uint32_t    lifetime;                                   ///< lifetime in seconds
-    uint32_t    defaultPmin;                                ///< Default minimum period in seconds
-    uint32_t    defaultPmax;                                ///< Default maximum period in seconds
-    bool        isDisable;                                  ///< Is device disabled?
-    uint32_t    disableTimeout;                             ///< Disable timeout in seconds
-    bool        isNotifStored;                              ///< Notification storing
-    uint8_t     bindingMode[LWM2MCORE_BINDING_STR_MAX_LEN]; ///< Binding mode
+    uint16_t  serverObjectInstanceId;                            ///< Object instance Id of object 1
+                                                                 ///< (server)
+    uint16_t  serverId;                                          ///< Short server ID
+    uint32_t  lifetime;                                          ///< lifetime in sec
+    uint32_t  defaultPmin;                                       ///< Default minimum period in sec
+    uint32_t  defaultPmax;                                       ///< Default maximum period in sec
+    bool      isDisable;                                         ///< Is device disabled?
+    uint32_t  disableTimeout;                                    ///< Disable timeout in sec
+    bool      isNotifStored;                                     ///< Notification storing
+    uint8_t   bindingMode[LWM2MCORE_BINDING_STR_MAX_LEN];        ///< Binding mode
+    uint8_t   registrationId[LWM2MCORE_REGISTRATION_ID_MAX_LEN]; ///< Registration ID
 };
 
 //--------------------------------------------------------------------------------------------------

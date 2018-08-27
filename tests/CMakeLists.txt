@@ -12,7 +12,8 @@ include(${LWM2MCORE_ROOT_DIR}/lwm2mcore.cmake)
 set(LWM2MCORE_TEST_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/tests/tests.c
     ${LWM2MCORE_SOURCES_DIR}/tests/wakaama_stub.c
-    ${LWM2MCORE_SOURCES_DIR}/tests/tinydtls_stub.c)
+    ${LWM2MCORE_SOURCES_DIR}/tests/tinydtls_stub.c
+    ${LWM2MCORE_SOURCES_DIR}/tests/sampleConfig.c)
 
 add_definitions(${SHARED_DEFINITIONS} ${WAKAAMA_DEFINITIONS} ${LWM2MCORE_DEFINITIONS})
 

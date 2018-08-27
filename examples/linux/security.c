@@ -941,8 +941,8 @@ lwm2mcore_Sid_t lwm2mcore_Base64Decode
 
     if (!dstLen || !src || !dst)
     {
-        return LWM2MCORE_ERR_INVALID_ARG;
         printf("Null pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
     }
 
     decodeLen = CalculateBase64DecodeLength(src);

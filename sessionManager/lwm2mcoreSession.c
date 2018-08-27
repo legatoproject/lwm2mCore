@@ -445,13 +445,45 @@ static uint32_t ConvertToCoapCode
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to manage registration and send start registration start event
+ */
+//--------------------------------------------------------------------------------------------------
+static void ManageRegistration
+(
+    lwm2mcore_Status_t* statusPtr   ///< [INOUT] Event status pointer
+)
+{
+    statusPtr->event = LWM2MCORE_EVENT_SESSION_STARTED;
+    smanager_SendStatusEvent(*statusPtr);
+
+    statusPtr->event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
+    statusPtr->u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
+    smanager_SendStatusEvent(*statusPtr);
+
+    // Check if a download should be resumed
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
+    {
+        LOG("Error while checking download resume");
+    }
+
+    /* Launch inactivity timer to monitor inactivity during registered state */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
+                                    INACTIVE_TIMEOUT_SECONDS,
+                                    Lwm2mClientInactivityHandler))
+    {
+        LOG("Error launching client inactivity timer");
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to send status event to the application, using the callback stored in the LwM2MCore
  * session manager
  */
 //--------------------------------------------------------------------------------------------------
 void smanager_SendStatusEvent
 (
-    lwm2mcore_Status_t status
+    lwm2mcore_Status_t status    ///< [IN] Event status
 )
 {
     // Check if a status callback is available
@@ -476,7 +508,7 @@ void smanager_SendSessionEvent
     smanager_EventStatus_t eventstatus    ///< [IN] Event status
 )
 {
-    lwm2mcore_Status_t status;
+    static lwm2mcore_Status_t status;
 
     switch (eventId)
     {
@@ -527,27 +559,7 @@ void smanager_SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("REGISTER DONE");
-
-                    status.event = LWM2MCORE_EVENT_SESSION_STARTED;
-                    smanager_SendStatusEvent(status);
-
-                    status.event = LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START;
-                    status.u.session.type = LWM2MCORE_SESSION_DEVICE_MANAGEMENT;
-                    smanager_SendStatusEvent(status);
-
-                    // Check if a download should be resumed
-                    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
-                    {
-                        LOG("Error while checking download resume");
-                    }
-
-                    /* Launch inactivity timer to monitor inactivity during registered state */
-                    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
-                                                    INACTIVE_TIMEOUT_SECONDS,
-                                                    Lwm2mClientInactivityHandler))
-                    {
-                        LOG("Error launching client inactivity timer");
-                    }
+                    ManageRegistration(&status);
                 }
                 break;
 
@@ -591,6 +603,15 @@ void smanager_SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("REG UPDATE DONE");
+
+                    /* Registration update can be performed even when the session is already running
+                       and in this case, we should not report the event SESSION_STARTED. The
+                       following condition ensures that the session is not started.
+                    */
+                    if (status.event == LWM2MCORE_EVENT_AUTHENTICATION_STARTED)
+                    {
+                        ManageRegistration(&status);
+                    }
                 }
                 break;
 
@@ -1371,4 +1392,143 @@ bool smanager_IsBootstrapConnection
     }
 
     return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to get the registration ID from internal storage
+ *
+ * @return
+ *  - @c true if the registation ID is successfully retrieved for the specified server ID
+ *  - @c else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_GetRegistrationID
+(
+    uint16_t shortID,            ///< [IN] Server ID
+    char*    registrationIdPtr,  ///< [INOUT] Registration ID pointer
+    size_t   len                 ///< [IN] Registration ID length
+)
+{
+    ConfigBootstrapFile_t* bsConfigPtr;
+    ConfigServerObject_t* serverInformationPtr;
+
+    bsConfigPtr = omanager_GetBootstrapConfiguration();
+    if (!bsConfigPtr)
+    {
+        LOG("Unable to get boostrap configuration file");
+        return false;
+    }
+
+    serverInformationPtr = bsConfigPtr->serverPtr;
+    if (!serverInformationPtr)
+    {
+        LOG("Unable to get serverInformationPtr");
+        return false;
+    }
+
+    while (serverInformationPtr)
+    {
+        if ((serverInformationPtr->data.serverId == shortID)
+                && (strlen((char*)serverInformationPtr->data.registrationId) != 0))
+        {
+            strncpy(registrationIdPtr, (char*)serverInformationPtr->data.registrationId, len);
+            LOG_ARG("Get server ID: %d, registration ID: %s", shortID, registrationIdPtr);
+            return true;
+        }
+        serverInformationPtr = serverInformationPtr->nextPtr;
+    }
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to save the registration in the internal storage
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetRegistrationID
+(
+    uint16_t    shortID,             ///< [IN] Server ID
+    const char* registrationIdPtr    ///< [IN] Registration ID pointer
+)
+{
+    ConfigBootstrapFile_t* bsConfigPtr;
+    ConfigServerObject_t* serverInformationPtr;
+
+    LOG_ARG("Set server ID: %d, registration ID: %s", shortID, registrationIdPtr);
+
+    bsConfigPtr = omanager_GetBootstrapConfiguration();
+    if (!bsConfigPtr)
+    {
+        return;
+    }
+
+    serverInformationPtr = bsConfigPtr->serverPtr;
+    if (!serverInformationPtr)
+    {
+        return;
+    }
+
+    while (serverInformationPtr)
+    {
+        if (serverInformationPtr->data.serverId == shortID)
+        {
+            strncpy((char*)serverInformationPtr->data.registrationId, registrationIdPtr,
+                    LWM2MCORE_REGISTRATION_ID_MAX_LEN);
+            omanager_StoreBootstrapConfiguration(bsConfigPtr);
+            return;
+        }
+        serverInformationPtr = serverInformationPtr->nextPtr;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to delete all registration IDs from the internal storage
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_DeleteRegistrationID
+(
+    int    shortID    ///< [IN] Server ID. Use -1 value to delete all servers registration ID.
+)
+{
+    bool updated = false;
+    ConfigBootstrapFile_t* bsConfigPtr;
+    ConfigServerObject_t* serverInformationPtr;
+
+    LOG_ARG("Delete Id: %d", shortID);
+
+    bsConfigPtr  = omanager_GetBootstrapConfiguration();
+    if (!bsConfigPtr)
+    {
+        return;
+    }
+
+    serverInformationPtr = bsConfigPtr->serverPtr;
+    if (!serverInformationPtr)
+    {
+        return;
+    }
+
+    while (serverInformationPtr)
+    {
+        if (shortID == -1)
+        {
+            memset(serverInformationPtr->data.registrationId, 0, LWM2MCORE_REGISTRATION_ID_MAX_LEN);
+            updated = true;
+        }
+        else if (serverInformationPtr->data.serverId == shortID)
+        {
+            memset(serverInformationPtr->data.registrationId, 0, LWM2MCORE_REGISTRATION_ID_MAX_LEN);
+            updated = true;
+            break;
+        }
+        serverInformationPtr = serverInformationPtr->nextPtr;
+    }
+
+    if (updated)
+    {
+        omanager_StoreBootstrapConfiguration(bsConfigPtr);
+    }
 }
