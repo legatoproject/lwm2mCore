@@ -1474,8 +1474,9 @@ void lwm2mcore_SetRegistrationID
     {
         if (serverInformationPtr->data.serverId == shortID)
         {
+            memset(serverInformationPtr->data.registrationId, 0, LWM2MCORE_REGISTRATION_ID_MAX_LEN);
             strncpy((char*)serverInformationPtr->data.registrationId, registrationIdPtr,
-                    LWM2MCORE_REGISTRATION_ID_MAX_LEN);
+                    LWM2MCORE_REGISTRATION_ID_MAX_LEN - 1);
             omanager_StoreBootstrapConfiguration(bsConfigPtr);
             return;
         }
