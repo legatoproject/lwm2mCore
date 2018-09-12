@@ -2243,6 +2243,23 @@ int omanager_ReadFwUpdateObj
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *  Called when the update timer expires.
+ */
+//--------------------------------------------------------------------------------------------------
+static void LaunchFwUpdateTimerExpiryHandler
+(
+    void
+)
+{
+    int sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, 0, NULL, 0);
+    if (sID != LWM2MCORE_ERR_COMPLETED_OK)
+    {
+        LOG_ARG("Error launching FW update: %d", sID);
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to execute a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with execute operation
@@ -2268,13 +2285,16 @@ int omanager_ExecFwUpdate
 {
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
+    (void) bufferPtr;
+    (void) len;
+
     /* BufferPtr can be null as per spec (OMA-TS-LightweightM2M-V1_0-20151214-C.pdf, E.6) */
     if (NULL == uriPtr)
     {
         return LWM2MCORE_ERR_INVALID_ARG;
     }
 
-    if (0 < uriPtr->oiid)
+    if (uriPtr->oiid != 0)
     {
         /* Only one object instance */
         return LWM2MCORE_ERR_INCORRECT_RANGE;
@@ -2290,7 +2310,18 @@ int omanager_ExecFwUpdate
     {
         /* Resource 2: Update */
         case LWM2MCORE_FW_UPDATE_UPDATE_RID:
-            sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, bufferPtr, len);
+            /* Acknowledge the update request and launch the actual update/reboot later */
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_REBOOT,
+                                            LWM2MCORE_TIMER_REBOOT_DELAY,
+                                            &LaunchFwUpdateTimerExpiryHandler))
+            {
+                LOG("Error launching update timer");
+                sID = LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
             break;
 
         default:
