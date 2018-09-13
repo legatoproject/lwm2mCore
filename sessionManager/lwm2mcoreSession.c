@@ -783,6 +783,31 @@ void smanager_SendSessionEvent
     }
 }
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Get the target server context
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2m_server_t* GetTargetServer
+(
+    void
+)
+{
+    bool registered = false;
+    smanager_ClientData_t* dataPtr = DataCtxPtr;
+    lwm2m_server_t* targetPtr = NULL;
+
+    /* Check that the device is registered to DM server */
+    if ((true == lwm2mcore_ConnectionGetType((lwm2mcore_Ref_t)dataPtr, &registered) && registered))
+    {
+        /* Retrieve the serverID from list */
+        targetPtr = dataPtr->lwm2mHPtr->serverList;
+    }
+
+    return targetPtr;
+}
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Callback called when the socked is opened
@@ -1319,6 +1344,123 @@ lwm2mcore_PushResult_t lwm2mcore_Push
     }
 
     return result;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send an empty response to server.
+ *
+ * @return
+ *      - true if response is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SendEmptyResponse
+(
+    uint16_t mid
+)
+{
+    lwm2m_server_t* targetPtr = GetTargetServer();
+
+    if (targetPtr)
+    {
+        lwm2m_send_empty_response(DataCtxPtr->lwm2mHPtr,
+                                  targetPtr->shortID,
+                                  mid);
+        return true;
+    }
+    else
+    {
+        LOG("serverList is NULL");
+        return false;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send an unsolicited message to server (Push)
+ *
+ * @return
+ *      - true if response is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SendNotification
+(
+    lwm2mcore_CoapNotification_t* notificationPtr        ///< [IN] unsolictied message from device
+)
+{
+    lwm2m_server_t* targetPtr = GetTargetServer();
+
+    if (targetPtr)
+    {
+        return lwm2m_send_notification(DataCtxPtr->lwm2mHPtr,
+                                       targetPtr->shortID,
+                                       notificationPtr->uriPtr,
+                                       notificationPtr->tokenPtr,
+                                       notificationPtr->tokenLength,
+                                       notificationPtr->contentType,
+                                       notificationPtr->payloadPtr,
+                                       notificationPtr->payloadLength,
+                                       notificationPtr->streamStatus);
+    }
+    else
+    {
+        LOG("serverList is NULL");
+        return false;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to send a CoAP response to server.
+ *
+ * @return
+ *      - true if an asynchronous response is initiated
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SendResponse
+(
+    lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response
+)
+{
+    bool registered = false;
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*) instanceRef;
+
+    if (NULL == instanceRef)
+    {
+        return false;
+    }
+
+    /* Check that the device is registered to DM server */
+    if ((true == lwm2mcore_ConnectionGetType(instanceRef, &registered) && registered))
+    {
+        /* Retrieve the serverID from list */
+        lwm2m_server_t* targetPtr = dataPtr->lwm2mHPtr->serverList;
+        if (NULL == targetPtr)
+        {
+            LOG("serverList is NULL");
+            return false;
+        }
+        else
+        {
+            return lwm2m_send_response(dataPtr->lwm2mHPtr,
+                                       targetPtr->shortID,
+                                       responsePtr->messageId,
+                                       responsePtr->code,
+                                       responsePtr->tokenPtr,
+                                       responsePtr->tokenLength,
+                                       responsePtr->contentType,
+                                       responsePtr->payload,
+                                       responsePtr->payloadLength,
+                                       responsePtr->streamStatus);
+        }
+    }
+
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------

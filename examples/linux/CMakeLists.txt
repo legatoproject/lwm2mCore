@@ -22,7 +22,8 @@ add_definitions(-g
                 -Waggregate-return
                 -Wswitch-default
                 -DLWM2M_DEREGISTER
-                -DLWM2M_LOCATION_FLOAT)
+                -DLWM2M_LOCATION_FLOAT
+                -DCOAP_BLOCK1_SIZE=4096)
 
 include_directories (${LWM2MCORE_SOURCES_DIR} ${WAKAAMA_SOURCES_DIR} ${TINYDTLS_SOURCES_DIR})
 

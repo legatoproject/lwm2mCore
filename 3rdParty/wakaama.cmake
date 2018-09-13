@@ -30,6 +30,8 @@ set(WAKAAMA_SOURCES
     ${WAKAAMA_SOURCES_DIR}/json.c
     ${WAKAAMA_SOURCES_DIR}/discover.c
     ${WAKAAMA_SOURCES_DIR}/block1.c
+    ${WAKAAMA_SOURCES_DIR}/block1-stream.c
+    ${WAKAAMA_SOURCES_DIR}/block2-stream.c
     ${WAKAAMA_SOURCES_DIR}/acl.c
     ${EXT_SOURCES})
 

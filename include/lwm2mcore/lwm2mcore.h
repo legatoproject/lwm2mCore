@@ -336,6 +336,38 @@ typedef enum
     LWM2MCORE_PUSH_CONTENT_ZCBOR = 12118 ///< Proprietary compressed CBOR (zlib + CBOR)
 } lwm2mcore_PushContent_t;
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief CoAP receive stream status (write request block-2)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_STREAM_NONE = 0,
+            ///< Payload is less than 1KB.
+    LWM2MCORE_RX_STREAM_START = 1,
+        ///< Beginning of a new CoAP receive stream
+    LWM2MCORE_RX_STREAM_IN_PROGRESS = 2,
+        ///< Incoming CoAP Stream is in progress
+    LWM2MCORE_RX_STREAM_END = 3,
+        ///< Incoming CoAP Stream completed successfully
+    LWM2MCORE_RX_STREAM_ERROR = 4,
+        ///< Error in receiving incoming stream
+    LWM2MCORE_TX_STREAM_START = 5,
+        ///< Start an outgoing stream
+    LWM2MCORE_TX_STREAM_IN_PROGRESS = 6,
+        ///< Continue streaming
+    LWM2MCORE_TX_STREAM_END = 7,
+        ///< All blocks sent successfully
+    LWM2MCORE_TX_STREAM_ERROR = 8,
+        ///< Error in sending stream
+    LWM2MCORE_STREAM_INVALID = 9
+        ///< Stream status invalid
+}
+lwm2mcore_StreamStatus_t;
+
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function pointer of push callback function
@@ -790,7 +822,7 @@ lwm2mcore_PushResult_t lwm2mcore_Push
     lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
     uint8_t* payloadPtr,                    ///< [IN] payload
     size_t payloadLength,                   ///< [IN] payload length
-    lwm2mcore_PushContent_t content,       ///< [IN] content type
+    lwm2mcore_PushContent_t content,        ///< [IN] content type
     uint16_t* midPtr                        ///< [OUT] message id
 );
 

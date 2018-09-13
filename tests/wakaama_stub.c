@@ -370,6 +370,72 @@ bool lwm2m_async_response
     return true;
 }
 
+
+bool lwm2m_send_response
+(
+    lwm2m_context_t * contextP,
+    uint16_t shortServerId,
+    uint16_t mid,
+    uint32_t code,
+    uint8_t* token,
+    uint8_t token_len,
+    uint16_t content_type,
+    uint8_t * payload,
+    size_t payload_len,
+    uint32_t streamStatus
+)
+{
+    (void)contextP;
+    (void)shortServerId;
+    (void)mid;
+    (void)code;
+    (void)token;
+    (void)token_len;
+    (void)content_type;
+    (void)payload;
+    (void)payload_len;
+    (void)streamStatus;
+    return true;
+}
+
+bool lwm2m_send_notification
+(
+    lwm2m_context_t * contextP,
+    uint16_t shortServerId,
+    uint8_t* uri,
+    uint8_t* token,
+    uint8_t token_len,
+    uint16_t content_type,
+    uint8_t * payload,
+    size_t payload_len,
+    uint32_t streamStatus
+)
+{
+    (void)contextP;
+    (void)shortServerId;
+    (void)uri;
+    (void)token;
+    (void)token_len;
+    (void)content_type;
+    (void)payload;
+    (void)payload_len;
+    (void)streamStatus;
+    return true;
+}
+
+bool lwm2m_send_empty_response
+(
+    lwm2m_context_t * contextP,
+    uint16_t shortServerId,
+    uint16_t mid
+)
+{
+    (void)contextP;
+    (void)shortServerId;
+    (void)mid;
+    return true;
+}
+
 void lwm2m_data_free
 (
     int size,

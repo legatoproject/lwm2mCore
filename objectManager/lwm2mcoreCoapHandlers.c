@@ -23,6 +23,22 @@
 
 //--------------------------------------------------------------------------------------------------
 /*
+ * Only one external event handler is allowed to be registered at a time.
+ */
+//--------------------------------------------------------------------------------------------------
+static coap_external_handler_t ExternalHandlerRef = NULL;
+
+
+//--------------------------------------------------------------------------------------------------
+/*
+ * Only one external ack handler is allowed to be registered at a time.
+ */
+//--------------------------------------------------------------------------------------------------
+static coap_ack_handler_t AckHandlerRef = NULL;
+
+
+//--------------------------------------------------------------------------------------------------
+/*
  * Only one event handler is allowed to be registered at a time.
  */
 //--------------------------------------------------------------------------------------------------
@@ -183,6 +199,133 @@ void lwm2mcore_SetCoapEventHandler
     }
 }
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set CoAP external handler
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetCoapExternalHandler
+(
+    coap_request_handler_t handlerRef    ///< [IN] Coap external event handler
+)
+{
+    // New handler is being added
+    ExternalHandlerRef = handlerRef;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set CoAP ack handler
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetCoapAckHandler
+(
+    coap_ack_handler_t handlerRef    ///< [IN] Coap external ack handler
+)
+{
+    // New handler is being added
+    AckHandlerRef = handlerRef;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Calls the external CoAP push handler function to indicate status of the push operation.
+ * If push is streamed the callback is returned only when the stream ends.
+  */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_AckCallback
+(
+    lwm2mcore_AckResult_t result                        ///< [IN] CoAP ack result
+)
+{
+    if (AckHandlerRef != NULL)
+    {
+        AckHandlerRef(result);
+    }
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Calls the external CoAP event handler to handle incoming CoAP messages
+ *
+ *  * @return
+ *      - CoAP error code from user application
+ *      - COAP_501_NOT_IMPLEMENTED if there is no registered handler found.
+ */
+//--------------------------------------------------------------------------------------------------
+coap_status_t lwm2mcore_CallCoapExternalHandler
+(
+    coap_packet_t* message,                           ///< [IN] CoAP request
+    lwm2mcore_StreamStatus_t streamStatus             ///< [IN] Stream status
+)
+{
+    lwm2mcore_CoapRequest_t* requestPtr;
+
+    requestPtr = (lwm2mcore_CoapRequest_t*)lwm2m_malloc(sizeof(lwm2mcore_CoapRequest_t));
+    if (!requestPtr)
+    {
+        LOG("requestPtr is NULL");
+        return COAP_500_INTERNAL_SERVER_ERROR;
+    }
+
+    requestPtr->uri = coap_get_multi_option_as_string(message->uri_path);
+#ifdef DELIMITER
+    requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
+#endif
+    if (requestPtr->uri)
+    {
+        requestPtr->uriLength = strlen(requestPtr->uri);
+    }
+    else
+    {
+        requestPtr->uriLength = 0;
+    }
+
+    requestPtr->method = message->code;
+    requestPtr->buffer = message->payload;
+    requestPtr->bufferLength = message->payload_len;
+    requestPtr->messageId = message->mid;
+    requestPtr->tokenLength = message->token_len;
+    memcpy(requestPtr->token, message->token, message->token_len);
+    requestPtr->contentType = message->content_type;
+    requestPtr->streamStatus = streamStatus;
+
+    if (ExternalHandlerRef != NULL)
+    {
+        /* Call external CoAP Handler */
+        ExternalHandlerRef(requestPtr);
+    }
+
+    if ((NULL == ExternalHandlerRef) && (requestPtr))
+    {
+       lwm2m_free(requestPtr);
+    }
+
+    // ToDo: Initiate a timer to delay this ack by 2 seconds (application processing time)
+    // If the app responds within 2 seconds, we can send a piggy backed response.
+
+    // Actual response will be sent by external app
+    return COAP_IGNORE;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Returns the registered CoAP external event handler
+ */
+//--------------------------------------------------------------------------------------------------
+coap_external_handler_t lwm2mcore_GetCoapExternalHandler
+(
+    void
+)
+{
+    return ExternalHandlerRef;
+}
+
+
 //--------------------------------------------------------------------------------------------------
 /**
  * Retrieves the registered coap request handler and returns the coap request details
@@ -241,6 +384,34 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     }
 
     return coapErrorCode;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get CoAP message id.
+ */
+//--------------------------------------------------------------------------------------------------
+uint16_t lwm2mcore_GetMessageId
+(
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
+)
+{
+    return requestRef->messageId;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get CoAP stream status.
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_StreamStatus_t lwm2mcore_GetStreamStatus
+(
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
+)
+{
+    return requestRef->streamStatus;
 }
 
 
@@ -320,7 +491,7 @@ const uint8_t* lwm2mcore_GetToken
  * Function to get token length from request
  */
 //--------------------------------------------------------------------------------------------------
-size_t lwm2mcore_GetTokenLength
+uint8_t lwm2mcore_GetTokenLength
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 )
