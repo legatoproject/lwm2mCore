@@ -489,6 +489,7 @@ bool omanager_LoadBootstrapConfiguration
 {
     lwm2mcore_Sid_t sid;
     uint32_t lenWritten = 0;
+    uint32_t lenConfigServerObj = 0;
     uint32_t loop;
     uint32_t fileSize = 0;
     size_t fileReadSize = 0;
@@ -623,17 +624,39 @@ bool omanager_LoadBootstrapConfiguration
         }
     }
 
+    /*
+    * A new parameter "registrationId" has been added in the structure. As a consequence, the
+    * stored configuration file may be smaller than expected. The idea is to compare the file
+    * length against the structure length in order to detect if the new parameter is missing.
+    *
+    * The stored configuration remains in the wrong state. It will be updated to the new format
+    * when:
+    * - user updates the polling value
+    * - a connection is made to the server by polling or by user request
+    */
+    if ((fileSize - lenWritten) ==
+        (configPtr->serverObjectNumber *
+        (sizeof(ConfigServerToStore_t) - LWM2MCORE_REGISTRATION_ID_MAX_LEN)))
+    {
+        lenConfigServerObj = sizeof(ConfigServerToStore_t) - LWM2MCORE_REGISTRATION_ID_MAX_LEN;
+        LOG("LocationID parameter is not included");
+    }
+    else
+    {
+        lenConfigServerObj = sizeof(ConfigServerToStore_t);
+    }
+
     /* Allocate server objects and copy related data */
     for (loop = 0; loop < configPtr->serverObjectNumber; loop++)
     {
-        if (fileSize >= (lenWritten + sizeof(ConfigServerToStore_t)))
+        if (fileSize >= (lenWritten + lenConfigServerObj))
         {
             serverPtr = (ConfigServerObject_t*)lwm2m_malloc(sizeof(ConfigServerObject_t));
             if (serverPtr)
             {
                 memset(serverPtr, 0, sizeof(ConfigServerObject_t));
-                memcpy(serverPtr, rawData + lenWritten, sizeof(ConfigServerToStore_t));
-                lenWritten += sizeof(ConfigServerToStore_t);
+                memcpy(serverPtr, rawData + lenWritten, lenConfigServerObj);
+                lenWritten += lenConfigServerObj;
 
                 /* Check if the server object instance Id is already stored */
                 if (!omanager_GetBootstrapConfigurationServerInstance(configPtr,
