@@ -326,9 +326,9 @@ void test_lwm2mcore_SendAsyncResponse
         TEST_ASSERT(false);
     }
 
-    RequestPtr->uriLength = strlen("www.sierrawireless.com");
-    RequestPtr->uri = (char*)lwm2m_malloc(RequestPtr->uriLength + 1);
-    strncpy(RequestPtr->uri, "www.sierrawireless.com", RequestPtr->uriLength + 1);
+    size_t uriLength = strlen("www.sierrawireless.com");
+    RequestPtr->uri = (char*)lwm2m_malloc(uriLength+ 1);
+    strncpy(RequestPtr->uri, "www.sierrawireless.com", uriLength + 1);
 
     RequestPtr->method = 1;
 
