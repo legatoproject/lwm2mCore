@@ -112,7 +112,6 @@ lwm2mcore_stream_status_t;
 typedef struct
 {
     char *uri;                              ///< [IN] uri represents the path of the coap response
-    size_t uriLength;                       ///< [IN] length of uri
     coap_method_t method;                   ///< [IN] is the operation GET/PUT/POST
     uint16_t messageId;                     ///< [IN] coap message Id
     uint8_t token[8];                       ///< [IN] token

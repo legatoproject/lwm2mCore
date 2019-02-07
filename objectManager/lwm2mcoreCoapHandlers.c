@@ -275,14 +275,6 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
 #ifdef DELIMITER
     requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
 #endif
-    if (requestPtr->uri)
-    {
-        requestPtr->uriLength = strlen(requestPtr->uri);
-    }
-    else
-    {
-        requestPtr->uriLength = 0;
-    }
 
     requestPtr->method = message->code;
     requestPtr->buffer = message->payload;
@@ -355,14 +347,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
 #ifdef DELIMITER
     requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
 #endif
-    if (requestPtr->uri)
-    {
-        requestPtr->uriLength = strlen(requestPtr->uri);
-    }
-    else
-    {
-        requestPtr->uriLength = 0;
-    }
+
     requestPtr->method = message->code;
     requestPtr->buffer = message->payload;
     requestPtr->bufferLength = message->payload_len;
