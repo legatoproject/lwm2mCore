@@ -769,3 +769,24 @@ lwm2mcore_Sid_t lwm2mcore_GetTpfState
 
    return LWM2MCORE_ERR_COMPLETED_OK;
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to indicate that the server reads the update result resource.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_UpdateResultWasNotified
+(
+    lwm2mcore_UpdateType_t type     ///< [IN] Update type
+)
+{
+    (void) type;
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}

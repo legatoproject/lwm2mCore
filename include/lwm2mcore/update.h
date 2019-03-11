@@ -762,6 +762,28 @@ lwm2mcore_Sid_t lwm2mcore_IsFwUpdateInstallWaited
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to indicate that the server reads the update result resource.
+ *
+ *
+ * @note This API is called by LwM2MCore in order to notify the client that the LwM2M server reads
+ * the update result. The client can manage the connectivity to the server in case of a FW update
+ * or a SW update by supporting this API in order to know that the LwM2M server reads the update
+ * result after the update process, then the update is over on system point of view (server and
+ * platform)
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_UpdateResultWasNotified
+(
+    lwm2mcore_UpdateType_t type     ///< [IN] Update type
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Clean the stale workspace of aborted SOTA/FOTA job
  */
 //--------------------------------------------------------------------------------------------------

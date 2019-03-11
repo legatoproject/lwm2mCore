@@ -2401,6 +2401,7 @@ int omanager_ReadFwUpdateObj
                                             sizeof(updateResult),
                                             false);
             }
+            lwm2mcore_UpdateResultWasNotified(LWM2MCORE_FW_UPDATE_TYPE);
         }
         break;
 
