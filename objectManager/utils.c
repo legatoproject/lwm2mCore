@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <platform/types.h>
 #include <stddef.h>
+#include <string.h>
 #include "utils.h"
 
 //--------------------------------------------------------------------------------------------------
@@ -358,4 +359,21 @@ int64_t omanager_BytesToInt
     return value;
 }
 
-
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Safely truncating string copy function
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_StrCopy
+(
+    char* dst,                  ///< [OUT] destination buffer
+    const char* src,            ///< [IN] source string
+    size_t size                 ///< [IN] size of destination buffer
+)
+{
+    size_t srcLen = strlen(src);
+    size_t maxLen = size - 1;
+    size_t copyLen = (srcLen < maxLen) ? srcLen : maxLen;
+    memcpy(dst, src, copyLen);
+    dst[copyLen] = '\0';
+}

@@ -126,6 +126,19 @@ int64_t omanager_BytesToInt
     const char* bytesPtr,    ///< [IN] bytes the buffer contains data to be converted
     size_t len                  ///< [IN] Bytes length
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Safely truncating string copy function
+ */
+//--------------------------------------------------------------------------------------------------
+void omanager_StrCopy
+(
+    char* dst,                  ///< [OUT] destination buffer
+    const char* src,            ///< [IN] source string
+    size_t size                 ///< [IN] size of destination buffer
+);
+
 /**
   * @}
   */

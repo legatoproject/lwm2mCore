@@ -1782,7 +1782,7 @@ static bool UpdateSwListWakaama
         memset(aOnePath, 0, sizeof(aOnePath));
         if (strlen(aData) < sizeof(aOnePath))
         {
-            strncpy(aOnePath, aData, strlen(aData));
+            omanager_StrCopy(aOnePath, aData, sizeof(aOnePath));
         }
         else
         {
@@ -1803,7 +1803,7 @@ static bool UpdateSwListWakaama
                 memset(prefix, 0, sizeof(prefix));
                 if (strlen(aData) < sizeof(prefix))
                 {
-                    strncpy(prefix, aData, strlen(aData));
+                    omanager_StrCopy(prefix, aData, sizeof(prefix));
                 }
                 else
                 {
