@@ -24,6 +24,11 @@
 #include "handlers.h"
 #include "aclConfiguration.h"
 #include "bootstrapConfiguration.h"
+#include <downloader.h>
+#include <updateAgent.h>
+
+#include <lwm2mcore/lwm2mcorePackageDownloader.h>
+
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -141,6 +146,60 @@ static void PushCallbackHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to close a connection
+ *
+ * @return
+ *      - true if the treatment is launched
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+#ifndef LWM2M_DEREGISTER
+static bool CloseConnection
+(
+    smanager_ClientData_t* dataPtr     ///< [IN] instance reference
+)
+{
+    if (NULL == dataPtr)
+    {
+        return false;
+    }
+
+    /* Stop the current timers */
+    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+    {
+        LOG("Failed to stop the step timer");
+    }
+
+    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_INACTIVITY))
+    {
+        LOG("Failed to stop the inactivity timer");
+    }
+
+    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_DOWNLOAD))
+    {
+        LOG("Failed to stop the download timer");
+    }
+
+    dtls_FreeConnection(dataPtr->connListPtr);
+    dataPtr->lwm2mHPtr = NULL;
+    dataPtr->connListPtr = NULL;
+
+    /* Close the socket */
+    if (!lwm2mcore_UdpClose(SocketConfig))
+    {
+        LOG("Failed to close UDP connection");
+        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
+    }
+
+    /* Zero-init the socket structure */
+    memset(&SocketConfig, 0, sizeof(lwm2mcore_SocketConfig_t));
+
+    return true;
+}
+#endif
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function called by the LWM2M core to initiate a connection to a server
  *
  * @return
@@ -213,7 +272,7 @@ void lwm2m_close_connection
         if (targetPtr == appDataPtr->connListPtr)
         {
             appDataPtr->connListPtr = targetPtr->nextPtr;
-            lwm2m_free(targetPtr);
+            dtls_CloseAndFreePeer(targetPtr);
         }
         else
         {
@@ -226,7 +285,7 @@ void lwm2m_close_connection
             if (NULL != parentPtr)
             {
                 parentPtr->nextPtr = targetPtr->nextPtr;
-                lwm2m_free(targetPtr);
+                dtls_CloseAndFreePeer(targetPtr);
             }
         }
         dtls_UpdateDtlsList(appDataPtr->connListPtr);
@@ -282,7 +341,7 @@ static void Lwm2mClientInactivityHandler
     }
 
     /* Notify that the session is inactive */
-    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_INACTIVE);
+    smanager_SendSessionEvent(EVENT_TYPE_REGISTRATION, EVENT_STATUS_INACTIVE, NULL);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -305,7 +364,7 @@ static void Lwm2mClientStepHandler
     LOG("Entering");
 
     /* This function does two things:
-     * - first it does the work needed by liblwm2m (eg. (re)sending some packets).
+     * - first it does the work needed by Wakaama (eg. (re)sending some packets).
      * - Secondly it adjusts the timeout value (default 60s) depending on the state of the
      *   transaction
      *   (eg. retransmission) and the time between the next operation
@@ -329,17 +388,43 @@ static void Lwm2mClientStepHandler
             LOG("All retransmission attempts failed");
             // All retransmission attempts failed
             // On tinyDTLS side, bufferized message are deleted
-            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);
-            // Delete DM credentials if present
-            if (omanager_DeleteDmCredentials())
+            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL, NULL);
+
+            if (STATE_REGISTERING == DataCtxPtr->lwm2mHPtr->state)
             {
-                // DM credentials were deleted: force connection to the bootstrap server.
-                DataCtxPtr->lwm2mHPtr->state = STATE_BOOTSTRAP_REQUIRED;
+                lwm2m_server_t* targetPtr = DataCtxPtr->lwm2mHPtr->serverList;
+                lwm2m_transaction_t* transacPtr = DataCtxPtr->lwm2mHPtr->transactionList;
+                LOG("Force bootstrap");
+
+                // Delete DM credentials if present
+                omanager_DeleteDmCredentials();
+
+                DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+
+                while (targetPtr)
+                {
+                    targetPtr->status = STATE_REG_FAILED;
+                    if (targetPtr->sessionH != NULL)
+                    {
+                        lwm2m_close_connection(targetPtr->sessionH,
+                                               DataCtxPtr->lwm2mHPtr->userData);
+                        targetPtr->sessionH = NULL;
+                    }
+                    targetPtr->dirty = true;
+                    targetPtr = targetPtr->next;
+                }
+
+                while (transacPtr)
+                {
+                    lwm2m_transaction_t* nextTransacPtr = transacPtr->next;
+                    transaction_remove(DataCtxPtr->lwm2mHPtr, transacPtr);
+                    transacPtr = nextTransacPtr;
+                }
             }
             else
             {
                 // Close the connection
-                smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_FAIL);
+                smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_FAIL, NULL);
                 lwm2mcore_Disconnect((lwm2mcore_Ref_t)DataCtxPtr);
                 return;
             }
@@ -461,10 +546,12 @@ static void ManageRegistration
     smanager_SendStatusEvent(*statusPtr);
 
     // Check if a download should be resumed
-    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ResumePackageDownload())
+#ifndef LWM2M_EXTERNAL_DOWNLOADER
+    if (LWM2MCORE_ERR_COMPLETED_OK != downloadManager_ResumePackageDownloader())
     {
         LOG("Error while checking download resume");
     }
+#endif
 
     /* Launch inactivity timer to monitor inactivity during registered state */
     if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
@@ -504,11 +591,16 @@ void smanager_SendStatusEvent
 //--------------------------------------------------------------------------------------------------
 void smanager_SendSessionEvent
 (
-    smanager_EventType_t eventId,         ///< [IN] Event Id
-    smanager_EventStatus_t eventstatus    ///< [IN] Event status
+    smanager_EventType_t    eventId,        ///< [IN] Event Id
+    smanager_EventStatus_t  eventstatus,    ///< [IN] Event status
+    void*                   contextPtr      ///< [IN] Context
 )
 {
     static lwm2mcore_Status_t status;
+
+#ifndef LWM2M_DEREGISTER
+    (void)contextPtr;
+#endif
 
     switch (eventId)
     {
@@ -537,6 +629,26 @@ void smanager_SendSessionEvent
                     LOG("BOOTSTRAP FAILURE");
                     status.event = LWM2MCORE_EVENT_SESSION_FAILED;
                     smanager_SendStatusEvent(status);
+                }
+                break;
+
+                case EVENT_STATUS_FINISHING:
+                {
+                    /* Stop the timer and launch it */
+                    if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+                    {
+                        LOG("Error to stop the step timer");
+                    }
+
+                    /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the update
+                     * request
+                     */
+                    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                                    1,
+                                                    Lwm2mClientStepHandler))
+                    {
+                        LOG("ERROR to launch the step timer for registration update");
+                    }
                 }
                 break;
 
@@ -612,6 +724,8 @@ void smanager_SendSessionEvent
                     {
                         ManageRegistration(&status);
                     }
+                    status.event = LWM2MCORE_EVENT_REG_UPDATE_DONE;
+                    smanager_SendStatusEvent(status);
                 }
                 break;
 
@@ -688,6 +802,24 @@ void smanager_SendSessionEvent
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
                         smanager_SendStatusEvent(status);
                     }
+                    else
+                    {
+                        /* Stop the timer and launch it */
+                        if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+                        {
+                            LOG("Error to stop the step timer");
+                        }
+
+                        /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the update
+                         * request
+                         */
+                        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                                        1,
+                                                        Lwm2mClientStepHandler))
+                        {
+                            LOG("ERROR to launch the step timer for registration update");
+                        }
+                    }
                 }
                 break;
 
@@ -753,8 +885,48 @@ void smanager_SendSessionEvent
 
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
+#ifdef LWM2M_DEREGISTER
+                    smanager_ClientData_t* dataPtr;
+                    lwm2m_context_t* lwm2mContextPtr;
+#endif
                     LOG("SESSION DONE");
                     BootstrapSession = false;
+
+#ifdef LWM2M_DEREGISTER
+                    if (contextPtr)
+                    {
+                        lwm2mContextPtr = (lwm2m_context_t*)contextPtr;
+                        dataPtr = (smanager_ClientData_t*)(lwm2mContextPtr->userData);
+                        dtls_FreeConnection(dataPtr->connListPtr);
+                        dataPtr->lwm2mHPtr = NULL;
+                        dataPtr->connListPtr = NULL;
+
+                        /* Close the socket */
+                        if (!lwm2mcore_UdpClose(SocketConfig))
+                        {
+                            LOG("Failed to close UDP connection");
+                            lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
+                        }
+
+                        /* Zero-init the socket structure */
+                        memset(&SocketConfig, 0, sizeof(lwm2mcore_SocketConfig_t));
+
+                        if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+                        {
+                            LOG("Failed to stop the step timer");
+                        }
+
+                        if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_INACTIVITY))
+                        {
+                            LOG("Failed to stop the inactivity timer");
+                        }
+
+                        if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_DOWNLOAD))
+                        {
+                            LOG("Failed to stop the download timer");
+                        }
+                    }
+#endif
                     status.event = LWM2MCORE_EVENT_SESSION_FINISHED;
                     smanager_SendStatusEvent(status);
                 }
@@ -783,10 +955,13 @@ void smanager_SendSessionEvent
     }
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Get the target server context
+ *
+ * @return
+ *      - DM server context
+ *      - @c NULL if the device is not registered to DM server
  */
 //--------------------------------------------------------------------------------------------------
 static lwm2m_server_t* GetTargetServer
@@ -798,13 +973,14 @@ static lwm2m_server_t* GetTargetServer
     smanager_ClientData_t* dataPtr = DataCtxPtr;
     lwm2m_server_t* targetPtr = NULL;
 
-    /* Check that the device is registered to DM server */
+    // Check that the device is registered to DM server
     if ((true == lwm2mcore_ConnectionGetType((lwm2mcore_Ref_t)dataPtr, &registered) && registered))
     {
-        /* Retrieve the serverID from list */
+        // Retrieve the serverID from list
         targetPtr = dataPtr->lwm2mHPtr->serverList;
     }
 
+    // TODO: Check evolution for multi-server. Here, only the first server is taken into account.
     return targetPtr;
 }
 
@@ -838,7 +1014,7 @@ void lwm2mcore_UdpReceiveCb
         return;
     }
 
-    // Let liblwm2m respond to the query depending on the context
+    // Let Wakaama respond to the query depending on the context
     LOG("Handling packet");
     rc = dtls_HandlePacket(connPtr, bufferPtr, (size_t)len);
     if (rc)
@@ -872,8 +1048,8 @@ void lwm2mcore_UdpReceiveCb
 bool omanager_UpdateRequest
 (
     lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
-    bool withObjects                ///< [IN] indicates if supported object instance list needs to
-                                    ///< be sent
+    uint8_t regUpdateOptions        ///< [IN] bitfield of requested parameters to be added in the
+                                    ///< registration update message
 )
 {
     bool result = false;
@@ -901,7 +1077,7 @@ bool omanager_UpdateRequest
             LOG_ARG("shortServerId %d", targetPtr->shortID);
             if (COAP_NO_ERROR != lwm2m_update_registration(dataPtr->lwm2mHPtr,
                                                            targetPtr->shortID,
-                                                           withObjects))
+                                                           regUpdateOptions))
             {
                 LOG_ARG("Error while sending update registration on server %d", targetPtr->shortID);
             }
@@ -943,6 +1119,32 @@ bool omanager_UpdateRequest
  *                      PUBLIC FUNCTIONS
  */
 //--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Set an event handler for LWM2M core events
+ *
+ * @note The handler can also be set using @ref lwm2mcore_Init function.
+ * @ref lwm2mcore_Init function is called before initiating a connection to any LwM2M server.
+ * @ref lwm2mcore_SetEventHandler function is called at device boot in order to receive events.
+ *
+ * @return
+ *  - true on success
+ *  - false on failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SetEventHandler
+(
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
+)
+{
+    if (NULL == eventCb)
+    {
+        return false;
+    }
+    StatusCb = eventCb;
+    return true;
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1009,10 +1211,8 @@ void lwm2mcore_Free
             lwm2m_free(dataPtr->lwm2mcoreCtxPtr);
         }
 
-        if (NULL != dataPtr)
-        {
-            lwm2m_free(dataPtr);
-        }
+        lwm2m_free(dataPtr);
+        DataCtxPtr = NULL;
     }
 }
 
@@ -1087,7 +1287,7 @@ bool lwm2mcore_Update
         return false;
     }
 
-    return omanager_UpdateRequest(instanceRef, false);
+    return omanager_UpdateRequest(instanceRef, LWM2M_REG_UPDATE_NONE);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1154,11 +1354,82 @@ bool lwm2mcore_NotifyResourceChange
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to close a connection
+ * @brief Function to close a connection. A deregister message is first sent to the server. After
+ *        the end of its treatement, the connection with the server is closed.
+ *
+ * @note The deregister procedure may take several seconds.
+ *
+ * @warning To be fully managed, the @c LWM2M_DEREGISTER flag should be embedded.
  *
  * @return
- *      - true if the treatment is launched
- *      - else false
+ *      - @c true if the treatment is launched
+ *      - else @c false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_DisconnectWithDeregister
+(
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
+)
+{
+    smanager_ClientData_t* dataPtr;
+
+#ifndef LWM2M_DEREGISTER
+    LOG("WARNING: lwm2mcore_DisconnectWithDeregister should be used when LWM2M_DEREGISTER flag is\
+ embedded");
+#endif /* !LWM2M_DEREGISTER */
+
+    if (!instanceRef)
+    {
+        LOG("Null instance reference");
+        return false;
+    }
+
+    /* Stop package download if one is on-going */
+    LOG("Suspend Download");
+    downloader_SuspendDownload();
+
+    dataPtr = (smanager_ClientData_t*)instanceRef;
+
+    /* Stop the agent */
+    dataPtr->lwm2mHPtr->userData = dataPtr;
+
+    if (true == lwm2m_close(dataPtr->lwm2mHPtr))
+    {
+#ifdef LWM2M_DEREGISTER
+        /* Stop the current timers */
+        if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+        {
+            LOG("Failed to stop the step timer");
+        }
+        /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the deregister msg */
+        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                        1,
+                                        Lwm2mClientStepHandler))
+        {
+            LOG("ERROR to launch the step timer for registration update");
+        }
+#else /* !LWM2M_DEREGISTER */
+        CloseConnection(dataPtr);
+        /* Notify that the connection is stopped */
+        smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS, NULL);
+#endif /* !LWM2M_DEREGISTER */
+    }
+    else
+    {
+        lwm2m_followClosure(dataPtr->lwm2mHPtr);
+    }
+
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to close a connection with the server without initiating a deregister procedure.
+ *        It is the case when the data connection is lost.
+ *
+ * @return
+ *      - @c true if the treatment is launched
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_Disconnect
@@ -1176,41 +1447,19 @@ bool lwm2mcore_Disconnect
 
     /* Stop package download if one is on-going */
     LOG("Suspend Download");
-    lwm2mcore_SuspendPackageDownload();
+    downloader_SuspendDownload();
 
-    /* Stop the current timers */
-    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
-    {
-        LOG("Failed to stop the step timer");
-    }
-
-    if (!lwm2mcore_TimerStop(LWM2MCORE_TIMER_INACTIVITY))
-    {
-        LOG("Failed to stop the inactivity timer");
-    }
-
-    dataPtr = (smanager_ClientData_t*) instanceRef;
+    dataPtr = (smanager_ClientData_t*)instanceRef;
 
     /* Stop the agent */
-    lwm2m_close(dataPtr->lwm2mHPtr);
-    dtls_FreeConnection(dataPtr->connListPtr);
-    dataPtr->lwm2mHPtr = NULL;
-    dataPtr->connListPtr = NULL;
+    dataPtr->lwm2mHPtr->userData = dataPtr;
+    lwm2m_followClosure(dataPtr->lwm2mHPtr);
 
-    /* Close the socket */
-    if (!lwm2mcore_UdpClose(SocketConfig))
-    {
-        LOG("Failed to close UDP connection");
-        lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
-    }
-
-    /* Zero-init the socket structure */
-    memset(&SocketConfig, 0, sizeof(lwm2mcore_SocketConfig_t));
-
-    /* Notify that the connection is stopped */
-    smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_SUCCESS);
-
+#ifndef LWM2M_DEREGISTER
+    CloseConnection(dataPtr);
+#endif
     return true;
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1346,37 +1595,6 @@ lwm2mcore_PushResult_t lwm2mcore_Push
     return result;
 }
 
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Function to send an empty response to server.
- *
- * @return
- *      - true if response is initiated
- *      - else false
- */
-//--------------------------------------------------------------------------------------------------
-bool lwm2mcore_SendEmptyResponse
-(
-    uint16_t mid
-)
-{
-    lwm2m_server_t* targetPtr = GetTargetServer();
-
-    if (targetPtr)
-    {
-        lwm2m_send_empty_response(DataCtxPtr->lwm2mHPtr,
-                                  targetPtr->shortID,
-                                  mid);
-        return true;
-    }
-    else
-    {
-        LOG("serverList is NULL");
-        return false;
-    }
-}
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Function to send an unsolicited message to server (Push)
@@ -1424,7 +1642,7 @@ bool lwm2mcore_SendNotification
 bool lwm2mcore_SendResponse
 (
     lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
-    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response pointer
 )
 {
     bool registered = false;
@@ -1451,10 +1669,10 @@ bool lwm2mcore_SendResponse
                                        targetPtr->shortID,
                                        responsePtr->messageId,
                                        responsePtr->code,
-                                       responsePtr->tokenPtr,
+                                       responsePtr->token,
                                        responsePtr->tokenLength,
                                        responsePtr->contentType,
-                                       responsePtr->payload,
+                                       responsePtr->payloadPtr,
                                        responsePtr->payloadLength,
                                        responsePtr->streamStatus);
         }
@@ -1475,8 +1693,8 @@ bool lwm2mcore_SendResponse
 bool lwm2mcore_SendAsyncResponse
 (
     lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
-    lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] CoAP request refernce
-    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response
+    lwm2mcore_CoapRequest_t* requestPtr,        ///< [IN] CoAP request pointer
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response pointer
 )
 {
     bool registered = false;
@@ -1506,7 +1724,7 @@ bool lwm2mcore_SendAsyncResponse
                                         responsePtr->token,
                                         responsePtr->tokenLength,
                                         responsePtr->contentType,
-                                        responsePtr->payload,
+                                        responsePtr->payloadPtr,
                                         responsePtr->payloadLength);
         }
     }
@@ -1674,4 +1892,42 @@ void lwm2mcore_DeleteRegistrationID
     {
         omanager_StoreBootstrapConfiguration(bsConfigPtr);
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to schedule a registration update message to all servers
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_SendUpdateAllServers
+(
+    uint8_t regUpdateOptions        ///< [IN] bitfield of requested parameters to be added in the
+                                    ///< registration update message
+)
+{
+    if (!DataCtxPtr)
+    {
+        LOG("Context NULL");
+        return;
+    }
+
+    if((regUpdateOptions & LWM2M_REG_UPDATE_LIFETIME) == LWM2M_REG_UPDATE_LIFETIME)
+    {
+
+        uint32_t lifetime = 0;
+        lwm2m_server_t* targetPtr;
+
+        // Get the lifetime
+        omanager_GetLifetime(&lifetime);
+
+        targetPtr = GetTargetServer();
+        while (targetPtr)
+        {
+            targetPtr->lifetime = lifetime;
+            targetPtr = targetPtr->next;
+        }
+    }
+
+    omanager_UpdateRequest((lwm2mcore_Ref_t)DataCtxPtr, regUpdateOptions);
 }

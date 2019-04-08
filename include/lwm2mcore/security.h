@@ -322,7 +322,7 @@ lwm2mcore_Sid_t lwm2mcore_ProcessSha1
 lwm2mcore_Sid_t lwm2mcore_EndSha1
 (
     void* sha1CtxPtr,                   ///< [IN] SHA1 context pointer
-    lwm2mcore_PkgDwlType_t packageType, ///< [IN] Package type (FW or SW)
+    lwm2mcore_UpdateType_t packageType, ///< [IN] Package type (FW or SW)
     uint8_t* signaturePtr,              ///< [IN] Package signature used for verification
     size_t signatureLen                 ///< [IN] Package signature length
 );

@@ -45,7 +45,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
 //--------------------------------------------------------------------------------------------------
 coap_status_t lwm2mcore_CallCoapExternalHandler
 (
-    coap_packet_t* message,                           ///< [IN] CoAP request
+    coap_packet_t* messagePtr,                        ///< [IN] CoAP request pointer
     lwm2mcore_StreamStatus_t streamStatus             ///< [IN] Stream status
 );
 /**

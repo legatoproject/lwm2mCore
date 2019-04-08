@@ -209,9 +209,19 @@ int dtls_Resume
 //--------------------------------------------------------------------------------------------------
 void dtls_HandshakeRetransmission
 (
-    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS conection list
+    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS connection list
     dtls_tick_t*        timerValue,         ///< [INOUT] Timer value for retransmission
     bool*               isMaxReached        ///< [INOUT] Is maximum retransmission reached ?
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to close and free peer
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_CloseAndFreePeer
+(
+    dtls_Connection_t* targetPtr            ///< [IN] DTLS connection
 );
 
 /**

@@ -98,3 +98,20 @@ int lwm2m_strncmp
 {
     return strncmp(s1Ptr, s2Ptr, n);
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Memory reallocation
+ *
+ * @return
+ *  - memory address
+ */
+//--------------------------------------------------------------------------------------------------
+void* lwm2mcore_realloc
+(
+    void*  ptr,         ///< [IN] Data address
+    size_t newSize      ///< [IN] New size allocation
+)
+{
+    return realloc(ptr, newSize);
+}

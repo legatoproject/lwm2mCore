@@ -18,6 +18,8 @@
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/device.h>
 #include <lwm2mcore/udp.h>
+#include <lwm2mcore/lwm2mcorePackageDownloader.h>
+#include <lwm2mcore/update.h>
 #include "dtls_debug.h"
 #include "dtlsConnection.h"
 
@@ -30,6 +32,7 @@
 #include <errno.h>
 #include <signal.h>
 #include "clientConfig.h"
+#include "update.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -126,11 +129,11 @@ static void StopConnection
     void
 )
 {
+#ifdef LWM2M_DEREGISTER
+    lwm2mcore_DisconnectWithDeregister(ContextPtr);
+#else
     lwm2mcore_Disconnect(ContextPtr);
-    lwm2mcore_Free(ContextPtr);
-    ContextPtr = NULL;
-    FD_CLR(LinuxSocketConfig.sock, &Fd);
-    LinuxSocketConfig.sock = 0;
+#endif
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -180,14 +183,23 @@ static int StatusHandler
 
         case LWM2MCORE_EVENT_SESSION_FINISHED:
             printf("The session with the server finished successfully\n");
+            lwm2mcore_Free(ContextPtr);
+            ContextPtr = NULL;
+            FD_CLR(LinuxSocketConfig.sock, &Fd);
+            LinuxSocketConfig.sock = 0;
             break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS:
             printf("A descriptor was downloaded with the package size\n");
+
+            ClientStartDownload(eventStatus.u.pkgStatus.pkgType,
+                                eventStatus.u.pkgStatus.numBytes,
+                                false);
             break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FINISHED:
             printf("The OTA update package downloaded successfully\n");
+            lwm2mcore_Update(ContextPtr);
             break;
 
         case LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_FAILED:
@@ -255,11 +267,12 @@ static int StatusHandler
 //--------------------------------------------------------------------------------------------------
 static void Interrupt
 (
-    int signal      ///< [IN] Signal number
+    int sigNumber      ///< [IN] Signal number
 )
 {
-    (void)signal;
-    printf("...Please wait for program to exit...\n");
+    char buffer[] ="...Please wait for program to exit...\n";
+    (void)sigNumber;
+    write(STDERR_FILENO, buffer, strlen(buffer));
     Quit = 1;
 }
 
@@ -306,9 +319,9 @@ CommandDesc_t Commands[] =
 //--------------------------------------------------------------------------------------------------
 static CommandDesc_t* FindCommand
 (
-    CommandDesc_t* commandArrayPtr, ///< [IN] Commands table
-    char* bufferPtr,                ///< [IN] Incoming command
-    size_t length                   ///< [IN] Incoming command length
+    CommandDesc_t*  commandArrayPtr,    ///< [IN] Commands table
+    uint8_t*        bufferPtr,          ///< [IN] Incoming command
+    size_t          length              ///< [IN] Incoming command length
 )
 {
     int i = 0;
@@ -322,7 +335,7 @@ static CommandDesc_t* FindCommand
 
     while ((NULL != commandArrayPtr[i].namePtr)
         && ((strlen(commandArrayPtr[i].namePtr) != length)
-         || (strncmp(bufferPtr, commandArrayPtr[i].namePtr, length))))
+         || (strncmp((char*)bufferPtr, commandArrayPtr[i].namePtr, length))))
     {
         i++;
     }
@@ -344,7 +357,7 @@ static CommandDesc_t* FindCommand
 static void DisplayHelp
 (
     CommandDesc_t*  commandArrayPtr,    ///< [IN] Supported commands table
-    char*           bufferPtr           ///< [IN] Incoming command
+    uint8_t*        bufferPtr           ///< [IN] Incoming command
 )
 {
     printf("Command\tDescription\n");
@@ -431,7 +444,7 @@ static void TreatCmd
         case QUIT:
             if (NULL != ContextPtr)
             {
-                lwm2mcore_Disconnect(ContextPtr);
+                lwm2mcore_DisconnectWithDeregister(ContextPtr);
                 lwm2mcore_Free(ContextPtr);
             }
             Quit = 1;
@@ -451,15 +464,15 @@ static void TreatCmd
 //--------------------------------------------------------------------------------------------------
 static void HandleCommand
 (
-    CommandDesc_t* commandArrayPtr,
-    char* bufferPtr
+    CommandDesc_t*  commandArrayPtr,    ///< Commands table
+    uint8_t*        bufferPtr           ///< Incoming command
 )
 {
     CommandDesc_t* cmdPtr;
     int length = 0;
 
     // Find end of command name
-    while (bufferPtr[length] != 0 && !isspace(bufferPtr[length]&0xFF))
+    while (bufferPtr[length] != 0 && !isspace(bufferPtr[length]))
     {
         length++;
     }
@@ -467,10 +480,6 @@ static void HandleCommand
     cmdPtr = FindCommand(commandArrayPtr, bufferPtr, length);
     if (NULL != cmdPtr)
     {
-        while (bufferPtr[length] != 0 && isspace(bufferPtr[length]&0xFF))
-        {
-            length++;
-        }
         TreatCmd(cmdPtr->cmdId);
     }
     else
@@ -497,6 +506,7 @@ int main
     int opt;
     int result;
     uint8_t buffer[MAX_PACKET_SIZE];
+    struct sigaction psa;
 
     printf("#              #     #  #####  #     #  #####\n");
     printf("#       #    # ##   ## #     # ##   ## #     #  ####  #####  ######\n");
@@ -531,7 +541,7 @@ int main
         opt += 1;
     }
 
-    DisplayHelp(Commands, (char*)buffer);
+    DisplayHelp(Commands, buffer);
     printf("Connection will be automatically launched in 5 seconds\n");
     sleep(5);
 
@@ -543,7 +553,8 @@ int main
     clientConfigRead(&ClientConfiguration);
 
     // Install signal handler to catch CTRL+C to gracefully shutdown
-    signal(SIGINT, Interrupt);
+    psa.sa_handler = Interrupt;
+    sigaction(SIGTSTP, &psa, NULL);
 
     // Automatically launch a connection
     TreatCmd(START_CNX);
@@ -584,8 +595,9 @@ int main
                     buffer[numBytes] = 0;
                     // We call the corresponding callback of the typed command passing it the buffer
                     // for further arguments
-                    HandleCommand(Commands, (char*)buffer);
+                    HandleCommand(Commands, buffer);
                 }
+
                 if (0 == Quit)
                 {
                     printf("\r\n> ");

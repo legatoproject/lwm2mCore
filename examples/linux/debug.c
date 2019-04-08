@@ -12,6 +12,41 @@
 #include <string.h>
 #include <platform/types.h>
 #include <stdint.h>
+#include <time.h>
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Define buffer length for log
+ */
+//--------------------------------------------------------------------------------------------------
+#define LOG_BUFFER_LEN 255
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Add timestamp in log
+ *
+ * @return
+ *  - number of bytes placed in the array sPtr
+ */
+//--------------------------------------------------------------------------------------------------
+static inline size_t PrintTimestamp
+(
+    char*   sPtr,   ///[INOUT] Log string
+    size_t  len,    ///[IN] sPtr sizeof
+    time_t  t       ///[IN] time
+)
+{
+    struct tm *tmp;
+    struct tm result;
+    tmp = localtime_r(&t, &  result);
+    if (!tmp)
+    {
+        perror("tmp is NULL");
+        return 0;
+    }
+
+    return strftime(sPtr, len, "%b %d %H:%M:%S", tmp);
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -21,10 +56,21 @@
 #if LWM2M_WITH_LOGS
 void lwm2m_printf(const char * format, ...)
 {
+    static char timebuf[32];
     va_list ap;
+    static char strBuffer[LOG_BUFFER_LEN];
+
+    if (PrintTimestamp(timebuf,sizeof(timebuf), time(NULL)))
+    {
+        fprintf(stdout, "%s ", timebuf);
+    }
+
+    memset(strBuffer, 0, LOG_BUFFER_LEN);
+
     va_start(ap, format);
-    vprintf(format, ap);
+    vsnprintf(strBuffer, LOG_BUFFER_LEN, format, ap);
     va_end(ap);
+    printf("%s", strBuffer);
 }
 #endif
 

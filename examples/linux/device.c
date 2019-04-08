@@ -551,6 +551,12 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
  * Request to reboot the device
  * This API needs to have a procedural treatment
  *
+ * @warning The client MUST acknowledge this function before treating the reboot request, in order
+ * to allow LwM2MCore to acknowledge the LwM2M server that the reboot request is correctly taken
+ * into account.
+ * Advice: launch a timer (value could be decided by the client implementation) in order to treat
+ * the reboot request.
+ *
  * @return
  *  - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails

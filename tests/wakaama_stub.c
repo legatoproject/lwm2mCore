@@ -277,12 +277,12 @@ int lwm2m_update_registration
 (
     lwm2m_context_t* contextP,
     uint16_t shortServerID,
-    bool withObjects
+    uint8_t regUpdateOptions
 )
 {
     (void)contextP;
     (void)shortServerID;
-    (void)withObjects;
+    (void)regUpdateOptions;
 
     return COAP_NO_ERROR;
 }
@@ -299,13 +299,21 @@ void lwm2m_resource_value_changed
     return;
 }
 
-void lwm2m_close
+bool lwm2m_close
 (
     lwm2m_context_t* contextP
 )
 {
     (void)contextP;
-    return;
+    return true;
+}
+
+void lwm2m_followClosure
+(
+    lwm2m_context_t* contextP
+)
+{
+    (void)contextP;
 }
 
 void lwm2m_set_push_callback

@@ -74,9 +74,24 @@ lwm2mcore_Sid_t lwm2mcore_SetPollingTimer
     uint32_t interval   ///< [IN] Polling Timer interval in seconds
 )
 {
+    uint32_t lifetime = 0;
+
+    printf("interval %u sec\n", interval);
     if (false == lwm2mcore_CheckLifetimeLimit(interval))
     {
         return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    if ((LWM2MCORE_ERR_COMPLETED_OK == lwm2mcore_GetLifetime(&lifetime))
+     && (lifetime == interval))
+    {
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_SetLifetime(interval))
+    {
+        printf("Failed to set lifetime\n");
+        return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     return LWM2MCORE_ERR_COMPLETED_OK;

@@ -303,6 +303,7 @@ static lwm2mcore_Resource_t DeviceResources[] =
         NULL,                                       //.write
         omanager_ExecDeviceObj,                     //.exec
     },
+#ifdef LWM2M_OBJECT_3_BATTERY
     {
         LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,         //.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
@@ -311,6 +312,7 @@ static lwm2mcore_Resource_t DeviceResources[] =
         NULL,                                       //.write
         NULL,                                       //.exec
     },
+#endif
     {
         LWM2MCORE_DEVICE_CURRENT_TIME_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_TIME,               //.type
@@ -471,6 +473,22 @@ static lwm2mcore_Resource_t FirmwareUpdateResources[] =
     },
     {
         LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadFwUpdateObj,                   //.read
+        NULL,                                       //.write
+        NULL                                        //.exec
+    },
+    {
+        LWM2MCORE_FW_UPDATE_PROTO_SUPPORT_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        2,                                          //.maxResInstCnt
+        omanager_ReadFwUpdateObj,                   //.read
+        NULL,                                       //.write
+        NULL                                        //.exec
+    },
+    {
+        LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID,    //.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
         1,                                          //.maxResInstCnt
         omanager_ReadFwUpdateObj,                   //.read

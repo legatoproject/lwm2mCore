@@ -146,8 +146,12 @@
  * @c SIERRA                                    | Mandatory   | Include Sierra Wireless updates in Wakaama and tinyDTLS and support of Sierra proprietary objects
  * @c LWM2M_SUPPORT_JSON                        | Optional    | Enable JSON payload support
  * @c LWM2M_DEREGISTER                          | Optional    | Send a DEREGISTER message to the server when the device disconects from the server
+ * @c LWM2M_EXTERNAL_DOWNLOADER                 | Optional    | Use an external package downloader (on client side)
  * @c LWM2M_LOCATION_FLOAT                      | Optional    | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
  * @c DELIMITER                                 | Optional    | Change default CoAP URI delimiter
+ * @c LWM2M_OBJECT_3_BATTERY                    | Optional    | Enable read on battery level (/3/0/9)
+ * @c LWM2M_OBJECT_9                            | Optional    | Used for buffer allocation for embedded application (SOTA)
+ * @c LEGACY_FW_STATUS                          | Optional    | Used to ensure compatibility with Sierra Wireless proprietary downloader
  *
  * The recommended compilation flags to be used are:
  * - @c LWM2M_CLIENT_MODE
@@ -158,6 +162,8 @@
  * - @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT
  * - @c WITH_TINYDTLS
  * - @c SIERRA
+ * - @c LWM2M_OBJECT_3_BATTERY
+ * - @c LWM2M_OBJECT_9
  * - @c LWM2M_DEREGISTER (but depends on the server behavior)
  * - @c LWM2M_LOCATION_FLOAT if the server supports the last v1.0 LwM2M specification or newer
  *   version
@@ -270,6 +276,13 @@
  * @note To be fully compliant with LwM2M 1.0 specification or newer versions, the
  * @c LWM2M_LOCATION_FLOAT compilation flag needs to be used.
  *
+ * @subsection subs_lwm2m_downloader Package downloader
+ * A LwM2M server can request that a device downloads a package in order to update/install a
+ * Firmware/embedded application.
+ * The package downloads can be managed by LwM2MCore or by the client itself.
+ * To manage the package download on client side, please embed the @c LWM2M_EXTERNAL_DOWNLOADER
+ * compilation flag.
+ *
  * @page p_integration Integration
  * @tableofcontents
  *
@@ -282,6 +295,7 @@
  *  All header files are included in @c include/lwm2mcore
  * OS service header file   | OS specific header file   | Description
  * :----------------------- | :------------------------ | :-------------
+ * @c memory.h              | No                        | Memory service
  * @c mutex.h               | No                        | Mutex service
  * @c paramStorage.h        | No                        | Parametrer storage service
  * @c sem.h                 | No                        | Semaphore service
@@ -435,18 +449,52 @@
  * participant "Device Management server" as Dm
  *
  * client -> lwm2mcore: ""lwm2mcore_Disconnect(...)""
- * lwm2mcore -> lwm2mcore: Suspend package download*
- * lwm2mcore -> lwm2mcore: Stop cyclic timer
+ * lwm2mcore -> lwm2mcore: Suspend package download
+ * lwm2mcore -> lwm2mcore: Stop cyclic timers
  * lwm2mcore -> wakaama: ""lwm2m_close""
- * group LWM2M_DEREGISTER flag is used
- * wakaama -> Dm: Send a ""DEREGISTER"" message
- * wakaama <- Dm: ""CoAP_DELETED""
- * end
  * wakaama -> wakaama: Free registered objects
  * lwm2mcore -> tinyDTLS: Free context
  * tinyDTLS -> Dm: ""DTLS_CLOSE""
  * lwm2mcore -> lwm2mcore: Free DTLS connection list
  *
+ * lwm2mcore -> adaptationLayer: ""lwm2mcore_UdpClose""
+ * adaptationLayer -> adaptationLayer: Close socket
+ * lwm2mcore <-- adaptationLayer: Result
+ * client <- lwm2mcore: ""LWM2MCORE_EVENT_SESSION_FINISHED""
+ * @enduml
+ *
+ * @startuml{lwm2mcore_disconnection_deregister.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore disconnection
+ *
+ * participant "Client" as client
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * client -> lwm2mcore: ""lwm2mcore_DisconnectWithDeregister(...)""
+ * lwm2mcore -> lwm2mcore: Suspend package download
+ * lwm2mcore -> wakaama: ""lwm2m_close""
+ *
+ * alt LWM2M_DEREGISTER flag is used
+ * lwm2mcore -> lwm2mcore: Schedule a 1-sec timer to treat the ""DEREGISTER"" message
+ * wakaama -> Dm: Send a ""DEREGISTER"" message
+ * wakaama <- Dm: ""CoAP_DELETED""
+ * wakaama -> wakaama: ""lwm2m_followClosure""
+ * else
+ * lwm2mcore -> wakaama: ""lwm2m_followClosure""
+ * end
+ * wakaama -> wakaama: Free registered objects
+ * wakaama -> lwm2mcore: Event ""EVENT_SESSION"" - ""EVENT_STATUS_DONE_SUCCESS""
+ * lwm2mcore -> lwm2mcore: Close UDP socket
+ * lwm2mcore -> lwm2mcore: Stop cyclic timers
+ * lwm2mcore -> lwm2mcore: Free DTLS connection list
  * lwm2mcore -> adaptationLayer: ""lwm2mcore_UdpClose""
  * adaptationLayer -> adaptationLayer: Close socket
  * lwm2mcore <-- adaptationLayer: Result
@@ -732,7 +780,121 @@
  *
  * @section LwM2MCore_lwm2mcore_fota FOTA: Firmware Update Over-The-Air
  *
- * @todo Schematics for FOTA needs to be created
+ * @startuml{lwm2mcore_Firmware_update.png}
+ * autonumber
+ * hide footbox
+ * title LwM2MCore Firmware update
+ *
+ * participant "Client" as client
+ * participant "Download thread" as clientDownload
+ * box "LwM2MCore" #lightBlue
+ * participant "LwM2MCore" as lwm2mcore
+ * participant "Adaptation Layers" as adaptationLayer
+ * participant "Wakaama" as wakaama
+ * participant "tinyDTLS" as tinyDTLS
+ * end box
+ * participant "Bootstrap server" as Bs
+ * participant "Device Management server" as Dm
+ *
+ * group Device Management server checks FW versions, FW update state and result values
+ * lwm2mcore <- Dm: READ /3/0/3 (FW version)
+ * lwm2mcore -> Dm: value
+ *
+ * lwm2mcore <- Dm: READ /5/0/3 (FW update state)
+ * lwm2mcore -> Dm: value
+ *
+ * lwm2mcore <- Dm: READ /5/0/5 (FW update result)
+ * lwm2mcore -> Dm: value
+ *
+ * note left of Dm
+ * Device Management server can check if a package download is already under treatment
+ * This is the case if update state = Downloading
+ * end note
+ *
+ * group A package download is on-going (FW update state is set to ""LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING"")
+ * lwm2mcore <- Dm: WRITE /5/0/1 (package URL) with empty data
+ * lwm2mcore -> lwm2mcore: abort the download, reset Fw update state to IDLE
+ * lwm2mcore --> client: notifications
+ * lwm2mcore -> Dm: OK
+ * end
+ * end
+ *
+ * lwm2mcore <- Dm: WRITE /5/0/1 with package URL to be downloaded
+ * lwm2mcore -> lwm2mcore: Initialize the workspace (URL storage, FW update state initialization)
+ * lwm2mcore -> adaptationLayer: HTTPS HEAD command
+ * adaptationLayer -> Dm: HTTPS HEAD command
+ * adaptationLayer <- Dm: HTTPS repsonse
+ * lwm2mcore <- adaptationLayer: HTTPS response
+ * lwm2mcore -> clientDownload: ""LWM2MCORE_EVENT_PACKAGE_DOWNLOAD_DETAILS"" event: package size
+ *
+ *
+ * lwm2mcore <- clientDownload: ""lwm2mcore_StartPackageDownloader""
+ * lwm2mcore -> adaptationLayer: HTTPS GET command
+ * adaptationLayer -> Dm: HTTPS GET command
+ * loop Package download
+ * lwm2mcore -> clientDownload: ""lwm2mcore_WritePackageData""
+ * lwm2mcore <- clientDownload: OK
+ * end
+ * adaptationLayer <- Dm: HTTPS repsonse
+ * lwm2mcore <- adaptationLayer: HTTPS repsonse
+ *
+ * group During the package download, the Device Management server can check the FW update state and result values
+ * lwm2mcore <- Dm: READ /5/0/3 (FW update state)
+ * lwm2mcore -> Dm: value
+ *
+ * lwm2mcore <- Dm: READ /5/0/5 (FW update result)
+ * lwm2mcore -> Dm: value
+ *
+ * note left of Dm
+ * Device Management server can wait for final values for FW update state and result:
+ * State: ""LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED""
+ * Result: ""LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_INSTALL_FAILURE""
+ * ""LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL""
+ * The server considers that the package download succeeds when
+ * State = ""LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED""
+ * Result = ""LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL""
+ * end note
+ * end
+ *
+ * group If the Device Managements checks that the package download succeeds
+ * lwm2mcore <- Dm: EXEC /5/0/3
+ * lwm2mcore -> client: ""lwm2mcore_LaunchUpdate""
+ * lwm2mcore <- client: ""OK""
+ * lwm2mcore -> Dm: ""OK""
+ *
+ * note left of Dm
+ * The client is notified by the ""lwm2mcore_LaunchUpdate"" API that a Firmware update request is received from the server.
+ * The common way to launch such update is to reboot the platform.
+ * Before rebooting the platform, the client needs to call the ""lwm2mcore_SetFwUpdateAccepted"" API.
+ * It's quite better to not call this function before the real update treatment because the FW update state is set to ""LWM2MCORE_FW_UPDATE_STATE_UPDATING"" value.
+ * end note
+ * end
+ *
+ * client -> client: update procedure, platform reboot
+ *
+ * note over lwm2mcore, client: Platform reboot
+ *
+ * client -> client: Fimrware update result check
+ * lwm2mcore <- client: ""lwm2mcore_SetUpdateResult""
+ * note right of client
+ * The client can notify LwM2MCore of the Firmware update result by calling ""lwm2mcore_SetUpdateResult"" function
+ * end note
+ *
+ * note over lwm2mcore, client: New connection to the Device Management server
+ *
+ * lwm2mcore <- Dm: READ /5/0/3 (FW update state)
+ * lwm2mcore -> Dm: value
+ *
+ * lwm2mcore <- Dm: READ /5/0/5 (FW update result)
+ * lwm2mcore -> Dm: value
+ *
+ * @enduml
  *
  * @section LwM2MCore_lwm2mcore_sota SOTA: Software Update Over-The-Air
  *
@@ -750,6 +912,9 @@
  *
  * @defgroup lwm2mcore_internal_IFS LwM2MCore internal interface
  * @brief LwM2MCore internal interface
+ *
+ * @defgroup lwm2mcore_monitoring_IFS LwM2MCore monitoring interface
+ * @brief LwM2MCore monitoring interface
  *
  * @defgroup lwm2mcore_init_IFS Initialization and free
  * @ingroup lwm2mcore_public_IFS
@@ -778,6 +943,14 @@
  * @defgroup lwm2mcore_package_downloader_IFS Package downloader interface
  * @ingroup lwm2mcore_public_IFS
  * @brief Package downloader interface
+ *
+ * @defgroup lwm2mcore_update_IFS Update interface
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Update interface
+ *
+ * @defgroup lwm2mcore_server_IFS Server interface
+ * @ingroup lwm2mcore_public_IFS
+ * @brief Server interface
  *
  * @defgroup lwm2mcore_acl_int Access Control Lists
  * @ingroup lwm2mcore_internal_IFS
@@ -872,5 +1045,47 @@
  * @defgroup lwm2mcore_update_IFS Update interface
  * @ingroup lwm2mcore_platform_adaptor_IFS
  * @brief Update interface
+ *
+ *
+ * @defgroup lwm2mcore_connectivity_monitoring_IFS Connectivity monitoring
+ * @ingroup lwm2mcore_monitoring_IFS
+ * @brief Connectivity monitoring
+ *
+ * @defgroup lwm2mcore_device_monitoring_IFS Device monitoring
+ * @ingroup lwm2mcore_monitoring_IFS
+ * @brief Device monitoring
+ *
+ * @defgroup lwm2mcore_location_monitoring_IFS Location monitoring
+ * @ingroup lwm2mcore_monitoring_IFS
+ * @brief Location monitoring
+ *
+ *
+ * @defgroup lwm2mcore_platform_adaptor_memory_IFS Memory
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for memory management
+ *
+ * @defgroup lwm2mcore_platform_adaptor_mutex_IFS Mutex
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for mutex (Not used)
+ *
+ * @defgroup lwm2mcore_platform_adaptor_storage_IFS Parameter storage
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for parameter storage
+ *
+ * @defgroup lwm2mcore_platform_adaptor_semaphore_IFS Semaphore
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for semaphore
+ *
+ * @defgroup lwm2mcore_platform_adaptor_socket_IFS Socket
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for socket
+ *
+ * @defgroup lwm2mcore_platform_adaptor_timer_IFS Timer
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for timer
+ *
+ * @defgroup lwm2mcore_platform_adaptor_udp_IFS UDP
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for UDP
  *
  */

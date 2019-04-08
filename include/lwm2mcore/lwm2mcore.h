@@ -140,7 +140,14 @@ typedef enum
     LWM2MCORE_ERR_OP_NOT_SUPPORTED      = -4,   ///< Not supported resource
     LWM2MCORE_ERR_INVALID_ARG           = -5,   ///< Invalid parameter in resource handler
     LWM2MCORE_ERR_INVALID_STATE         = -6,   ///< Invalid state to treat the resource handler
-    LWM2MCORE_ERR_OVERFLOW              = -7    ///< Buffer overflow
+    LWM2MCORE_ERR_OVERFLOW              = -7,   ///< Buffer overflow
+    LWM2MCORE_ERR_TIMEOUT               = -8,   ///< Timeout when reading or writing on socket
+    LWM2MCORE_ERR_NET_RECV_FAILED       = -9,   ///< Reading information from the socket failed
+    LWM2MCORE_ERR_NET_SEND_FAILED       = -10,  ///< Sending information through the socket failed
+    LWM2MCORE_ERR_NET_ERROR             = -11,  ///< Error on socket management (package download
+                                                ///< case)
+    LWM2MCORE_ERR_MEMORY                = -12,  ///< Memory issue
+    LWM2MCORE_ERR_RETRY_FAILED          = -13   ///< Last download retry attempt failed.
 }lwm2mcore_Sid_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -171,8 +178,10 @@ typedef enum
     LWM2MCORE_EVENT_DOWNLOAD_PROGRESS              = 18,    ///< Indicate the download %
     LWM2MCORE_EVENT_LWM2M_SESSION_TYPE_START       = 23,    ///< LWM2M Event to know if the session is a Bootstrap or a Device Management one
     LWM2MCORE_EVENT_LWM2M_SESSION_INACTIVE         = 24,    ///< LWM2M Event to know if the session is inactive for 20 sec
+    LWM2MCORE_EVENT_PACKAGE_SIZE_ERROR             = 25,    ///< An error occured during the package size retrieval
+    LWM2MCORE_EVENT_REG_UPDATE_DONE                = 26,    ///< A register update was successfully sent
     /* NEW EVENT TO BE ADDED BEFORE THIS COMMENT */
-    LWM2MCORE_EVENT_LAST                           = 25     ///< Internal usage
+    LWM2MCORE_EVENT_LAST                           = 27     ///< Internal usage
 }lwm2mcore_StatusType_t;
 /**
   * @}
@@ -414,6 +423,18 @@ typedef struct
   * @}
   */
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration to indicates if an update is linked to a firmware update or a software update
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_FW_UPDATE_TYPE,    ///< Firmware update
+    LWM2MCORE_SW_UPDATE_TYPE,    ///< Software update
+    LWM2MCORE_MAX_UPDATE_TYPE    ///< Internal usage
+}lwm2mcore_UpdateType_t;
+
 /**
   * @addtogroup lwm2mcore_init_IFS
   * @{
@@ -426,8 +447,8 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_PkgDwlType_t pkgType;     ///< Package type
-    uint32_t numBytes;                  ///< For package download, num of bytes to be downloaded
+    lwm2mcore_UpdateType_t pkgType;     ///< Package type
+    uint64_t numBytes;                  ///< For package download, num of bytes to be downloaded
     uint32_t progress;                  ///< For package download, package download progress in %
     uint32_t errorCode;                 ///< For package download, error code
 }lwm2mcore_PkgDwlStatus_t;
@@ -623,9 +644,24 @@ typedef int (*lwm2mcore_StatusCb_t)
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Initialize LwM2MCore
+ * @brief Set an event handler for LWM2M core events
  *
- * @remark Public function which can be called by the client.
+ * @note The handler can also be set using @ref lwm2mcore_Init function.
+ * @ref lwm2mcore_Init function is called before initiating a connection to any LwM2M server.
+ * @ref lwm2mcore_SetEventHandler function is called at device boot in order to receive events.
+ *
+ * @return
+ *  - true on success
+ *  - false on failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_SetEventHandler
+(
+    lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  *
  * @return
  *  - instance reference
@@ -677,6 +713,44 @@ uint16_t lwm2mcore_ObjectRegister
     lwm2mcore_Handler_t* const handlerPtr,  ///< [IN] List of supported object/resource by client
                                             ///< This parameter can be set to NULL
     void* const servicePtr                  ///< [IN] Client service API table
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Write a resource from the object table
+ *
+ * @return
+ *      - true if resource is found and read succeeded
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceWrite
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [IN] Array of requested resources to be write
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Execute a resource from the object table
+ *
+ * @return
+ *      - true if resource is found and read succeeded
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceExec
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [IN] Array of requested resources to be write
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -746,7 +820,27 @@ bool lwm2mcore_Connect
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Function to close a connection
+ * @brief Function to close a connection. A deregister message is first sent to the server. After
+ *        the end of its treatement, the connection with the server is closed.
+ *
+ * @note The deregister procedure may take several seconds.
+ *
+ * @warning To be fully managed, the @c LWM2M_DEREGISTER flag should be embedded.
+ *
+ * @return
+ *      - @c true if the treatment is launched
+ *      - else @c false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_DisconnectWithDeregister
+(
+    lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to close a connection with the server without initiating a deregister procedure.
+ *        It is the case when the data connection is lost.
  *
  * @remark Public function which can be called by the client.
  *

@@ -383,9 +383,11 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
- * @note When LwM2MCore receives a reboot request from the server (EXECUTE on /3/0/4), a 2-second
- * timer is launched and this function is called by LwM2MCore when the timer expires. The client
- * needs to manage the platform reboot by implementing this function.
+ * @warning The client MUST acknowledge this function before treating the reboot request, in order
+ * to allow LwM2MCore to acknowledge the LwM2M server that the reboot request is correctly taken
+ * into account.
+ * Advice: launch a timer (value could be decided by the client implementation) in order to treat
+ * the reboot request.
  *
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds

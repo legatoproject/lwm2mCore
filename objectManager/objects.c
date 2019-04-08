@@ -304,15 +304,15 @@ static uint8_t ReadResourceInstances
 (
     lwm2mcore_Uri_t* uriPtr,                    ///< [IN] Requested operation and object/resource
     lwm2mcore_internalResource_t* resourcePtr,  ///< [IN] LWM2M resource
-    lwm2m_data_t* dataPtr                       ///< [INOUT] Encoded LWM2M data
+    lwm2m_data_t* dataPtr,                      ///< [INOUT] Encoded LWM2M data
+    char* bufPtr,                               ///< [IN] Read buffer
+    size_t bufSize                              ///< [IN] Read Buffer size
 )
 {
     int sid = 0;
     uint16_t i = 0;
     uint16_t instanceNumber;
     uint8_t result = COAP_404_NOT_FOUND;
-    char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
-    size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
     lwm2m_data_t* instancesPtr;
 
     /* Check for object 2 (ACL
@@ -340,12 +340,13 @@ static uint8_t ReadResourceInstances
 
     do
     {
-        asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
-        memset(asyncBuf, 0, asyncBufLen);
+        size_t readSize = bufSize;
+
+        memset(bufPtr, 0, bufSize);
         uriPtr->riid = i;
 
         /* Read the instance of the resource */
-        sid  = resourcePtr->read(uriPtr, asyncBuf, &asyncBufLen, NULL);
+        sid  = resourcePtr->read(uriPtr, bufPtr, &readSize, NULL);
 
         /* Define the CoAP result */
         result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -353,13 +354,13 @@ static uint8_t ReadResourceInstances
         if (COAP_205_CONTENT == result)
         {
             /* Check if some data was returned */
-            if (asyncBufLen)
+            if (readSize)
             {
                 /* Set resource id and encode as LWM2M data */
                 (instancesPtr + i)->id = uriPtr->riid;
                 result = EncodeData(resourcePtr->type,
-                                    asyncBuf,
-                                    asyncBufLen,
+                                    bufPtr,
+                                    readSize,
                                     instancesPtr + i);
             }
             else
@@ -512,7 +513,11 @@ static uint8_t ReadCb
 
                 if (1 < resourcePtr->maxInstCount)
                 {
-                    result = ReadResourceInstances(&uri, resourcePtr, (*dataArrayPtr) + i);
+                    result = ReadResourceInstances(&uri,
+                                                   resourcePtr,
+                                                   (*dataArrayPtr) + i,
+                                                   asyncBuf,
+                                                   asyncBufLen);
                 }
                 else
                 {
@@ -1969,9 +1974,53 @@ static bool UpdateSwListWakaama
     // Send a registration update if the device is registered to the DM server
     if (updatedList)
     {
-        omanager_UpdateRequest(instanceRef, updatedList);
+        omanager_UpdateRequest(instanceRef, LWM2M_REG_UPDATE_OBJECT_LIST);
     }
     return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * search for a specific resource of object from the object table
+ *
+ * @return
+ *      - lwm2mcore_Resource_t*  pointer for the found resource
+ *      - NULL if the resource is not found
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t* SearchResource
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t resourceId               ///< [IN] resource identifier
+)
+{
+    int i, j;
+    lwm2mcore_Handler_t* lwm2mHandlersPtr = NULL;
+    lwm2mcore_Resource_t* resourcePtr = NULL ;
+    lwm2mHandlersPtr = omanager_GetHandlers();
+
+    if (!lwm2mHandlersPtr)
+    {
+        return false;
+    }
+
+    // Search for the resource in the object table
+    for (i = 0; i < (lwm2mHandlersPtr->objCnt); i++)
+    {
+        if (objectId == (lwm2mHandlersPtr->objects[i].id))
+        {
+            for (j = 0; j < (lwm2mHandlersPtr->objects[i].resCnt); j++)
+            {
+                if (resourceId == (lwm2mHandlersPtr->objects[i].resources[j].id))
+                {
+                    resourcePtr = &lwm2mHandlersPtr->objects[i].resources[j];
+                    break;
+                }
+            }
+        }
+    }
+
+    return resourcePtr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2000,11 +2049,9 @@ bool lwm2mcore_ResourceRead
 )
 {
     lwm2mcore_Uri_t uri;
-    lwm2mcore_Handler_t* lwm2mHandlersPtr = NULL;
     lwm2mcore_Resource_t* resourcePtr = NULL;
     char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN] = {0};
     size_t dataBufferSize;
-    int i, j;
 
     if ((!dataPtr) || (!dataSizePtr))
     {
@@ -2021,28 +2068,7 @@ bool lwm2mcore_ResourceRead
     uri.riid = resourceInstanceId;
     uri.op = LWM2MCORE_OP_READ;
 
-    lwm2mHandlersPtr = omanager_GetHandlers();
-
-    if (!lwm2mHandlersPtr)
-    {
-        return false;
-    }
-
-    // Search for the resource in the object table
-    for (i = 0; i < (lwm2mHandlersPtr->objCnt); i++)
-    {
-        if (uri.oid == (lwm2mHandlersPtr->objects[i].id))
-        {
-            for (j = 0; j < (lwm2mHandlersPtr->objects[i].resCnt); j++)
-            {
-                if (uri.rid == (lwm2mHandlersPtr->objects[i].resources[j].id))
-                {
-                    resourcePtr = &lwm2mHandlersPtr->objects[i].resources[j];
-                    break;
-                }
-            }
-        }
-    }
+    resourcePtr = SearchResource(objectId, resourceId);
 
     if (!resourcePtr)
     {
@@ -2094,6 +2120,125 @@ bool lwm2mcore_ResourceRead
     return true;
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Write a resource from the object table
+ *
+ * @return
+ *      - true if resource is found and read succeeded
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceWrite
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [IN] Array of requested resources to be write
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
+)
+{
+    lwm2mcore_Uri_t uri;
+    lwm2mcore_Resource_t* resourcePtr = NULL;
+
+    // add condition to restrict the use of this function only for object 5 (Fwupdate)
+    if ((!dataPtr) || (!dataSizePtr) || (objectId != LWM2MCORE_FIRMWARE_UPDATE_OID))
+    {
+        return false;
+    }
+
+    memset(&uri, 0, sizeof(uri));
+    uri.oid = objectId;
+    uri.oiid = objectInstanceId;
+    uri.rid = resourceId;
+    uri.riid = resourceInstanceId;
+    uri.op = LWM2MCORE_OP_WRITE;
+
+    resourcePtr = SearchResource(objectId, resourceId);
+
+    if (!resourcePtr)
+    {
+        LOG("Requested ressource not found");
+        return false;
+    }
+
+    if (!resourcePtr->write)
+    {
+        LOG("Requested resource cannot be write");
+        return false;
+    }
+
+    // Execute the write function
+    LOG_ARG("Execute the write function in resourceid : %u ", resourcePtr->id);
+    resourcePtr->type = LWM2MCORE_RESOURCE_TYPE_STRING;
+    resourcePtr->maxResInstCnt = 1;
+    if (LWM2MCORE_ERR_COMPLETED_OK != resourcePtr->write(&uri, dataPtr, *dataSizePtr))
+    {
+        return false;
+    }
+
+    return true;
+}
+//--------------------------------------------------------------------------------------------------
+/**
+ * execute a resource from the object table
+ *
+ * @return
+ *      - true if resource is found and read succeeded
+ *      - else false
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_ResourceExec
+(
+    uint16_t objectId,                 ///< [IN] object identifier
+    uint16_t objectInstanceId,         ///< [IN] object instance identifier
+    uint16_t resourceId,               ///< [IN] resource identifier
+    uint16_t resourceInstanceId,       ///< [IN] resource instance identifier
+    char*    dataPtr,                  ///< [IN] Array of requested resources to be write
+    size_t*  dataSizePtr               ///< [IN/OUT] Size of the array
+)
+{
+    // add condition to restrict the use of this function only for object 5 (Fwupdate)
+    if (objectId != LWM2MCORE_FIRMWARE_UPDATE_OID)
+    {
+        return false;
+    }
+
+    lwm2mcore_Uri_t uri;
+    lwm2mcore_Resource_t* resourcePtr = NULL;
+
+    memset(&uri, 0, sizeof(uri));
+    uri.oid = objectId;
+    uri.oiid = objectInstanceId;
+    uri.rid = resourceId;
+    uri.riid = resourceInstanceId;
+    uri.op = LWM2MCORE_OP_EXECUTE;
+
+    resourcePtr = SearchResource(objectId, resourceId);
+
+    if (!resourcePtr)
+    {
+        LOG("Requested ressource not found");
+        return false;
+    }
+
+    if (!resourcePtr->exec)
+    {
+        LOG("Requested resource cannot be executed");
+        return false;
+    }
+
+    // call to esecute function
+    LOG_ARG("Execute function in resourceid : %u ", resourcePtr->id);
+    resourcePtr->maxResInstCnt = 1;
+    if (LWM2MCORE_ERR_COMPLETED_OK != resourcePtr->exec(&uri, dataPtr, *dataSizePtr))
+    {
+        return false;
+    }
+
+    return true;
+}
 //--------------------------------------------------------------------------------------------------
 /**
  * Register the object table and service API
@@ -2286,5 +2431,6 @@ lwm2mcore_Sid_t lwm2mcore_SetLifetime
     uint32_t lifetime               ///< [IN] Lifetime in seconds
 )
 {
+    LOG_ARG("lwm2mcore_SetLifetime %d sec", lifetime);
     return omanager_SetLifetime(lifetime, true);
 }

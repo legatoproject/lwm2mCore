@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Accept-Ranges: bytes
+Cache-Control: public,max-age=8035200
+Content-Type: application/octet-stream
+Date: Tue, 19 Jun 2018 21:45:25 GMT
+Date: Tue, 19 Jun 2018 21:45:25 GMT
+Expires: Thu, 20 Sep 2018 21:45:26 GMT
+Last-Modified: Thu, 01 Jan 1970 00:00:00 GMT
+Content-Length: 9080
+Strict-Transport-Security: max-age=31536000
+

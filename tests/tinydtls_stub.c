@@ -9,6 +9,7 @@
 //-------------------------------------------------------------------------------------------------
 
 #include "dtls.h"
+#include "liblwm2m.h"
 
 void dtls_init
 (
@@ -145,4 +146,11 @@ void dtls_ticks
 )
 {
     (void)t;
+}
+
+void transaction_remove(lwm2m_context_t * contextP,
+                        lwm2m_transaction_t * transacP)
+{
+    (void)contextP;
+    (void)transacP;
 }

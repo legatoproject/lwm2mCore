@@ -10,27 +10,16 @@ set(LWM2MCORE_SOURCES_DIR ${LWM2MCORE_ROOT_DIR}/)
 
 # Provides LWM2MCORE_SOURCES_DIR and LWM2MCORE_SOURCES and LWM2MCORE_DEFINITIONS variables.
 
-set(LWM2MCORE_HEADERS
-    ${LWM2MCORE_SOURCES_DIR}/include/coapHandlers.h
-    ${LWM2MCORE_SOURCES_DIR}/include/connectivity.h
-    ${LWM2MCORE_SOURCES_DIR}/include/device.h
-    ${LWM2MCORE_SOURCES_DIR}/include/location.h
-    ${LWM2MCORE_SOURCES_DIR}/include/lwm2mcore.h
-    ${LWM2MCORE_SOURCES_DIR}/include/paramStorage.h
-    ${LWM2MCORE_SOURCES_DIR}/include/security.h
-    ${LWM2MCORE_SOURCES_DIR}/include/sem.h
-    ${LWM2MCORE_SOURCES_DIR}/include/socket.h
-    ${LWM2MCORE_SOURCES_DIR}/include/timer.h
-    ${LWM2MCORE_SOURCES_DIR}/include/udp.h
-    ${LWM2MCORE_SOURCES_DIR}/include/update.h)
 
 include_directories(${LWM2MCORE_SOURCES_DIR}/examples/linux/
+                    ${LEGATO_ROOT}/apps/platformServices/airVantageConnector/avcDaemon
                     ${LWM2MCORE_SOURCES_DIR}/include/
                     ${LWM2MCORE_SOURCES_DIR}/include/platform-specific/linux/
                     ${LWM2MCORE_SOURCES_DIR}/objectManager/
-                    ${LWM2MCORE_SOURCES_DIR}/packageDownload/
+                    ${LWM2MCORE_SOURCES_DIR}/packageDownloader/
                     ${LWM2MCORE_SOURCES_DIR}/sessionManager/
                     ${LWM2MCORE_SOURCES_DIR}/3rdParty/tinydtls/
+                    ${LWM2MCORE_SOURCES_DIR}/3rdParty/tinyhttp/
                     ${LWM2MCORE_SOURCES_DIR}/3rdParty/wakaama/core/
                     ${LWM2MCORE_SOURCES_DIR}/3rdParty/wakaama/core/er-coap-13/)
 
@@ -43,6 +32,7 @@ set(LWM2MCORE_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/objectManager/objectsTable.c
     ${LWM2MCORE_SOURCES_DIR}/objectManager/utils.c
     ${LWM2MCORE_SOURCES_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
+    ${LWM2MCORE_SOURCES_DIR}/packageDownloader/update.c
     ${LWM2MCORE_SOURCES_DIR}/packageDownloader/workspace.c
     ${LWM2MCORE_SOURCES_DIR}/sessionManager/dtlsConnection.c
     ${LWM2MCORE_SOURCES_DIR}/sessionManager/lwm2mcoreSession.c)
@@ -66,4 +56,6 @@ add_definitions(-g
                 -DLWM2M_WITH_LOGS
                 -DWITH_TINYDTLS
                 -DLWM2M_OLD_CONTENT_FORMAT_SUPPORT
-                -DSIERRA)
+                -DSIERRA
+                -DLWM2M_OBJECT_3_BATTERY
+                -DLWM2M_OBJECT_9)

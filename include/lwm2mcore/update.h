@@ -35,19 +35,11 @@
  * @brief Define the maximum length for the software objects
  */
 //--------------------------------------------------------------------------------------------------
+#ifdef LWM2M_OBJECT_9
 #define LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN   4032
-
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief Enumeration to indicates if an update is linked to a firmware update or a software update
- */
-//--------------------------------------------------------------------------------------------------
-typedef enum
-{
-    LWM2MCORE_FW_UPDATE_TYPE,    ///< Firmware update
-    LWM2MCORE_SW_UPDATE_TYPE,    ///< Software update
-    LWM2MCORE_MAX_UPDATE_TYPE    ///< Internal usage
-}lwm2mcore_UpdateType_t;
+#else
+#define LWM2MCORE_SW_OBJECT_INSTANCE_LIST_MAX_LEN   0
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -157,6 +149,22 @@ typedef enum
     LWM2MCORE_SW_UPDATE_RESULT_UNINSTALL_FAILURE= 59    ///< Uninstallation Failure
 }lwm2mcore_SwUpdateResult_t;
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for update errors (generic values)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_UPDATE_ERROR_NO_STORAGE_SPACE,        ///< Failure - not enough space
+    LWM2MCORE_UPDATE_ERROR_OUT_OF_MEMORY,           ///< Not enough storage for the new package
+    LWM2MCORE_UPDATE_ERROR_CONNECTION_LOST,         ///< Connection lost during downloading process
+    LWM2MCORE_UPDATE_ERROR_UNSUPPORTED_PACKAGE,     ///< Unsupported package type
+    LWM2MCORE_UPDATE_ERROR_DEVICE_SPECIFIC          ///< Device defined update error
+}
+lwm2mcore_UpdateError_t;
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief The server pushes a package to the LWM2M client
@@ -197,7 +205,7 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
+lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri //TODO: intenral now
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -222,7 +230,7 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
+lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri //TODO: intenral now
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -236,6 +244,10 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
  * @brief The server requests to launch an update
  *
  * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @warning The client MUST store a parameter in non-volatile memory in order to keep in memory that
+ * an install request was received and launch a timer (value could be decided by the client
+ * implementation) in order to treat the install request.
  *
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
@@ -257,7 +269,7 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief The server requires the update state
+ * @brief The server requires the software update state
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
@@ -271,16 +283,15 @@ lwm2mcore_Sid_t lwm2mcore_LaunchUpdate
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetUpdateState
+lwm2mcore_Sid_t lwm2mcore_GetSwUpdateState
 (
-    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     uint8_t* updateStatePtr         ///< [OUT] update state
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief The server requires the update result
+ * @brief The server requires the software update result
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
@@ -294,12 +305,140 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdateState
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetUpdateResult
+lwm2mcore_Sid_t lwm2mcore_GetSwUpdateResult
 (
-    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     uint8_t* updateResultPtr        ///< [OUT] update result
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function for setting software update state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetSwUpdateState
+(
+    lwm2mcore_SwUpdateState_t swUpdateState     ///< [IN] New SW update state
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for setting software update result
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetSwUpdateResult
+(
+    lwm2mcore_SwUpdateResult_t swUpdateResult   ///< [IN] New SW update result
+);
+
+#ifdef LEGACY_FW_STATUS
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for setting legacy firmware update state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetLegacyFwUpdateState
+(
+    lwm2mcore_FwUpdateState_t fwUpdateState     ///< [IN] New FW update state
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for setting legacy firmware update result
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetLegacyFwUpdateResult
+(
+    lwm2mcore_FwUpdateResult_t fwUpdateResult   ///< [IN] New FW update result
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for getting legacy firmware update state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetLegacyFwUpdateState
+(
+    lwm2mcore_FwUpdateState_t* fwUpdateStatePtr     ///< [INOUT] FW update state
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function for getting legacy firmware update result
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetLegacyFwUpdateResult
+(
+    lwm2mcore_FwUpdateResult_t* fwUpdateResultPtr   ///< [INOUT] FW update result
+);
+
+#endif // LEGACY_FW_STATUS
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -498,25 +637,142 @@ lwm2mcore_Sid_t lwm2mcore_SoftwareUpdateInstance
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_ResumePackageDownload
+lwm2mcore_Sid_t lwm2mcore_SetDownloadError
 (
-    void
+    lwm2mcore_UpdateError_t error   ///< [IN] Update error
 );
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Suspend a package download if necessary
+ * Indicates that the Firmware update is accepted
  *
- * @remark Platform adaptor function which needs to be defined on client side.
+ * @remark Public function which can be called by the client.
+ *
+ * @note
+ * This function is not available if @c LWM2M_EXTERNAL_DOWNLOADER compilation flag is embedded
+ *
+ * @note
+ * This API needs to be called when the client accepts the Firmware update request.
+ * When the Firmware update request is received by LwM2MCore from the server, the @ref
+ * lwm2mcore_LaunchUpdate function is called.
+ * The client can totally handle this request on its side, the common response to this update
+ * request should be a platform reset.
+ * Before resetting the platform, the client MUST call this function in order to allow LwM2MCore
+ * knowning that the update requested was accepted.
  *
  * @return
- *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the request
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_SuspendPackageDownload
+lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted
 (
     void
+);
+
+//lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted(type) type à mettre? type dans workspace
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Indicates that the Firmware update succeeds
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @note
+ * This function is not available if @c LWM2M_EXTERNAL_DOWNLOADER compilation flag is embedded
+ *
+ * @note
+ * This API needs to be called by the client when a Firmware update was treated (so usually at
+ * platform initialization). According to the Firmware update result, the client sets the @c
+ * isSuccess parameter to the right value.
+ *
+ * @return
+ *      - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the request
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetUpdateResult
+(
+    bool    isSuccess   ///< [IN] true to indicate the update success, else failure
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to get download information
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG when at least one parameter is invalid
+ *  - LWM2MCORE_ERR_INVALID_STATE if no package download is on-going
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetDownloadInfo
+(
+    lwm2mcore_UpdateType_t* updateTypePtr,  ///< [OUT] Update type
+    uint64_t*               packageSizePtr  ///< [OUT] Package size
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to check if a FW update is on-going
+ * This function returns true if the FW upate install was accepted (@ref
+ * lwm2mcore_SetUpdateAccepted) and before final FW update (@ref lwm2mcore_SetUpdateResult)
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG when at least one parameter is invalid
+ *  - LWM2MCORE_ERR_INVALID_STATE if no package download is on-going
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_IsFwUpdateOnGoing
+(
+    bool*   IsFwUpdateOnGoingPtr    ///< [INOUT] True if a FW update is ongoing, false otherwise
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to check if a package download for FW update is over and if the install request
+ * was not received.
+ * This function can be called by the client when a connection is closed to the server, or at client
+ * initialization to know if the client needs to initiate a connection to the server in order to
+ * receive the FW update install request from the server (a package was fully downloaded but the
+ * install request was not received).
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG when at least one parameter is invalid
+ *  - LWM2MCORE_ERR_INVALID_STATE if no package download was ended
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_IsFwUpdateInstallWaited
+(
+    bool*   IsFwUpdateInstallWaitedPtr    ///< [INOUT] True if a FW update install request is waited
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Get TPF mode state
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetTpfState
+(
+    bool*  statePtr        ///< [OUT] true if third party FOTA service is started
 );
 
 /**

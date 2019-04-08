@@ -27,7 +27,6 @@
 //--------------------------------------------------------------------------------------------------
 #define COAP_PATH_MAX_LENGTH 256
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief CoAP response code.
@@ -48,7 +47,6 @@ typedef enum
 }
 lwm2mcore_CoapResponseCode_t;
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief CoAP Response
@@ -56,18 +54,16 @@ lwm2mcore_CoapResponseCode_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_CoapResponseCode_t code;              ///< [IN] response code
-    uint16_t messageId;                             ///< [IN] message id
-    uint8_t token[8];                               ///< [IN] token
-    uint8_t* tokenPtr;                              ///< [IN] token ptr
-    uint8_t tokenLength;                            ///< [IN] token length
-    unsigned int contentType;                       ///< [IN] payload content type
-    uint8_t* payload;                               ///< [IN] payload
-    size_t payloadLength;                           ///< [IN] payload length
-    lwm2mcore_StreamStatus_t  streamStatus;         ///< [IN] status of the transmit stream
+    lwm2mcore_CoapResponseCode_t code;              ///< [IN] Response code
+    uint16_t messageId;                             ///< [IN] Message id
+    uint8_t token[8];                               ///< [IN] Token
+    uint8_t tokenLength;                            ///< [IN] Token length
+    unsigned int contentType;                       ///< [IN] Payload content type
+    uint8_t* payloadPtr;                            ///< [IN] Payload pointer
+    size_t payloadLength;                           ///< [IN] Payload length
+    lwm2mcore_StreamStatus_t  streamStatus;         ///< [IN] Status of the transmit stream
 }
 lwm2mcore_CoapResponse_t;
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -76,18 +72,17 @@ lwm2mcore_CoapResponse_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    uint8_t* uriPtr;                                ///< [IN] uri
-    uint8_t* tokenPtr;                              ///< [IN] token ptr
-    uint8_t tokenLength;                            ///< [IN] token length
-    unsigned int contentType;                       ///< [IN] payload content type
-    uint8_t* payloadPtr;                            ///< [IN] payload
-    size_t payloadLength;                           ///< [IN] payload length
-    lwm2mcore_StreamStatus_t  streamStatus;         ///< [IN] status of the transmit stream
+    uint8_t* uriPtr;                                ///< [IN] URI pointer
+    uint8_t* tokenPtr;                              ///< [IN] Token pointer
+    uint8_t tokenLength;                            ///< [IN] Token length
+    unsigned int contentType;                       ///< [IN] Payload content type
+    uint8_t* payloadPtr;                            ///< [IN] Payload pointer
+    size_t payloadLength;                           ///< [IN] Payload length
+    lwm2mcore_StreamStatus_t  streamStatus;         ///< [IN] Status of the transmit stream
     void* callbackRef;                              ///< [IN] Callback for ack received / timeout
     void* callbackContextPtr;                       ///< [IN] Context ptr for ack callback
 }
 lwm2mcore_CoapNotification_t;
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -111,7 +106,7 @@ lwm2mcore_stream_status_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    char *uri;                              ///< [IN] uri represents the path of the coap response
+    char *uri;                              ///< [IN] URI represents the path of the coap response
     coap_method_t method;                   ///< [IN] is the operation GET/PUT/POST
     uint16_t messageId;                     ///< [IN] coap message Id
     uint8_t token[8];                       ///< [IN] token
@@ -123,14 +118,12 @@ typedef struct
 }
 lwm2mcore_CoapRequest_t;
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Reference to CoAP Request
  */
 //--------------------------------------------------------------------------------------------------
 typedef struct lwm2mcore_CoapRequest_t* lwm2mcore_CoapRequestRef_t;
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -152,7 +145,6 @@ typedef void (*coap_external_handler_t)
     lwm2mcore_CoapRequest_t* requestRef
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function pointer of CoAP ack handler.
@@ -162,7 +154,6 @@ typedef void (*coap_ack_handler_t)
 (
     lwm2mcore_AckResult_t ackResult
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -176,7 +167,6 @@ void lwm2mcore_SetCoapEventHandler
     coap_request_handler_t handlerRef        ///< [IN] Coap action handler
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to register a handler on all CoAP messages other than lwm2m oriented messages
@@ -189,7 +179,6 @@ void lwm2mcore_SetCoapExternalHandler
     coap_external_handler_t handlerRef        ///< [IN] Handler for receiving incoming CoAP messages
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to register a handler on push ack response
@@ -201,7 +190,6 @@ void lwm2mcore_SetCoapAckHandler
 (
     coap_ack_handler_t handlerRef        ///< [IN] Handler for receiving CoAP Ack messages
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -218,7 +206,6 @@ uint16_t lwm2mcore_GetMessageId
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to get CoAP stream status.
@@ -234,7 +221,6 @@ lwm2mcore_StreamStatus_t lwm2mcore_GetStreamStatus
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to get URI from request
@@ -249,7 +235,6 @@ const char* lwm2mcore_GetRequestUri
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -269,7 +254,6 @@ coap_method_t lwm2mcore_GetRequestMethod
     lwm2mcore_CoapRequest_t* requestRef        ///< [IN] Coap request reference
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to get payload from request
@@ -284,7 +268,6 @@ const uint8_t* lwm2mcore_GetRequestPayload
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -301,7 +284,6 @@ size_t lwm2mcore_GetRequestPayloadLength
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to get token from request
@@ -317,7 +299,6 @@ const uint8_t* lwm2mcore_GetToken
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to get token length from request
@@ -332,7 +313,6 @@ uint8_t lwm2mcore_GetTokenLength
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -364,8 +344,8 @@ unsigned int lwm2mcore_GetContentType
 bool lwm2mcore_SendAsyncResponse
 (
     lwm2mcore_Ref_t instanceRef,            ///< [IN] instance reference
-    lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request reference
-    lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response
+    lwm2mcore_CoapRequest_t* requestPtr,    ///< [IN] coap request pointer
+    lwm2mcore_CoapResponse_t* responsePtr   ///< [IN] coap response pointer
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -382,9 +362,8 @@ bool lwm2mcore_SendAsyncResponse
 bool lwm2mcore_SendResponse
 (
     lwm2mcore_Ref_t instanceRef,                ///< [IN] instance reference
-    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response
+    lwm2mcore_CoapResponse_t* responsePtr       ///< [IN] CoAP response pointer
 );
-
 
 //--------------------------------------------------------------------------------------------------
 /**

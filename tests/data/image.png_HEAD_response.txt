@@ -1,0 +1,14 @@
+HTTP/1.1 200 OK
+Cache-Control: private, max-age=604800
+Content-Length: 4780
+Content-Type: image/png
+Expires:Tue, 26 Jun 2018 10:26:12 GMT
+Last-Modified: Tue, 27 Sep 2016 18:48:39 GMT
+Accept-Ranges: bytes
+Server: Microsoft-IIS/7.5
+Content-Disposition: inline; filename="SW-logo.png"
+X-AspNet-Version: 4.0.30319
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept
+Date: Tue, 19 Jun 2018 10:26:12 GMT
+

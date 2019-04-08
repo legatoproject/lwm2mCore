@@ -535,8 +535,8 @@ void omanager_FreeObjectByInstanceId
 bool omanager_UpdateRequest
 (
     lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
-    bool withObjects                ///< [IN] indicates if supported object instance list needs to
-                                    ///< be sent
+    uint8_t regUpdateOptions        ///< [IN] bitfield of requested parameters to be added in the
+                                    ///< registration update message
 );
 
 //--------------------------------------------------------------------------------------------------

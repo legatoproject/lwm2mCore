@@ -28,6 +28,7 @@
 #include "sessionManager.h"
 #include "internals.h"
 #include "liblwm2m.h"
+#include "alert.h"
 
 #define COAP_PORT "5683"
 #define COAPS_PORT "5684"
@@ -39,6 +40,13 @@
  */
 //--------------------------------------------------------------------------------------------------
 dtls_context_t* DtlsContextPtr;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Global for DTLS rehandshake
+ */
+//--------------------------------------------------------------------------------------------------
+static bool IsRehandshake = false;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -497,15 +505,20 @@ static int dtlsEventCb
         case DTLS_EVENT_CONNECT:
         case DTLS_EVENT_RENEGOTIATE:
         {
-            /* Notify that the device starts an authentication */
-            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_STARTED);
+            // Do not notify in case of rehandshake
+            if (false == IsRehandshake)
+            {
+                /* Notify that the device starts an authentication */
+                smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_STARTED, NULL);
+            }
+            IsRehandshake = false;
         }
         break;
 
         case DTLS_EVENT_CONNECTED:
         {
             /* Notify that the device authentication succeeds */
-            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_SUCCESS);
+            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_SUCCESS, NULL);
         }
         break;
 
@@ -513,7 +526,7 @@ static int dtlsEventCb
         case DTLS_ALERT_HANDSHAKE_FAILURE:
         {
             /* Notify that the device authentication fails */
-            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL);
+            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL, NULL);
         }
         break;
 
@@ -1012,13 +1025,13 @@ int dtls_HandlePacket
 {
     if (NULL != connPtr->dtlsSessionPtr)
     {
-        // Let liblwm2m respond to the query depending on the context
+        // Let Wakaama respond to the query depending on the context
         int result = dtls_handle_message(connPtr->dtlsContextPtr,
                                          connPtr->dtlsSessionPtr,
                                          bufferPtr,
                                          numBytes);
 
-        if (DTLS_ALERT_NO_RENEGOTIATION == result)
+        if (dtls_alert_fatal_create(DTLS_ALERT_NO_RENEGOTIATION) == result)
         {
             if (0 != dtls_Rehandshake(connPtr, false))
             {
@@ -1035,7 +1048,7 @@ int dtls_HandlePacket
     }
     else
     {
-        // no security, just give the plaintext buffer to liblwm2m
+        // no security, just give the plaintext buffer to Wakaama
         lwm2mcore_DataDump("Received bytes in no sec", bufferPtr, numBytes);
         lwm2m_handle_packet(connPtr->lwm2mHPtr, bufferPtr, numBytes, (void*)connPtr);
     }
@@ -1064,7 +1077,7 @@ int dtls_Rehandshake
 
     LOG("Initiate a DTLS rehandshake");
 
-    // if not a dtls connection we do nothing
+    // if not a DTLS connection we do nothing
     if (NULL == connPtr->dtlsSessionPtr)
     {
         return 0;
@@ -1081,11 +1094,13 @@ int dtls_Rehandshake
         dtls_reset_peer(connPtr->dtlsContextPtr, peer);
     }
 
+    IsRehandshake = true;
     // start a fresh handshake
     result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
     if (0 != result)
     {
-         LOG_ARG("Error DTLS reconnection %d",result);
+         LOG_ARG("Error DTLS reconnection %d", result);
+         IsRehandshake = false;
     }
     return result;
 }
@@ -1187,7 +1202,7 @@ bool lwm2m_session_is_equal
 //--------------------------------------------------------------------------------------------------
 void dtls_HandshakeRetransmission
 (
-    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS conection list
+    dtls_Connection_t*  connListPtr,        ///< [IN] DTLS connection list
     dtls_tick_t*        timerValue,         ///< [INOUT] Timer value for retransmission
     bool*               isMaxReached        ///< [INOUT] Is maximum retransmission reached ?
 )
@@ -1234,4 +1249,31 @@ void dtls_HandshakeRetransmission
     }
 
     LOG_ARG("DTLS retransmission %d sec, isMaxReached %d", *timerValue, *isMaxReached);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to close and free peer
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_CloseAndFreePeer
+(
+    dtls_Connection_t* targetPtr            ///< [IN] DTLS connection
+)
+{
+    dtls_peer_t* peer;
+
+    if ((!targetPtr) || (!(targetPtr->dtlsContextPtr) || (!(targetPtr->dtlsSessionPtr))))
+    {
+        return;
+    }
+
+    peer = dtls_get_peer(targetPtr->dtlsContextPtr, targetPtr->dtlsSessionPtr);
+    if (peer != NULL)
+    {
+        peer->state = DTLS_STATE_CLOSED;
+        dtls_reset_peer(targetPtr->dtlsContextPtr, peer);
+    }
+    lwm2m_free(targetPtr->dtlsSessionPtr);
+    lwm2m_free(targetPtr);
 }

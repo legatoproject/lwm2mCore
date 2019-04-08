@@ -1,7 +1,7 @@
 /**
  * @file handlers.c
  *
- * client of the LWM2M stack
+ * client of the LwM2M stack
  *
  * Copyright (C) Sierra Wireless Inc.
  *
@@ -16,8 +16,11 @@
 #include <lwm2mcore/security.h>
 #include <lwm2mcore/server.h>
 #include <lwm2mcore/paramStorage.h>
+#include <lwm2mcore/timer.h>
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/location.h>
+#include <lwm2mcore/lwm2mcorePackageDownloader.h>
+#include "downloader.h"
 #include <lwm2mcore/timer.h>
 #include "handlers.h"
 #include "sessionManager.h"
@@ -27,6 +30,8 @@
 #include "aclConfiguration.h"
 #include "bootstrapConfiguration.h"
 #include "liblwm2m.h"
+#include "workspace.h"
+#include "updateAgent.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -35,14 +40,6 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_GAD_VELOCITY_MAX_BYTES    7
-
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Reboot timer delay in seconds. On timer expiration, a reboot is executed.
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_TIMER_REBOOT_DELAY    2
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -314,7 +311,7 @@ int omanager_WriteSecurityObj
 
     switch (uriPtr->rid)
     {
-        /* Resource 0: LWM2M server URI */
+        /* Resource 0: LwM2M server URI */
         case LWM2MCORE_SECURITY_SERVER_URI_RID:
             if ((LWM2MCORE_SERVER_URI_MAX_LEN < len) || (LWM2MCORE_BUFFER_MAX_LEN < len))
             {
@@ -403,7 +400,7 @@ int omanager_WriteSecurityObj
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
 
-        /* Resource 9: LWM2M server SMS number */
+        /* Resource 9: LwM2M server SMS number */
         case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
@@ -492,7 +489,7 @@ int omanager_ReadSecurityObj
 
     switch (uriPtr->rid)
     {
-        /* Resource 0: LWM2M server URI */
+        /* Resource 0: LwM2M server URI */
         case LWM2MCORE_SECURITY_SERVER_URI_RID:
             if (securityInformationPtr->data.isBootstrapServer)
             {
@@ -596,7 +593,7 @@ int omanager_ReadSecurityObj
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
 
-        /* Resource 9: LWM2M server SMS number */
+        /* Resource 9: LwM2M server SMS number */
         case LWM2MCORE_SECURITY_SERVER_SMS_NUMBER_RID:
             sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
             break;
@@ -837,7 +834,7 @@ int omanager_WriteServerObj
     bsConfigPtr = omanager_GetBootstrapConfiguration();
     if (!bsConfigPtr)
     {
-        return false;
+        return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     serverInformationPtr = omanager_GetBootstrapConfigurationServerInstance(bsConfigPtr,
@@ -980,7 +977,7 @@ int omanager_ReadServerObj
     bsConfigPtr = omanager_GetBootstrapConfiguration();
     if (!bsConfigPtr)
     {
-        return false;
+        return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
     serverInformationPtr = omanager_GetBootstrapConfigurationServerInstance(bsConfigPtr,
@@ -1130,6 +1127,8 @@ lwm2mcore_Sid_t omanager_SetLifetime
         LOG("Failed to update lifetime in memory");
         return result;
     }
+
+    smanager_SendUpdateAllServers(LWM2M_REG_UPDATE_LIFETIME);
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
@@ -1639,19 +1638,6 @@ int omanager_ReadDeviceObj
 
 //--------------------------------------------------------------------------------------------------
 /**
- *  Called when the reboot timer expires.
- */
-//--------------------------------------------------------------------------------------------------
-static void LaunchRebootTimerExpiryHandler
-(
-    void
-)
-{
-    lwm2mcore_RebootDevice();
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Function to execute a resource of object 3
  * Object: 3 - Device
  * Resource: All with execute operation
@@ -1699,17 +1685,7 @@ int omanager_ExecDeviceObj
         /* Resource 4: Reboot */
         case LWM2MCORE_DEVICE_REBOOT_RID:
             /* Acknowledge the reboot request and launch the actual reboot later */
-            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_REBOOT,
-                                            LWM2MCORE_TIMER_REBOOT_DELAY,
-                                            LaunchRebootTimerExpiryHandler))
-            {
-                LOG("Error launching reboot timer");
-                sID = LWM2MCORE_ERR_GENERAL_ERROR;
-            }
-            else
-            {
-                sID = LWM2MCORE_ERR_COMPLETED_OK;
-            }
+            sID = lwm2mcore_RebootDevice();
             break;
 
         default:
@@ -2073,6 +2049,105 @@ int omanager_ReadConnectivityMonitoringObj
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * The server sends a package URI to the LwM2M client
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Sid_t SetUpdatePackageUri
+(
+    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
+    char* bufferPtr,                ///< [INOUT] Data buffer
+    size_t len                      ///< [IN] Length of input buffer
+)
+{
+    PackageDownloaderWorkspace_t workspace;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    if (!len)
+    {
+        /* If length is 0, the server requests to abort the previous download */
+        return lwm2mcore_AbortDownload();
+    }
+
+    bool state = false;
+    if (DWL_OK != GetTpfWorkspace(&state))
+    {
+        LOG("Unable to get the TPF state");
+        state = false;
+    }
+
+    /* Check if a package is under download except in TPF mode */
+    if (DWL_OK == ReadPkgDwlWorkspace(&workspace))
+    {
+        if ((LWM2MCORE_FW_UPDATE_TYPE == workspace.updateType)
+         && (!strncmp(workspace.url,
+                     bufferPtr,
+                     (len > strlen(workspace.url)) ? len : strlen(workspace.url)))
+         && (!state))
+        {
+            LOG("Same package URI is already stored");
+            return LWM2MCORE_ERR_COMPLETED_OK;
+        }
+
+        /* For interoperability:
+         * If a new package URI is received while a package URI is already stored (which means that
+         * the package is under download (the URI is erased at package download end)), the download
+         * should be aborted.
+         */
+        if (strlen(workspace.url))
+        {
+            LOG("Need to abort download");
+            lwm2mcore_AbortDownload();
+        }
+    }
+
+    if (LWM2MCORE_ERR_COMPLETED_OK == downloader_InitializeDownload(type,
+                                                                    instanceId,
+                                                                    bufferPtr,
+                                                                    len))
+    {
+        /* Check if the package download timer is running */
+        if (lwm2mcore_TimerIsRunning(LWM2MCORE_TIMER_DOWNLOAD))
+        {
+            lwm2mcore_TimerStop(LWM2MCORE_TIMER_DOWNLOAD);
+        }
+
+        if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_DOWNLOAD,
+                                        DOWNLOADER_PACKAGE_TIMER_VALUE,
+                                        downloader_PackageDownloadHandler))
+        {
+            LOG("Error launching download package timer");
+            switch (type)
+            {
+                case LWM2MCORE_FW_UPDATE_TYPE:
+                    downloader_SetFwUpdateResult(LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR);
+                    break;
+
+                case LWM2MCORE_SW_UPDATE_TYPE:
+                    lwm2mcore_SetSwUpdateResult(LWM2MCORE_SW_UPDATE_RESULT_DEVICE_ERROR);
+                    break;
+
+                default:
+                    LOG("Unhandled update type");
+                    break;
+            }
+        }
+        else
+        {
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to write a resource of object 5
  * Object: 5 - Firmware update
  * Resource: all with write operation
@@ -2117,16 +2192,22 @@ int omanager_WriteFwUpdateObj
     {
         /* Resource 1: Package URI */
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
-            if (LWM2MCORE_BUFFER_MAX_LEN < len)
+            if (LWM2MCORE_PACKAGE_URI_MAX_LEN < len)
             {
                 sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             }
             else
             {
-                sID = lwm2mcore_SetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                    uriPtr->oid,
-                                                    bufferPtr,
-                                                    len);
+#ifdef LWM2M_EXTERNAL_DOWNLOADER
+                /* For an external downloader, the DOWNLOAD_DETAILS notification needs to be sent to
+                 * the application including the package URL without its size
+                 */
+#else
+            sID = SetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                      uriPtr->oid,
+                                      bufferPtr,
+                                      len);
+#endif /* !LWM2M_EXTERNAL_DOWNLOADER */
             }
             break;
 
@@ -2188,17 +2269,26 @@ int omanager_ReadFwUpdateObj
     {
         /* Resource 1: Package URI */
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
-            sID = lwm2mcore_GetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                                uriPtr->oid,
-                                                bufferPtr,
-                                                lenPtr);
-            break;
+        {
+            PackageDownloaderWorkspace_t workspace;
+
+            if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
+            {
+                LOG("Error on reading workspace");
+            }
+
+            memset(bufferPtr, 0, *lenPtr);
+            memcpy(bufferPtr, workspace.url, strlen(workspace.url));
+            *lenPtr = strlen(workspace.url);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
 
         /* Resource 3: Update state */
         case LWM2MCORE_FW_UPDATE_UPDATE_STATE_RID:
         {
-            uint8_t updateState;
-            sID = lwm2mcore_GetUpdateState(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateState);
+            lwm2mcore_FwUpdateState_t updateState;
+            sID = downloader_GetFwUpdateState(&updateState);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2212,8 +2302,8 @@ int omanager_ReadFwUpdateObj
         /* Resource 5: Update result */
         case LWM2MCORE_FW_UPDATE_UPDATE_RESULT_RID:
         {
-            uint8_t updateResult;
-            sID = lwm2mcore_GetUpdateResult(LWM2MCORE_FW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
+            lwm2mcore_FwUpdateResult_t updateResult;
+            sID = downloader_GetFwUpdateResult(&updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2234,28 +2324,47 @@ int omanager_ReadFwUpdateObj
             sID = LWM2MCORE_ERR_OP_NOT_SUPPORTED;
             break;
 
+        /* Resource 8: Firmware update protocol support */
+        case LWM2MCORE_FW_UPDATE_PROTO_SUPPORT_RID:
+        {
+            /* 2 protocols are supported: HTTP and HTTPS */
+            lwm2mcore_FwUpdateProtocolSupport_t protocol[2] =
+                        { LWM2MCORE_FW_UPDATE_HTTPS_1_1_PROTOCOL ,
+                          LWM2MCORE_FW_UPDATE_HTTP_1_1_PROTOCOL};
+            if ( 2 > (uriPtr->oiid))
+            {
+                /* Only support pull method using HTTP(S) */
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &(protocol[uriPtr->riid]),
+                                                      sizeof(protocol[uriPtr->riid]),
+                                                      false);
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+        }
+        break;
+
+        /* Resource 9: Firmware update delivery method */
+        case LWM2MCORE_FW_UPDATE_DELIVERY_METHOD_RID:
+        {
+            /* Only support pull method via HTTP(S) */
+            lwm2mcore_FwUpdateDeliveryMethod_t method = LWM2MCORE_FW_UPDATE_PULL_METHOD;
+            *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                  &method,
+                                                  sizeof(method),
+                                                  false);
+            sID = LWM2MCORE_ERR_COMPLETED_OK;
+        }
+        break;
+
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             break;
     }
     return sID;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- *  Called when the update timer expires.
- */
-//--------------------------------------------------------------------------------------------------
-static void LaunchFwUpdateTimerExpiryHandler
-(
-    void
-)
-{
-    int sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, 0, NULL, 0);
-    if (sID != LWM2MCORE_ERR_COMPLETED_OK)
-    {
-        LOG_ARG("Error launching FW update: %d", sID);
-    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2310,18 +2419,7 @@ int omanager_ExecFwUpdate
     {
         /* Resource 2: Update */
         case LWM2MCORE_FW_UPDATE_UPDATE_RID:
-            /* Acknowledge the update request and launch the actual update/reboot later */
-            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_REBOOT,
-                                            LWM2MCORE_TIMER_REBOOT_DELAY,
-                                            &LaunchFwUpdateTimerExpiryHandler))
-            {
-                LOG("Error launching update timer");
-                sID = LWM2MCORE_ERR_GENERAL_ERROR;
-            }
-            else
-            {
-                sID = LWM2MCORE_ERR_COMPLETED_OK;
-            }
+            sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, 0, NULL, 0);
             break;
 
         default:
@@ -2687,10 +2785,16 @@ int omanager_WriteSwUpdateObj
             }
             else
             {
-                sID = lwm2mcore_SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
-                                                    uriPtr->oiid,
-                                                    bufferPtr,
-                                                    len);
+#ifdef LWM2M_EXTERNAL_DOWNLOADER
+                /* For an external downloader, the DOWNLOAD_DETAILS notification needs to be sent to
+                 * the application including the package URL without its size
+                 */
+#else
+            sID = SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
+                                      uriPtr->oiid,
+                                      bufferPtr,
+                                      len);
+#endif /* !LWM2M_EXTERNAL_DOWNLOADER */
             }
             break;
 
@@ -2786,7 +2890,7 @@ int omanager_ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_STATE_RID:
         {
             uint8_t updateResult;
-            sID = lwm2mcore_GetUpdateState(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
+            sID = lwm2mcore_GetSwUpdateState(uriPtr->oiid, &updateResult);
             if (sID == LWM2MCORE_ERR_COMPLETED_OK)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
@@ -2816,7 +2920,7 @@ int omanager_ReadSwUpdateObj
         case LWM2MCORE_SW_UPDATE_UPDATE_RESULT_RID:
         {
             uint8_t updateResult;
-            sID = lwm2mcore_GetUpdateResult(LWM2MCORE_SW_UPDATE_TYPE, uriPtr->oiid, &updateResult);
+            sID = lwm2mcore_GetSwUpdateResult(uriPtr->oiid, &updateResult);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
                 *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,

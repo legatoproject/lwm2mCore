@@ -27,7 +27,7 @@ typedef enum
 {
     LWM2MCORE_TIMER_STEP,           ///< Timer step
     LWM2MCORE_TIMER_INACTIVITY,     ///< Inactivity timer
-    LWM2MCORE_TIMER_REBOOT,         ///< Reboot expiration timer
+    LWM2MCORE_TIMER_DOWNLOAD,       ///< Timer for package download
     LWM2MCORE_TIMER_MAX             ///< Maximum timer value (internal use)
 }lwm2mcore_TimerType_t;
 
@@ -44,6 +44,8 @@ typedef void (*lwm2mcore_TimerCallback_t)
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Adaptation function for timer start
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
@@ -65,6 +67,8 @@ bool lwm2mcore_TimerSet
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
  * @return
  *  - @c true  on success
  *  - @c false on failure
@@ -78,6 +82,8 @@ bool lwm2mcore_TimerStop
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Adaptation function for timer state
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *

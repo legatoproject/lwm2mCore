@@ -1,0 +1,6 @@
+HTTP/1.1 301 Moved Permanently
+Date: Tue, 19 Jun 2018 21:29:31 GMT
+Server: Apache/ProXad [Jul 22 2015 14:50:04]
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+

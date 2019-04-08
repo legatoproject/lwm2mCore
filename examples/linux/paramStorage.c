@@ -191,4 +191,3 @@ lwm2mcore_Sid_t lwm2mcore_DeleteParam
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
-

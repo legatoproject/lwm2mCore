@@ -68,6 +68,35 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Enumeration for firmware update protocol support
+ * These values are defined in the LWM2M specification
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_FW_UPDATE_COAP_PROTOCOL       = 0,   ///< CoAP protocol is supported
+    LWM2MCORE_FW_UPDATE_COAPS_PROTOCOL      = 1,   ///< CoAPS protocol is supported
+    LWM2MCORE_FW_UPDATE_HTTP_1_1_PROTOCOL   = 2,   ///< HTTP 1.1 protocol is supported
+    LWM2MCORE_FW_UPDATE_HTTPS_1_1_PROTOCOL  = 3    ///< HTTPS 1.1 protocol is supported
+}
+lwm2mcore_FwUpdateProtocolSupport_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Enumeration for firmware update delivery method
+ * These values are defined in the LWM2M specification
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_FW_UPDATE_PULL_METHOD  = 0,   ///< Pull method only (via HTTP(S))
+    LWM2MCORE_FW_UPDATE_PUSH_METHOD  = 1,   ///< Push method only (via CoAP(S))
+    LWM2MCORE_FW_UPDATE_BOTH_METHODS = 2    ///< Push and pull methods
+}
+lwm2mcore_FwUpdateDeliveryMethod_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Binding mode: SMS
  */
 //--------------------------------------------------------------------------------------------------

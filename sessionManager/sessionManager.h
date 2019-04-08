@@ -99,8 +99,9 @@ void smanager_SendStatusEvent
 //--------------------------------------------------------------------------------------------------
 void smanager_SendSessionEvent
 (
-    smanager_EventType_t eventId,     ///< [IN] Event Id
-    smanager_EventStatus_t status     ///< [IN] Event status
+    smanager_EventType_t    eventId,        ///< [IN] Event Id
+    smanager_EventStatus_t  status,         ///< [IN] Event status
+    void*                   contextPtr      ///< [IN] Context
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -115,6 +116,18 @@ void smanager_SendSessionEvent
 bool smanager_IsBootstrapConnection
 (
     void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to schedule a registration update message to all servers
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_SendUpdateAllServers
+(
+    uint8_t regUpdateOptions        ///< [IN] bitfield of requested parameters to be added in the
+                                    ///< registration update message
 );
 /**
   * @}
