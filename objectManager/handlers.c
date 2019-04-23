@@ -1174,7 +1174,8 @@ lwm2mcore_Sid_t omanager_GetLifetime
     {
         *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
     }
-
+    lwm2m_free(bsConfigPtr->securityPtr);
+    lwm2m_free(bsConfigPtr->serverPtr);
     lwm2m_free(bsConfigPtr);
 
     LOG_ARG("Lifetime is %d seconds", *lifetimePtr);
