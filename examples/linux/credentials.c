@@ -479,7 +479,6 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_INCORRECT_RANGE;
     clientConfig_t* config = ClientConfigGet();
     char            credentialName[CREDENTIAL_NAME_LENGTH];
-    char            serverIdString[SERVER_ID_LENGTH];
 
     printf("Set credential %d, serverId %d\n", credId, serverId);
 
@@ -580,12 +579,7 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
                 return LWM2MCORE_ERR_OVERFLOW;
             }
 
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_PSKID);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_PSKID, serverId);
 
             lwm2mcore_DataDump("DM public key", bufferPtr, len);
 
@@ -617,12 +611,7 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
                 return LWM2MCORE_ERR_OVERFLOW;
             }
 
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_PSK);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_PSK, serverId);
 
             lwm2mcore_DataDump("DM secret key", bufferPtr, len);
 
@@ -657,12 +646,7 @@ lwm2mcore_Sid_t lwm2mcore_SetCredential
                 return LWM2MCORE_ERR_OVERFLOW;
             }
 
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_URL);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_URL, serverId);
 
             /* Save the credential in clientCondifg.txt */
             if (0 < clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
@@ -765,7 +749,6 @@ bool lwm2mcore_DeleteCredential
     clientSecurityConfig_t* securityObjPtr;
     clientConfig_t* config = ClientConfigGet();
     char            credentialName[CREDENTIAL_NAME_LENGTH];
-    char            serverIdString[SERVER_ID_LENGTH];
 
     securityObjPtr = GetDmServerConfigById(serverId);
     if (!securityObjPtr)
@@ -776,12 +759,7 @@ bool lwm2mcore_DeleteCredential
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_DM_PUBLIC_KEY:
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_PSKID);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_PSKID, serverId);
 
             clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
                                      credentialName,
@@ -790,12 +768,7 @@ bool lwm2mcore_DeleteCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_SECRET_KEY:
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_PSK);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_PSK, serverId);
 
             clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
                                      credentialName,
@@ -804,12 +777,7 @@ bool lwm2mcore_DeleteCredential
             break;
 
         case LWM2MCORE_CREDENTIAL_DM_ADDRESS:
-            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s", CLIENT_CONFIG_SERVER_URL);
-            snprintf(serverIdString, SERVER_ID_LENGTH, "%d", serverId);
-            snprintf(credentialName + strlen(credentialName),
-                     SERVER_ID_LENGTH,
-                     " %s",
-                     serverIdString);
+            snprintf(credentialName, CREDENTIAL_NAME_LENGTH, "%s %d", CLIENT_CONFIG_SERVER_URL, serverId);
 
             clientConfigWriteOneLine(CLIENT_CONFIG_DM_SERVER_SECTION_NAME,
                                      credentialName,

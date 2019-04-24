@@ -793,7 +793,7 @@ static void test_lwm2mcore_Downloader
     printf("\n====== downloader_GetPackageSize: Invalid protocol ======\n");
     packageSize = 0;
     memset(packageUrl, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
-    strncpy(packageUrl, INVALID_PROTOCOL_URL, strlen(INVALID_PROTOCOL_URL));
+    strncpy(packageUrl, INVALID_PROTOCOL_URL, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
     result = downloader_GetPackageSize(packageUrl, &packageSize);
     TEST_ASSERT(DOWNLOADER_INVALID_ARG == result);
 
@@ -1200,7 +1200,7 @@ static void test_lwm2mcore_UpdatePackage
     printf("\n====== Tests on lwm2mcore_StartPackageDownloader ======\n");
     printf("\n====== lwm2mcore_StartPackageDownloader: get size from invalid protocol ======\n");
     TEST_ASSERT(DWL_OK == ReadPkgDwlWorkspace(&workspace));
-    strncpy(workspace.url, INVALID_PROTOCOL_URL, strlen(INVALID_PROTOCOL_URL));
+    strncpy(workspace.url, INVALID_PROTOCOL_URL, sizeof(workspace.url));
     workspace.packageSize = 0;
     workspace.updateType = LWM2MCORE_FW_UPDATE_TYPE;
     TEST_ASSERT(DWL_OK == WritePkgDwlWorkspace(&workspace));
@@ -1216,7 +1216,7 @@ static void test_lwm2mcore_UpdatePackage
     printf("\n====== lwm2mcore_StartPackageDownloader: download from invalid protocol ======\n");
     // Invalid protocol
     TEST_ASSERT(DWL_OK == ReadPkgDwlWorkspace(&workspace));
-    strncpy(workspace.url, INVALID_PROTOCOL_URL, strlen(INVALID_PROTOCOL_URL));
+    strncpy(workspace.url, INVALID_PROTOCOL_URL, sizeof(workspace.url));
     workspace.packageSize = 100;
     TEST_ASSERT(DWL_OK == WritePkgDwlWorkspace(&workspace));
     TEST_ASSERT( LWM2MCORE_ERR_COMPLETED_OK == lwm2mcore_StartPackageDownloader(NULL));
