@@ -107,7 +107,8 @@ typedef enum
     DOWNLOADER_SEND_ERROR,        ///< Error on sending data
     DOWNLOADER_ERROR,             ///< Command failure
     DOWNLOADER_TIMEOUT,           ///< Command success but not data read during the dedicated time
-    DOWNLOADER_MEMORY_ERROR       ///< Memory allocation issue
+    DOWNLOADER_MEMORY_ERROR,      ///< Memory allocation issue
+    DOWNLOADER_CERTIF_ERROR       ///< Certificate failure
 }
 downloaderResult_t;
 

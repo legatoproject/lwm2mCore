@@ -632,6 +632,10 @@ static downloaderResult_t GetPackageSize
                 retry++;
                 break;
 
+            case DOWNLOADER_CERTIF_ERROR:
+                retry = DWL_RETRIES;
+                break;
+
             default:
                 retry = DWL_RETRIES;
                 result = DOWNLOADER_ERROR;
@@ -663,6 +667,26 @@ static downloaderResult_t GetPackageSize
             if (LWM2MCORE_FW_UPDATE_TYPE == workspacePtr->updateType)
             {
                 downloader_SetFwUpdateResult(PkgDwlObj.updateResult.fw);
+            }
+
+            // Remove the package URL from the workspace
+            ErasePackageUrl();
+            break;
+
+        case DOWNLOADER_CERTIF_ERROR:
+            SetUpdateResult(PKG_DWL_ERROR_PROTOCOL);
+            switch (PkgDwlObj.packageType)
+            {
+                case LWM2MCORE_FW_UPDATE_TYPE:
+                    downloader_SetFwUpdateResult(PkgDwlObj.updateResult.fw);
+                    break;
+
+                case LWM2MCORE_SW_UPDATE_TYPE:
+                    lwm2mcore_SetSwUpdateResult(PkgDwlObj.updateResult.sw);
+                    break;
+
+                default:
+                    break;
             }
 
             // Remove the package URL from the workspace
@@ -2149,6 +2173,13 @@ static void PkgDwlDownload
             PkgDwlObj.endOfProcessing = true;
             break;
 
+        case DOWNLOADER_CERTIF_ERROR:
+            LOG("HTTP certificate expired");
+            SetUpdateResult(PKG_DWL_ERROR_PROTOCOL);
+            PkgDwlObj.state = PKG_DWL_ERROR;
+            PkgDwlObj.result = DWL_FAULT;
+            break;
+
         default:
             LOG("Error while getting the package information");
             SetUpdateResult(PKG_DWL_ERROR_CONNECTION);
@@ -2188,6 +2219,13 @@ end:
             case DOWNLOADER_SEND_ERROR:
                 PkgDwlObj.state = PKG_DWL_SUSPEND;
                 PkgDwlObj.result = DWL_NETWORK_ERROR;
+                break;
+
+            case DOWNLOADER_CERTIF_ERROR:
+                LOG("Invalid certificate");
+                SetUpdateResult(PKG_DWL_ERROR_PROTOCOL);
+                PkgDwlObj.state = PKG_DWL_ERROR;
+                PkgDwlObj.result = DWL_FAULT;
                 break;
 
             default:
