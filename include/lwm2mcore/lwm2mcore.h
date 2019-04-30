@@ -18,6 +18,15 @@
   * @addtogroup lwm2mcore_config_IFS
   * @{
   */
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Macro used to declare that a symbol should be shared outside the dynamic shared object in
+ * which it is defined.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_SHARED __attribute__((visibility ("default")))
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Maximum length of a resource name

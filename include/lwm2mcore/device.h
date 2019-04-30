@@ -33,7 +33,7 @@
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceManufacturer
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceManufacturer
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -55,7 +55,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceManufacturer
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceModelNumber
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceModelNumber
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -77,7 +77,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceModelNumber
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -99,7 +99,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceSerialNumber
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceFirmwareVersion
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceFirmwareVersion
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -121,7 +121,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceFirmwareVersion
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
 (
     uint8_t* valuePtr  ///< [INOUT] data buffer
 );
@@ -139,7 +139,7 @@ lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
 (
     uint64_t* valuePtr  ///< [INOUT] data buffer
 );
@@ -177,7 +177,7 @@ lwm2mcore_Sid_t lwm2mcore_SetDeviceCurrentTime
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -199,7 +199,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceImei
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetIccid
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetIccid
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -221,7 +221,7 @@ lwm2mcore_Sid_t lwm2mcore_GetIccid
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -242,7 +242,7 @@ lwm2mcore_Sid_t lwm2mcore_GetSubscriptionIdentity
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
 (
     uint8_t*   currentSimPtr  ///< [OUT]    Currently used SIM card
 );
@@ -262,7 +262,7 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimCard
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_SetSimMode
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_SetSimMode
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -283,7 +283,7 @@ lwm2mcore_Sid_t lwm2mcore_SetSimMode
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
 (
     uint8_t*   simModePtr  ///< [OUT]    SIM mode pointer
 );
@@ -303,7 +303,7 @@ lwm2mcore_Sid_t lwm2mcore_GetCurrentSimMode
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
 (
     uint8_t*   switchStatusPtr  ///< [OUT]    SIM switch status
 );
@@ -324,7 +324,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetMsisdn
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetMsisdn
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -345,7 +345,7 @@ lwm2mcore_Sid_t lwm2mcore_GetMsisdn
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceTemperature
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceTemperature
 (
     int32_t* valuePtr   ///< [INOUT] data buffer
 );
@@ -365,7 +365,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceTemperature
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceUnexpectedResets
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceUnexpectedResets
 (
     uint32_t* valuePtr  ///< [INOUT] data buffer
 );
@@ -385,7 +385,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceUnexpectedResets
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
 (
     uint32_t* valuePtr  ///< [INOUT] data buffer
 );

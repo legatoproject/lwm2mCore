@@ -34,7 +34,7 @@
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetLatitude
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetLatitude
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -57,7 +57,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLatitude
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetLongitude
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetLongitude
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -80,7 +80,7 @@ lwm2mcore_Sid_t lwm2mcore_GetLongitude
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetAltitude
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetAltitude
 (
     char*   bufferPtr,  ///< [IN]    data buffer pointer
     size_t* lenPtr      ///< [INOUT] length of input buffer and length of the returned data
@@ -103,7 +103,7 @@ lwm2mcore_Sid_t lwm2mcore_GetAltitude
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetDirection
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDirection
 (
     uint32_t* valuePtr  ///< [INOUT] data buffer
 );
@@ -125,7 +125,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDirection
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
 (
     uint32_t* valuePtr  ///< [INOUT] data buffer
 );
@@ -147,7 +147,7 @@ lwm2mcore_Sid_t lwm2mcore_GetHorizontalSpeed
  *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
 (
     int32_t* valuePtr   ///< [INOUT] data buffer
 );
@@ -168,7 +168,7 @@ lwm2mcore_Sid_t lwm2mcore_GetVerticalSpeed
  *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetLocationTimestamp
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetLocationTimestamp
 (
     uint64_t* valuePtr  ///< [INOUT] data buffer
 );
