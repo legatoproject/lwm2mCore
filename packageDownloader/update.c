@@ -529,18 +529,19 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateResult
                 return LWM2MCORE_ERR_INVALID_STATE;
             }
 
-            if (isSuccess)
+            result = downloader_SetFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
+            if (LWM2MCORE_ERR_COMPLETED_OK == result)
             {
-                result = downloader_SetFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
-                if (LWM2MCORE_ERR_COMPLETED_OK == result)
+                if (isSuccess)
                 {
                     result = downloader_SetFwUpdateResult(
                                                 LWM2MCORE_FW_UPDATE_RESULT_INSTALLED_SUCCESSFUL);
                 }
-            }
-            else
-            {
-                result = downloader_SetFwUpdateResult(LWM2MCORE_FW_UPDATE_RESULT_INSTALL_FAILURE);
+                else
+                {
+                    result = downloader_SetFwUpdateResult(
+                                                LWM2MCORE_FW_UPDATE_RESULT_INSTALL_FAILURE);
+                }
             }
         }
         break;

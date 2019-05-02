@@ -26,7 +26,6 @@
 #include "bootstrapConfiguration.h"
 #include <downloader.h>
 #include <updateAgent.h>
-
 #include <lwm2mcore/lwm2mcorePackageDownloader.h>
 
 
@@ -1374,6 +1373,7 @@ bool lwm2mcore_DisconnectWithDeregister
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
+    bool isFotaOngoing = false;
     smanager_ClientData_t* dataPtr;
 
 #ifndef LWM2M_DEREGISTER
@@ -1403,6 +1403,16 @@ bool lwm2mcore_DisconnectWithDeregister
 
     /* Stop the agent */
     dataPtr->lwm2mHPtr->userData = dataPtr;
+
+    /* Check if a FOTA is not under treatment */
+    if( (LWM2MCORE_ERR_COMPLETED_OK == lwm2mcore_IsFwUpdateOnGoing(&isFotaOngoing))
+     && (isFotaOngoing))
+    {
+        /* Do not send the DEREGISTER */
+        LOG("Because of FOTA, DEREGISTER is not sent");
+        lwm2m_followClosure(dataPtr->lwm2mHPtr);
+        return true;
+    }
 
     if (true == lwm2m_close(dataPtr->lwm2mHPtr))
     {
