@@ -272,7 +272,7 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
 {
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_GENERAL_ERROR;
     PackageDownloaderWorkspace_t workspace;
-
+    memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
     if ((NULL == bufferPtr) || (NULL == lenPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
         return LWM2MCORE_ERR_INVALID_ARG;

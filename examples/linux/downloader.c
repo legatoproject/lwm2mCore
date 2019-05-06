@@ -884,10 +884,10 @@ static downloaderResult_t SendRequest
         if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_DisconnectForDownload(packageDownloadCtxPtr))
         {
             LOG("Error on download disconnection");
-            if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
-            {
-                LOG("Error on download free");
-            }
+        }
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
+        {
+            LOG("Error on download free");
         }
     }
 
@@ -895,18 +895,11 @@ static downloaderResult_t SendRequest
     {
         case LWM2MCORE_ERR_NET_RECV_FAILED:
             LOG("Error on download connection receive data");
-            if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
-            {
-                LOG("Error on download free");
-            }
             return DOWNLOADER_RECV_ERROR;
 
         case LWM2MCORE_ERR_NET_SEND_FAILED:
             LOG("Error on download connection send data");
-            if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
-            {
-                LOG("Error on download free");
-            }
+
             return DOWNLOADER_SEND_ERROR;
 
         case LWM2MCORE_ERR_MEMORY:
