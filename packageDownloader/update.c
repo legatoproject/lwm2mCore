@@ -142,7 +142,15 @@ lwm2mcore_Sid_t downloader_GetFwUpdateState
     }
 
     *statePtr = workspace.fwState;
-    LOG_ARG("fw State %d", workspace.fwState);
+
+    // state cannot exceed LWM2MCORE_FW_UPDATE_STATE_WAITINSTALLRESULT
+    if (*statePtr > LWM2MCORE_FW_UPDATE_STATE_WAITINSTALLRESULT)
+    {
+        LOG_ARG("Reset invalid fw update state(%d) from workspace", *statePtr);
+        *statePtr = LWM2MCORE_FW_UPDATE_STATE_IDLE;
+    }
+
+    LOG_ARG("fw State %d", *statePtr);
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
@@ -175,7 +183,15 @@ lwm2mcore_Sid_t downloader_GetFwUpdateResult
     }
 
     *resultPtr = workspace.fwResult;
-    LOG_ARG("fw Result %d", workspace.fwResult);
+
+    // result cannot exceed LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL
+    if (*resultPtr > LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL)
+    {
+        LOG_ARG("Reset invalid fw update result(%d) from workspace", *resultPtr);
+        *resultPtr = LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL;
+    }
+
+    LOG_ARG("fw Result %d", *resultPtr);
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
@@ -197,6 +213,13 @@ lwm2mcore_Sid_t downloader_SetFwUpdateState
 
     if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
     {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // state cannot exceed LWM2MCORE_FW_UPDATE_STATE_WAITINSTALLRESULT
+    if (state > LWM2MCORE_FW_UPDATE_STATE_WAITINSTALLRESULT)
+    {
+        LOG("Invalid Fw update state");
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
@@ -234,6 +257,13 @@ lwm2mcore_Sid_t downloader_SetFwUpdateResult
 
     if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
     {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // result cannot exceed LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL
+    if (result > LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PROTOCOL)
+    {
+        LOG("Invalid firmware update result");
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 

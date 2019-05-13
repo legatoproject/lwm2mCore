@@ -215,7 +215,7 @@ PackageDownloaderError_t;
  * FW or SW update result
  */
 //--------------------------------------------------------------------------------------------------
-typedef union
+typedef struct
 {
     lwm2mcore_FwUpdateResult_t  fw;     ///< Firmware update result
     lwm2mcore_SwUpdateResult_t  sw;     ///< Software update result
@@ -2104,8 +2104,9 @@ static void PkgDwlDownload
         // Notify the application of the download start
         PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
 
-        // Set update state to 'Downloading'
-        switch (pkgDwlPtr->data.updateType)
+        // Set update state to 'Downloading'.
+        // Use the update type set by PkgDwlInit().
+        switch (PkgDwlObj.packageType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
                 result = downloader_SetFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADING);
@@ -2418,7 +2419,7 @@ static void PkgDwlEnd
     if (PKG_DWL_NO_ERROR != GetPackageDownloaderError())
     {
         // Error during download or parsing, set update result accordingly.
-        switch (pkgDwlPtr->data.updateType)
+        switch (PkgDwlObj.packageType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
                 result = downloader_SetFwUpdateResult(PkgDwlObj.updateResult.fw);
@@ -2441,7 +2442,7 @@ static void PkgDwlEnd
         }
 
         // According to OMA-TS-LightweightM2M-V1_0-20170208-A, update state should be set to IDLE
-        switch (pkgDwlPtr->data.updateType)
+        switch (PkgDwlObj.packageType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
                 result = downloader_SetFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_IDLE);
@@ -2465,7 +2466,7 @@ static void PkgDwlEnd
     {
         // Successful download: set update state to 'Downloaded'.
         // No need to change the update result, it was already set to 'Normal' at the beginning.
-        switch (pkgDwlPtr->data.updateType)
+        switch (PkgDwlObj.packageType)
         {
             case LWM2MCORE_FW_UPDATE_TYPE:
                 result = downloader_SetFwUpdateState(LWM2MCORE_FW_UPDATE_STATE_DOWNLOADED);
