@@ -2069,6 +2069,23 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
     PackageDownloaderWorkspace_t workspace;
     int sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
+    // Update the package type.
+    // This is the first step as error handling is dependent on update type.
+    if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
+    {
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // Copy the updateType
+    workspace.updateType = type;
+
+    // Store the workspace
+    if (DWL_OK != WritePkgDwlWorkspace(&workspace))
+    {
+       LOG("Error on saving workspace");
+       return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
     if (!len)
     {
         /* If length is 0, the server requests to abort the previous download */
