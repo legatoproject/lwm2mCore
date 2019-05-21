@@ -2360,6 +2360,7 @@ int omanager_ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
         {
             PackageDownloaderWorkspace_t workspace;
+            memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
 
             if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
             {

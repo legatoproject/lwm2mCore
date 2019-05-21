@@ -112,7 +112,10 @@ lwm2mcore_DwlResult_t ReadPkgDwlWorkspace
         pkgDwlWorkspacePtr->updateType = LWM2MCORE_FW_UPDATE_TYPE;
     }
 
-    WritePkgDwlWorkspace(pkgDwlWorkspacePtr);
+    if(DWL_OK != WritePkgDwlWorkspace(pkgDwlWorkspacePtr))
+    {
+        return DWL_FAULT;
+    }
 #endif
 
     return DWL_OK;
