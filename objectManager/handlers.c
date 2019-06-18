@@ -1849,7 +1849,7 @@ int omanager_ReadConnectivityMonitoringObj
                 {
                     /* Reset the available network bearers list */
                     memset(bearersList, 0, sizeof(bearersList));
-                    bearersNb = 0;
+                    bearersNb = sizeof(bearersList) / sizeof(lwm2mcore_networkBearer_enum_t);
 
                     /* Retrieve the list */
                     sID = lwm2mcore_GetAvailableNetworkBearers(bearersList, &bearersNb);
