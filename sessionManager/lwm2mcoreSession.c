@@ -322,6 +322,43 @@ uint8_t lwm2m_report_coap_status
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Force a connection to the bootstrap
+ */
+//--------------------------------------------------------------------------------------------------
+static void ForceBootstrap
+(
+    lwm2m_server_t* targetPtr,          ///< [IN] Server list
+    lwm2m_transaction_t* transacPtr     ///< [IN] Transaction list
+)
+{
+    LOG("Force bootstrap");
+
+    // Delete DM credentials if present
+    omanager_DeleteDmCredentials();
+
+    while (targetPtr)
+    {
+        targetPtr->status = STATE_REG_FAILED;
+        if (targetPtr->sessionH != NULL)
+        {
+            lwm2m_close_connection(targetPtr->sessionH,
+                                   DataCtxPtr->lwm2mHPtr->userData);
+            targetPtr->sessionH = NULL;
+        }
+        targetPtr->dirty = true;
+        targetPtr = targetPtr->next;
+    }
+
+    while (transacPtr)
+    {
+        lwm2m_transaction_t* nextTransacPtr = transacPtr->next;
+        transaction_remove(DataCtxPtr->lwm2mHPtr, transacPtr);
+        transacPtr = nextTransacPtr;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  *  LwM2M client inactivity timeout.
  */
 //--------------------------------------------------------------------------------------------------
@@ -388,37 +425,36 @@ static void Lwm2mClientStepHandler
             LOG("All retransmission attempts failed");
             // All retransmission attempts failed
             // On tinyDTLS side, bufferized message are deleted
-            smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL, NULL);
 
             if (STATE_REGISTERING == DataCtxPtr->lwm2mHPtr->state)
             {
-                lwm2m_server_t* targetPtr = DataCtxPtr->lwm2mHPtr->serverList;
-                lwm2m_transaction_t* transacPtr = DataCtxPtr->lwm2mHPtr->transactionList;
-                LOG("Force bootstrap");
-
-                // Delete DM credentials if present
-                omanager_DeleteDmCredentials();
+                // Notify the authentication failure to DM
+                smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL, NULL);
 
                 DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
-
-                while (targetPtr)
+                // While the device tries to register to the server, all DTLS retransmissions failed
+                // The common use case is that DM credentials were updated on server side
+                // (key-rotation) which requires a connection to the bootstrap server in order to
+                // retrieve new DM credentials
+                ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
+                               DataCtxPtr->lwm2mHPtr->transactionList);
+            }
+            else if (STATE_READY == DataCtxPtr->lwm2mHPtr->state)
+            {
+                // This means that a DTLS resume fails on REG UPDATE
+                // Do not notify the authentication failure in this case
+                // Try a full DTLS handshake
+                DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+                LOG("Perform rehandshake");
+                    // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
+                    // 1) connects to the bootstrap server
+                    // 2) indicates the connection as failed.
+                    // Option 1 is kept
+                if (0 != dtls_Rehandshake(DataCtxPtr->connListPtr, false))
                 {
-                    targetPtr->status = STATE_REG_FAILED;
-                    if (targetPtr->sessionH != NULL)
-                    {
-                        lwm2m_close_connection(targetPtr->sessionH,
-                                               DataCtxPtr->lwm2mHPtr->userData);
-                        targetPtr->sessionH = NULL;
-                    }
-                    targetPtr->dirty = true;
-                    targetPtr = targetPtr->next;
-                }
-
-                while (transacPtr)
-                {
-                    lwm2m_transaction_t* nextTransacPtr = transacPtr->next;
-                    transaction_remove(DataCtxPtr->lwm2mHPtr, transacPtr);
-                    transacPtr = nextTransacPtr;
+                    LOG("Unable to perform rehandshake");
+                    ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
+                                   DataCtxPtr->lwm2mHPtr->transactionList);
                 }
             }
             else
@@ -678,7 +714,6 @@ void smanager_SendSessionEvent
                 case EVENT_STATUS_INACTIVE:
                 {
                     LOG("Session inactive");
-
                     status.event = LWM2MCORE_EVENT_LWM2M_SESSION_INACTIVE;
                     smanager_SendStatusEvent(status);
                 }
@@ -792,7 +827,6 @@ void smanager_SendSessionEvent
                 case EVENT_STATUS_DONE_SUCCESS:
                 {
                     LOG("AUTHENTICATION DONE");
-
                     if (BootstrapSession)
                     {
                         status.event = LWM2MCORE_EVENT_SESSION_STARTED;
