@@ -453,6 +453,10 @@ static void Lwm2mClientStepHandler
                 if (0 != dtls_Rehandshake(DataCtxPtr->connListPtr, false))
                 {
                     LOG("Unable to perform rehandshake");
+                    // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
+                    // 1) connects to the bootstrap server
+                    // 2) indicates the connection as failed.
+                    // Option 1 is kept
                     ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
                                    DataCtxPtr->lwm2mHPtr->transactionList);
                 }
