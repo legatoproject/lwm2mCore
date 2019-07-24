@@ -161,6 +161,27 @@ void lwm2mcore_PackageDownloaderInit
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Delete the package downloader resume info.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * This function is called to delete resume related information from the package downloader
+ * workspace.
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @note
+ * This function is not available if @c LWM2M_EXTERNAL_DOWNLOADER compilation flag is embedded
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_DeletePackageDownloaderResumeInfo
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Function to initialize a package download
  *
  * @remark Platform adaptor function which needs to be defined on client side.

@@ -2804,10 +2804,30 @@ void lwm2mcore_PackageDownloaderInit
     void
 )
 {
-    /*if (DWL_OK != DeletePkgDwlWorkspace())
+
+    if (DWL_OK != DeletePkgDwlWorkspace())
     {
         LOG("No package downloader workspace to delete");
-    }*/
+    }
+
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Delete the package downloader resume info.
+ *
+ * This function is called to delete resume related information from the package downloader
+ * workspace.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_DeletePackageDownloaderResumeInfo
+(
+    void
+)
+{
+    LOG("Clearing packageDownloader resume info");
+    CleanWorkspaceForCrcAndSignature();
+    ErasePackageUrl();
 }
 
 //--------------------------------------------------------------------------------------------------
