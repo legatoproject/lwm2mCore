@@ -510,6 +510,8 @@ static uint8_t ReadCb
             if (NULL != resourcePtr->read)
             {
                 LOG_ARG("READ /%d/%d/%d", uri.oid, uri.oiid, uri.rid);
+                asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+                memset(asyncBuf, 0, asyncBufLen);
 
                 if (1 < resourcePtr->maxInstCount)
                 {
@@ -521,9 +523,6 @@ static uint8_t ReadCb
                 }
                 else
                 {
-                    asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
-                    memset(asyncBuf, 0, asyncBufLen);
-
                     sid = resourcePtr->read(&uri, asyncBuf, &asyncBufLen, NULL);
 
                     /* Define the CoAP result */
@@ -645,8 +644,10 @@ static bool FormatDataWriteExecute
                 {
                     case LWM2MCORE_RESOURCE_TYPE_INT:
                     case LWM2MCORE_RESOURCE_TYPE_BOOL:
+                    case LWM2MCORE_RESOURCE_TYPE_TIME:
                     {
                         // The received data is the integer/boolean value in text
+                        // Time is also a type represented in integer rather than string form
                         // Example: value 123 is sent like 0x31 32 33
                         // Change the string in value
                         int64_t value = 0;
@@ -675,7 +676,6 @@ static bool FormatDataWriteExecute
 
                     case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
                     case LWM2MCORE_RESOURCE_TYPE_FLOAT:
-                    case LWM2MCORE_RESOURCE_TYPE_TIME:
                     case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
                     default:
                         memcpy(bufferPtr,
@@ -1630,7 +1630,8 @@ static bool RegisterObjTable
                 ObjectArray[ObjNb]->instanceList =
                         (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
                 memset(ObjectArray[ObjNb]->instanceList, 0, sizeof(lwm2m_list_t));
-                for (j = 0; j < objInstanceNb; j++)
+                // Since ObjectArray[0] is already malloced, the following loop starts with 1
+                for (j = 1; j < objInstanceNb; j++)
                 {
                     /* Add the object instance in the Wakaama format */
                     instancePtr = (lwm2m_list_t *)lwm2m_malloc(sizeof(lwm2m_list_t));
