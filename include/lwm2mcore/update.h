@@ -762,6 +762,16 @@ lwm2mcore_Sid_t lwm2mcore_IsFwUpdateInstallWaited
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Clean the stale workspace of aborted SOTA/FOTA job
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_CleanStaleData
+(
+    lwm2mcore_UpdateType_t type     ///< [IN] Update type
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Get TPF mode state
  *
  * @return

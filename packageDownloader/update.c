@@ -53,7 +53,6 @@ lwm2mcore_Sid_t downloader_InitializeDownload
 {
     PackageDownloaderWorkspace_t workspace;
 
-    (void)instanceId;
 
     if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
     {
@@ -92,7 +91,11 @@ lwm2mcore_Sid_t downloader_InitializeDownload
             break;
 
         case LWM2MCORE_SW_UPDATE_TYPE:
-            LOG("Init downloader for SOTA: TODO");
+            // For SOTA upgrade, no create command is issued. So if device reboots after uninstall,
+            // there is a chance that no SOTA object is dedicated for this uri. So create a SOTA
+            // object if there is currently none.
+            LOG("Initializing SOTA object instance");
+            lwm2mcore_SoftwareUpdateInstance(true, instanceId);
             break;
 
         default:

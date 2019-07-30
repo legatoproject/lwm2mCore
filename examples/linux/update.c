@@ -470,6 +470,20 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageVersion
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Clean the stale workspace of aborted SOTA/FOTA job
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_CleanStaleData
+(
+    lwm2mcore_UpdateType_t type     ///< [IN] Update type
+)
+{
+    (void)type;
+    printf("function to be implemented");
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * The server sets the "update supported objects" field for software update
  *
  * @return

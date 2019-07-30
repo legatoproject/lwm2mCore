@@ -2117,12 +2117,16 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
          * the package is under download (the URI is erased at package download end)), the download
          * should be aborted.
          */
+
         if (strlen(workspace.url))
         {
             LOG("Need to abort download");
             lwm2mcore_AbortDownload();
         }
     }
+
+    lwm2mcore_DeletePackageDownloaderResumeInfo();
+    lwm2mcore_CleanStaleData(workspace.updateType);
 
     if (LWM2MCORE_ERR_COMPLETED_OK == downloader_InitializeDownload(type,
                                                                     instanceId,

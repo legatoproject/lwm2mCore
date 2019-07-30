@@ -535,34 +535,6 @@ static void SetUpdateResultOnHttpError
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Remove package URL from workspace
- */
-//--------------------------------------------------------------------------------------------------
-static void ErasePackageUrl
-(
-    void
-)
-{
-    PackageDownloaderWorkspace_t workspace;
-    LOG("Erase package URL");
-
-    if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
-    {
-        LOG("Error on reading workspace");
-        return;
-    }
-
-    memset(workspace.url, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
-    workspace.packageSize = 0;
-
-    if (DWL_OK != WritePkgDwlWorkspace(&workspace))
-    {
-        LOG("Error when updating workspace");
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Get package size to be downloaded from the server
  *
  * @note
@@ -662,19 +634,18 @@ static downloaderResult_t GetPackageSize
 
         case DOWNLOADER_INVALID_ARG:        // HTTP 404
         case DOWNLOADER_CONNECTION_ERROR:   // Connection error to the server
-            // The command is not sent
-            SetUpdateResult(PKG_DWL_ERROR_URI);
-            if (LWM2MCORE_FW_UPDATE_TYPE == workspacePtr->updateType)
+        case DOWNLOADER_CERTIF_ERROR:       // Certificate error
+
+            if (DOWNLOADER_CERTIF_ERROR == result)
             {
-                downloader_SetFwUpdateResult(PkgDwlObj.updateResult.fw);
+                SetUpdateResult(PKG_DWL_ERROR_PROTOCOL);
+            }
+            else
+            {
+                // The command is not sent
+                SetUpdateResult(PKG_DWL_ERROR_URI);
             }
 
-            // Remove the package URL from the workspace
-            ErasePackageUrl();
-            break;
-
-        case DOWNLOADER_CERTIF_ERROR:
-            SetUpdateResult(PKG_DWL_ERROR_PROTOCOL);
             switch (PkgDwlObj.packageType)
             {
                 case LWM2MCORE_FW_UPDATE_TYPE:
@@ -689,9 +660,10 @@ static downloaderResult_t GetPackageSize
                     break;
             }
 
-            // Remove the package URL from the workspace
-            ErasePackageUrl();
+            // Remove the package URL and other download related resume info
+            lwm2mcore_DeletePackageDownloaderResumeInfo();
             break;
+
 
         case DOWNLOADER_MEMORY_ERROR:
         case DOWNLOADER_RECV_ERROR:
@@ -702,49 +674,12 @@ static downloaderResult_t GetPackageSize
         case DOWNLOADER_ERROR:
         default:
             SetUpdateResultOnHttpError();
-            // Remove the package URL from the workspace
-            ErasePackageUrl();
+            // Remove the package URL and other download related resume info
+            lwm2mcore_DeletePackageDownloaderResumeInfo();
             break;
     }
     LOG_ARG("Get Package size return %d", result);
     return result;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
- * Clean workspace for CRC and signature
- */
-//--------------------------------------------------------------------------------------------------
-static void CleanWorkspaceForCrcAndSignature
-(
-    void
-)
-{
-    PackageDownloaderWorkspace_t workspace;
-
-    if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
-    {
-        LOG("Error on reading workspace");
-        return;
-    }
-
-    // Do not clean FW update state and result
-    workspace.offset = 0;
-    workspace.section = 0;
-    workspace.subsection = 0;
-    workspace.packageCRC = 0;
-    workspace.commentSize = 0;
-    workspace.binarySize = 0;
-    workspace.paddingSize = 0;
-    workspace.remainingBinaryData = 0;
-    workspace.signatureSize = 0;
-    workspace.computedCRC = 0;
-    memset(workspace.sha1Ctx, 0, SHA1_CTX_MAX_SIZE);
-
-    if (DWL_OK != WritePkgDwlWorkspace(&workspace))
-    {
-        LOG("Error when updating workspace");
-    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -978,9 +913,8 @@ static void PkgDwlEvent
             LOG_ARG("Package download end: event %d, errorCode %d",
                     status.event, status.u.pkgStatus.errorCode);
 
-            // Remove the package URL from the workspace
-            ErasePackageUrl();
-            CleanWorkspaceForCrcAndSignature();
+            // Remove the package URL and other download related resume info
+            lwm2mcore_DeletePackageDownloaderResumeInfo();
             break;
 
         case PKG_DWL_EVENT_SIGN_OK:
@@ -2826,8 +2760,40 @@ void lwm2mcore_DeletePackageDownloaderResumeInfo
 )
 {
     LOG("Clearing packageDownloader resume info");
-    CleanWorkspaceForCrcAndSignature();
-    ErasePackageUrl();
+
+    PackageDownloaderWorkspace_t workspace;
+
+    if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
+    {
+        LOG("Error on reading workspace");
+        return;
+    }
+
+    // Do not clean FW update state and result
+    workspace.offset = 0;
+    workspace.section = 0;
+    workspace.subsection = 0;
+    workspace.packageCRC = 0;
+    workspace.commentSize = 0;
+    workspace.binarySize = 0;
+    workspace.paddingSize = 0;
+    workspace.remainingBinaryData = 0;
+    workspace.signatureSize = 0;
+    workspace.computedCRC = 0;
+    memset(workspace.sha1Ctx, 0, SHA1_CTX_MAX_SIZE);
+    LOG("Clearing package downloader url");
+    memset(workspace.url, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
+    workspace.packageSize = 0;
+
+    if (DWL_OK != WritePkgDwlWorkspace(&workspace))
+    {
+        LOG("Error when updating workspace");
+        return;
+    }
+
+    // Copy the updated workspace
+    memcpy(&PkgDwlWorkspace, &workspace, sizeof(PackageDownloaderWorkspace_t));
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2950,8 +2916,8 @@ lwm2mcore_Sid_t lwm2mcore_AbortDownload
 
     downloader_AbortDownload();
 
-    // Remove the package URL from the workspace
-    ErasePackageUrl();
+    // Remove the package URL and other download related resume info
+    lwm2mcore_DeletePackageDownloaderResumeInfo();
 
     switch (workspace.updateType)
     {
