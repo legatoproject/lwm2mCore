@@ -18,11 +18,17 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Define value for the max number of clock sources
+ */
+//--------------------------------------------------------------------------------------------------
+#define CLOCK_TIME_CONFIG_SOURCE_MAX 3
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Clock source types defined: TP, NTP, GPS
  * CLOCK_SOURCE_IS_VALID(source) validates whether the given source is within the valid range
  */
 //--------------------------------------------------------------------------------------------------
-#define CLOCK_TIME_CONFIG_SOURCE_MAX 3
 #define CLOCK_SOURCE_IS_VALID(source) ((source) < CLOCK_TIME_CONFIG_SOURCE_MAX)
 
 /**

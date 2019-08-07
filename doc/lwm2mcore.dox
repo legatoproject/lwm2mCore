@@ -151,6 +151,7 @@
  * @c DELIMITER                                 | Optional    | Change default CoAP URI delimiter
  * @c LWM2M_OBJECT_9                            | Optional    | Used for buffer allocation for embedded application (SOTA)
  * @c LEGACY_FW_STATUS                          | Optional    | Used to ensure compatibility with Sierra Wireless proprietary downloader
+ * @c LWM2M_OBJECT_33406                        | Optional    | Support Sierra Wireless LwM2M object 33406
  *
  * The recommended compilation flags to be used are:
  * - @c LWM2M_CLIENT_MODE
@@ -898,6 +899,7 @@
  *
  * @todo Schematics for SOTA needs to be created
  *
+ *
  * @endif
  *
  *
@@ -1027,6 +1029,13 @@
  * @ingroup lwm2mcore_public_IFS
  * @brief Server interface
  *
+ * @defgroup lwm2mcore_fileTransfer_IFS File transfer
+ * @ingroup lwm2mcore_public_IFS
+ * @brief File transfer
+ *
+ * @defgroup lwm2mcore_fileTransfer_int File transfer internal
+ * @ingroup lwm2mcore_internal_IFS
+ * @brief File transfer internal interface
  *
  * @defgroup lwm2mcore_platform_adaptor_socket_IFS Socket
  * @ingroup lwm2mcore_platform_adaptor_IFS
@@ -1040,7 +1049,7 @@
  * @ingroup lwm2mcore_platform_adaptor_IFS
  * @brief Adaptation layer for UDP
  *
- * @defgroup lwm2mcore_update_IFS Update interface
+ * @defgroup lwm2mcore_platform_adaptor_update_IFS Update interface
  * @ingroup lwm2mcore_platform_adaptor_IFS
  * @brief Update interface
  *
@@ -1086,4 +1095,7 @@
  * @ingroup lwm2mcore_platform_adaptor_IFS
  * @brief Adaptation layer for UDP
  *
+ * @defgroup lwm2mcore_platform_adaptor_fileTransfer_IFS File transfer
+ * @ingroup lwm2mcore_platform_adaptor_IFS
+ * @brief Adaptation layer for File transfer
  */

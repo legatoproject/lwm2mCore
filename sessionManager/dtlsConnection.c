@@ -789,6 +789,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
         connPtr->dtlsSessionPtr->size = connPtr->addrLen;
         connPtr->lastSend = lwm2m_gettime();
         connPtr->postRequestHandler = NULL;
+        connPtr->cmdEndHandler = NULL;
     }
     return connPtr;
 }

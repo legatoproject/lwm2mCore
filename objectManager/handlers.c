@@ -16,6 +16,10 @@
 #include <lwm2mcore/device.h>
 #include <lwm2mcore/security.h>
 #include <lwm2mcore/server.h>
+#ifdef LWM2M_OBJECT_33406
+#include <lwm2mcore/fileTransfer.h>
+#include "fileMngt.h"
+#endif
 #include <lwm2mcore/paramStorage.h>
 #include <lwm2mcore/timer.h>
 #include <lwm2mcore/update.h>
@@ -1577,7 +1581,7 @@ int omanager_WriteDeviceObj
     }
 
     /* Check that the operation is coherent */
-    if (0 ==(uriPtr->op & LWM2MCORE_OP_WRITE))
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
@@ -2322,7 +2326,7 @@ int omanager_ReadConnectivityMonitoringObj
  *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
  */
 //--------------------------------------------------------------------------------------------------
-static lwm2mcore_Sid_t SetUpdatePackageUri
+lwm2mcore_Sid_t omanager_SetUpdatePackageUri
 (
     lwm2mcore_UpdateType_t type,    ///< [IN] Update type
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
@@ -2331,7 +2335,7 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
 )
 {
     PackageDownloaderWorkspace_t workspace;
-    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+    lwm2mcore_Sid_t sID = LWM2MCORE_ERR_GENERAL_ERROR;
 
     // Update the package type.
     // This is the first step as error handling is dependent on update type.
@@ -2418,6 +2422,12 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
                     lwm2mcore_SetSwUpdateResult(LWM2MCORE_SW_UPDATE_RESULT_DEVICE_ERROR);
                     break;
 
+#ifdef LWM2M_OBJECT_33406
+                case LWM2MCORE_FILE_TRANSFER_TYPE:
+                    fileTransfer_SetResult(LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE);
+                    break;
+#endif
+
                 default:
                     LOG("Unhandled update type");
                     break;
@@ -2429,7 +2439,7 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
         }
     }
 
-    return (lwm2mcore_Sid_t)sID;
+    return sID;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2489,10 +2499,10 @@ int omanager_WriteFwUpdateObj
                  * the application including the package URL without its size
                  */
 #else
-            sID = SetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
-                                      uriPtr->oid,
-                                      bufferPtr,
-                                      len);
+            sID = omanager_SetUpdatePackageUri(LWM2MCORE_FW_UPDATE_TYPE,
+                                               uriPtr->oid,
+                                               bufferPtr,
+                                               len);
 #endif /* !LWM2M_EXTERNAL_DOWNLOADER */
             }
             break;
@@ -2562,6 +2572,11 @@ int omanager_ReadFwUpdateObj
             if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
             {
                 LOG("Error on reading workspace");
+            }
+
+            if (workspace.updateType != LWM2MCORE_FW_UPDATE_TYPE)
+            {
+                return LWM2MCORE_ERR_INVALID_STATE;
             }
 
             memset(bufferPtr, 0, *lenPtr);
@@ -3084,10 +3099,10 @@ int omanager_WriteSwUpdateObj
                  * the application including the package URL without its size
                  */
 #else
-            sID = SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
-                                      uriPtr->oiid,
-                                      bufferPtr,
-                                      len);
+            sID = omanager_SetUpdatePackageUri(LWM2MCORE_SW_UPDATE_TYPE,
+                                               uriPtr->oiid,
+                                               bufferPtr,
+                                               len);
 #endif /* !LWM2M_EXTERNAL_DOWNLOADER */
             }
             break;
@@ -3508,7 +3523,7 @@ int omanager_WriteCellularConnectivityObj
     }
 
     /* Check that the operation is coherent */
-    if (0 ==(uriPtr->op & LWM2MCORE_OP_WRITE))
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
     {
         return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
     }
@@ -4333,6 +4348,518 @@ int omanager_ExecClockTimeConfigObj
 
     return sID;
 }
+
+
+#ifdef LWM2M_OBJECT_33406
+//--------------------------------------------------------------------------------------------------
+/**
+ *                          OBJECT 33406: FILE TRANSFER
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_FileTransferRequest_t FileTransferInfo;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to perform an immediate file information storage. Called when all data on object /33406
+ * are received (WRITE) and before sending the response to the server
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if succeeds
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if parameter is invalid
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR other failure
+ *  - @ref LWM2MCORE_ERR_ALREADY_PROCESSED if the file is already present
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Sid_t TreatFileTransferInfo
+(
+    void* connPtr,              /// [IN] Connection list
+    bool  isCommandSucceded     /// [IN] Is the command succeeded?
+
+)
+{
+    (void)connPtr;
+    if (isCommandSucceded)
+    {
+        return fileTransfer_TreatInfo(FileTransferInfo);
+    }
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to check if a file transfer could be made immediatly after having sent the request
+ * response to the server
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+static void PostFileTransferRequest
+(
+    void* connPtr,              /// [IN] Connection list
+    bool  isCommandSucceded     /// [IN] Is the command succeeded?
+
+)
+{
+    (void)connPtr;
+    if (isCommandSucceded)
+    {
+        fileTransfer_CheckFileTransferPossible();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to write a resource of object 33406
+ *
+ * Object: 33406 - File transfer
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteFileTransferObj
+(
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)len;
+
+    if ((!uriPtr) || (!bufferPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: File Name */
+        case LWM2MCORE_FILE_TRANSFER_NAME_RID:
+            if (!lwm2mcore_AddCommandRequestEndHandler(TreatFileTransferInfo))
+            {
+                LOG("Failed to schedule request end handler");
+                fileTransfer_PreOperationFailure(LWM2MCORE_ERR_GENERAL_ERROR);
+                return LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+
+            if (!lwm2mcore_AddPostRequestHandler(PostFileTransferRequest))
+            {
+                LOG("Failed to schedule post request handler");
+                fileTransfer_PreOperationFailure(LWM2MCORE_ERR_GENERAL_ERROR);
+                return LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+
+            if ((strlen(bufferPtr) > LWM2MCORE_FILE_TRANSFER_NAME_MAX_CHAR)
+             || (len > LWM2MCORE_FILE_TRANSFER_NAME_MAX_CHAR))
+            {
+                sID = LWM2MCORE_ERR_OVERFLOW;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else if((!strlen(bufferPtr)) || (!len))
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else
+            {
+                memset(FileTransferInfo.fileName, 0, LWM2MCORE_FILE_TRANSFER_NAME_MAX_CHAR+1);
+                snprintf(FileTransferInfo.fileName,
+                         LWM2MCORE_FILE_TRANSFER_NAME_MAX_CHAR+1,
+                         "%s",
+                         bufferPtr);
+                 sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            break;
+
+        /* Resource 1: File Class */
+        case LWM2MCORE_FILE_TRANSFER_CLASS_RID:
+            if ((strlen(bufferPtr) > LWM2MCORE_FILE_TRANSFER_NAME_MAX_CHAR)
+             || (len > LWM2MCORE_FILE_TRANSFER_CLASS_MAX_CHAR))
+            {
+                sID = LWM2MCORE_ERR_OVERFLOW;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else
+            {
+                memset(FileTransferInfo.fileClass, 0, LWM2MCORE_FILE_TRANSFER_CLASS_MAX_CHAR+1);
+                snprintf(FileTransferInfo.fileClass,
+                         LWM2MCORE_FILE_TRANSFER_CLASS_MAX_CHAR+1,
+                         "%s",
+                         bufferPtr);
+                 sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            break;
+
+        /* Resource 2: File URI */
+        case LWM2MCORE_FILE_TRANSFER_URI_RID:
+            if ((strlen(bufferPtr) > LWM2MCORE_FILE_TRANSFER_URI_MAX_CHAR)
+             || (len > LWM2MCORE_FILE_TRANSFER_URI_MAX_CHAR))
+            {
+                sID = LWM2MCORE_ERR_OVERFLOW;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else
+            {
+                // If URL is empty, treat it directly
+                if (!len)
+                {
+                    // Treat the file abort
+                    sID = omanager_SetUpdatePackageUri(LWM2MCORE_FILE_TRANSFER_TYPE,
+                                                       uriPtr->oiid,
+                                                       bufferPtr,
+                                                       len);
+                }
+                else
+                {
+                    memset(FileTransferInfo.fileUri, 0, LWM2MCORE_FILE_TRANSFER_URI_MAX_CHAR+1);
+                    snprintf(FileTransferInfo.fileUri,
+                             LWM2MCORE_FILE_TRANSFER_URI_MAX_CHAR+1,
+                             "%s",
+                             bufferPtr);
+                     sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+            }
+            break;
+
+        /* Resource 3: Checksum */
+        case LWM2MCORE_FILE_TRANSFER_CHECKSUM_RID:
+            if ((strlen(bufferPtr) > LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR)
+             || (len > LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR))
+            {
+                sID = LWM2MCORE_ERR_OVERFLOW;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else if((!strlen(bufferPtr)) || (!len))
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else
+            {
+                memset(FileTransferInfo.fileHash, 0, LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR+1);
+                snprintf(FileTransferInfo.fileHash,
+                         LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR+1,
+                         "%s",
+                         bufferPtr);
+                 sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+            break;
+
+        /* Resource 4: Direction */
+        case LWM2MCORE_FILE_TRANSFER_DIRECTION_RID:
+        {
+            lwm2mcore_FileTransferDirection_t dir;
+            dir = (lwm2mcore_FileTransferDirection_t)omanager_BytesToInt((const char*)bufferPtr,
+                                                                         len);
+            if (dir >= LWM2MCORE_FILE_TRANSFER_DIRECTION_MAX)
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+                fileTransfer_PreOperationFailure(sID);
+            }
+            else
+            {
+                fileTransfer_SetDirection(dir);
+                FileTransferInfo.direction = dir;
+                sID = LWM2MCORE_ERR_COMPLETED_OK;
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            fileTransfer_PreOperationFailure(sID);
+            break;
+    }
+
+    return sID;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to read a resource of object 33406
+ *
+ * Object: 33406 - File transfer
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadFileTransferObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 3: Checksum */
+        case LWM2MCORE_FILE_TRANSFER_CHECKSUM_RID:
+        {
+            // Get the file transfer direction
+            // If direction = download, return empty hash
+            lwm2mcore_FileTransferDirection_t direction = LWM2MCORE_FILE_TRANSFER_DIRECTION_MAX;
+            sID = fileTransfer_GetDirection(&direction);
+            if (LWM2MCORE_FILE_TRANSFER_DIRECTION_DOWNLOAD != direction)
+            {
+                sID = lwm2mcore_GetFileTransferChecksum(bufferPtr, lenPtr);
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    *lenPtr = strlen(bufferPtr);
+                }
+            }
+            else
+            {
+                *lenPtr = 0;
+            }
+        }
+        break;
+
+        /* Resource 5: State */
+        case LWM2MCORE_FILE_TRANSFER_STATE_RID:
+        {
+            lwm2mcore_FileTransferState_t fileTransferState = LWM2MCORE_FILE_TRANSFER_STATE_IDLE;
+            sID = fileTransfer_GetState(&fileTransferState);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &fileTransferState,
+                                                      sizeof(fileTransferState),
+                                                      false);
+            }
+        }
+        break;
+
+        /* Resource 6: Result */
+        case LWM2MCORE_FILE_TRANSFER_RESULT_RID:
+        {
+            lwm2mcore_FileTransferResult_t transferResult = LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL;
+            sID = fileTransfer_GetResult(&transferResult);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &transferResult,
+                                                      sizeof(transferResult),
+                                                      false);
+            }
+        }
+        break;
+
+        /* Resource 7: Progress */
+        case LWM2MCORE_FILE_TRANSFER_PROGRESS_RID:
+        {
+            lwm2mcore_FileTransferState_t transferState = LWM2MCORE_FILE_TRANSFER_STATE_IDLE;
+            lwm2mcore_FileTransferResult_t transferResult = LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL;
+            uint8_t transferProgress = 0;
+
+            if ((LWM2MCORE_ERR_COMPLETED_OK == fileTransfer_GetState(&transferState))
+             && (LWM2MCORE_ERR_COMPLETED_OK == fileTransfer_GetResult(&transferResult)))
+            {
+                LOG_ARG("Transfer state: %d result %d", transferState, transferResult);
+                if ((LWM2MCORE_FILE_TRANSFER_STATE_IDLE == transferState)
+                 && (LWM2MCORE_FILE_TRANSFER_RESULT_SUCCESS == transferResult))
+                {
+                    LOG("Transfer succeeded -> force 100");
+                    transferProgress = 100;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else if ((LWM2MCORE_FILE_TRANSFER_STATE_PROCESSING == transferState)
+                         && (LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL == transferResult))
+                {
+                    LOG("Transfer processing -> force 0");
+                    transferProgress = 0;
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+                else
+                {
+                    sID = fileTransfer_GetProgress(&transferProgress);
+                    if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+                    {
+                        transferProgress = 0;
+                    }
+                }
+            }
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &transferProgress,
+                                                      sizeof(transferProgress),
+                                                      false);
+            }
+        }
+        break;
+
+        /* Resource 8: Failure Reason */
+        case LWM2MCORE_FILE_TRANSFER_FAILURE_REASON_RID:
+        {
+            sID = fileTransfer_GetFailureReason(bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to read a resource of object 33407
+ *
+ * Object: 33407 - File list
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadFileListObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: File name */
+        case LWM2MCORE_FILE_LIST_NAME_RID:
+            sID = lwm2mcore_GetFileNameByInstance(uriPtr->oiid, bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 2: File class */
+        case LWM2MCORE_FILE_LIST_CLASS_RID:
+            sID = lwm2mcore_GetFileClassByInstance(uriPtr->oiid, bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 2: File hashcode */
+        case LWM2MCORE_FILE_LIST_CHECKSUM_RID:
+            sID = lwm2mcore_GetFileChecksumByInstance(uriPtr->oiid, bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = strlen(bufferPtr);
+            }
+            break;
+
+        /* Resource 3: File origin */
+        case LWM2MCORE_FILE_LIST_DIRECTION_RID:
+        {
+            lwm2mcore_FileListOrigin_t origin = LWM2MCORE_FILE_LIST_ORIGIN_SERVER;
+            sID = lwm2mcore_GetFileOriginByInstance(uriPtr->oiid, &origin);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                      &origin,
+                                                      sizeof(origin),
+                                                      false);
+            }
+        }
+        break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+        break;
+    }
+
+    return sID;
+}
+#endif
 
 //--------------------------------------------------------------------------------------------------
 /**

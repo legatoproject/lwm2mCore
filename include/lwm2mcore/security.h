@@ -423,6 +423,112 @@ lwm2mcore_Sid_t lwm2mcore_CancelSha1
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Initialize the SHA256 computation.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_StartSha256
+(
+    void** sha256CtxPtr   ///< [INOUT] SHA256 context pointer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Compute and update SHA256 digest with the data buffer passed as an argument.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ProcessSha256
+(
+    void*    sha256CtxPtr,  ///< [IN] SHA256 context pointer
+    uint8_t* bufPtr,        ///< [IN] Data buffer to hash
+    size_t   len            ///< [IN] Data buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Finalize SHA256 digest and verify the checksum.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_EndAndCheckSha256
+(
+    void* sha256CtxPtr,                 ///< [IN] SHA256 context pointer
+    char* sha256DigestToCompare         ///< [IN] SHA256 digest to compare
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Copy the SHA256 context in a buffer.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CopySha256
+(
+    void*  sha256CtxPtr,    ///< [IN] SHA256 context pointer
+    void*  bufPtr,          ///< [INOUT] Buffer
+    size_t bufSize          ///< [INOUT] Buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Restore the SHA256 context from a buffer.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreSha256
+(
+    void*  bufPtr,      ///< [IN] Buffer
+    size_t bufSize,     ///< [IN] Buffer length
+    void** sha256CtxPtr ///< [INOUT] SHA256 context pointer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Cancel and reset the SHA256 computation.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CancelSha256
+(
+    void** sha256CtxPtr   ///< [INOUT] SHA256 context pointer
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Update SSL Certificate.
  *
  * @remark Platform adaptor function which needs to be defined on client side.

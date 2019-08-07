@@ -45,7 +45,8 @@ add_definitions(-g
                 -Wwrite-strings
                 -Waggregate-return
                 -Wswitch-default
-                -Werror)
+                -Werror
+                -DLWM2M_OBJECT_33406)
 
 SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
 SET(CMAKE_C_FLAGS "-g -O0 -Wall -fprofile-arcs -ftest-coverage")
@@ -82,7 +83,8 @@ set(LINUX_CLIENT_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/timer.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/udp.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/update.c
-    ${LWM2MCORE_SOURCES_DIR}/examples/linux/cellular.c)
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/cellular.c
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/fileTransfer.c)
 
 # Enable CMake Test Framework (CTest)
 enable_testing()

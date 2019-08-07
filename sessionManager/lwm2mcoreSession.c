@@ -2055,7 +2055,7 @@ bool lwm2mcore_SendAsyncResponse
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_AddPostRequestHandler
 (
-    void* handler
+    void* handlerPtr    ///< [IN] Handler
 )
 {
     if (!DataCtxPtr->connListPtr)
@@ -2064,7 +2064,34 @@ bool lwm2mcore_AddPostRequestHandler
         return false;
     }
 
-    DataCtxPtr->connListPtr->postRequestHandler = (postRequestHandlerCb)handler;
+    DataCtxPtr->connListPtr->postRequestHandler = (postRequestHandlerCb)handlerPtr;
+
+    LOG("Post-request handler added");
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to add a LWM2M command request end handler to be run after having processing
+ * processing the received command and before sending the command (applicable for WRITE only)
+ *
+ * @return
+ *  - @c true if the given handler has been successfully added into the currently active session
+ *  - @c false otherwise
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_AddCommandRequestEndHandler
+(
+    void* handlerPtr    ///< [IN] Handler
+)
+{
+        if (!DataCtxPtr->connListPtr)
+    {
+        LOG("No connection for adding command request end handler");
+        return false;
+    }
+
+    DataCtxPtr->connListPtr->cmdEndHandler = (cmdEndHandlerCb)handlerPtr;
 
     LOG("Post-request handler added");
     return true;
@@ -2078,7 +2105,8 @@ bool lwm2mcore_AddPostRequestHandler
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_ExecPostRequestHandler
 (
-    void* connP
+    void* connP,                /// [IN] Connection list
+    bool  isCommandSucceded     /// [IN] Is the command succeeded?
 )
 {
     dtls_Connection_t* connPtr = (dtls_Connection_t*)connP;
@@ -2089,8 +2117,42 @@ void lwm2mcore_ExecPostRequestHandler
     }
 
     LOG("Invoking post-request session handler");
-    connPtr->postRequestHandler(connPtr);
+    connPtr->postRequestHandler(connPtr, isCommandSucceded);
     connPtr->postRequestHandler = NULL;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a previously added post LWM2M command request end handler for the request
+ * that has just been processed and before sending the response to the server
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_ALREADY_PROCESSED if the file is already present
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ExeCommandEndHandler
+(
+    void* connP,                /// [IN] Connection list
+    bool  isCommandSucceded     /// [IN] Is the command succeeded?
+)
+{
+    lwm2mcore_Sid_t sID = LWM2MCORE_ERR_COMPLETED_OK;
+    dtls_Connection_t* connPtr = (dtls_Connection_t*)connP;
+    if (!connPtr || !(connPtr->cmdEndHandler))
+    {
+        LOG("No command request end handler to invoke");
+        return sID;
+    }
+
+    LOG("Invoking command end handler");
+    sID = (connPtr->cmdEndHandler)(connPtr, isCommandSucceded);
+    LOG_ARG("cmdEndHandler sID %d", sID);
+    connPtr->cmdEndHandler = NULL;
+    return sID;
 }
 
 //--------------------------------------------------------------------------------------------------

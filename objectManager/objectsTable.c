@@ -1031,6 +1031,135 @@ static lwm2mcore_Resource_t ExtConnectivityStatsResources[] =
     }
 };
 
+#ifdef LWM2M_OBJECT_33406
+//--------------------------------------------------------------------------------------------------
+/**
+ * Supported resources defined for file transfer management object, a Sierra Wireless proprietary
+ * object (33406)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t FileTransferResources[] =
+{
+   {
+        LWM2MCORE_FILE_TRANSFER_NAME_RID,               //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        NULL,                                           //.read
+        omanager_WriteFileTransferObj,                  //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_CLASS_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        NULL                        ,                   //.read
+        omanager_WriteFileTransferObj,                  //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_URI_RID,                //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        NULL,                                           //.read
+        omanager_WriteFileTransferObj,                  //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_CHECKSUM_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileTransferObj,                   //.read
+        omanager_WriteFileTransferObj,                  //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_DIRECTION_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        NULL,                                           //.read
+        omanager_WriteFileTransferObj,                    //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_STATE_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileTransferObj,                   //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_RESULT_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileTransferObj,                   //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_PROGRESS_RID,           //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileTransferObj,                   //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_TRANSFER_FAILURE_REASON_RID,     //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileTransferObj,                   //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Supported resources defined for stream sync object, a Sierra Wireless proprietary object (33407)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t FileListResources[] =
+{
+    {
+        LWM2MCORE_FILE_LIST_NAME_RID,                   //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileListObj,                       //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_LIST_CLASS_RID,                  //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileListObj,                       //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_LIST_CHECKSUM_RID,               //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                 //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileListObj,                       //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    },
+    {
+        LWM2MCORE_FILE_LIST_DIRECTION_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                    //.type
+        1,                                              //.maxResInstCnt
+        omanager_ReadFileListObj,                       //.read
+        NULL,                                           //.write
+        NULL,                                           //.exec
+    }
+};
+#endif
+
 //--------------------------------------------------------------------------------------------------
 /**
  * SSL certificate supported resources defined for LWM2M certificate object (10243)
@@ -1239,6 +1368,22 @@ static lwm2mcore_Object_t ObjArray[] =
         ARRAYSIZE(ClockTimeConfigResources),                                    //.resCnt
         ClockTimeConfigResources                                                //.resources
     },
+#ifdef LWM2M_OBJECT_33406
+    /* Object 33406: File transfer */
+    {
+        LWM2MCORE_FILE_TRANSFER_OID,                                            //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(FileTransferResources),                                       //.resCnt
+        FileTransferResources                                                   //.resources
+    },
+    /* Object 33407: File list */
+    {
+        LWM2MCORE_FILE_LIST_OID,                                                //.id
+        LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
+        ARRAYSIZE(FileListResources),                                           //.resCnt
+        FileListResources                                                       //.resources
+    },
+#endif
     /* Object 33408: SIM APDU config */
     {
         LWM2MCORE_SIM_APDU_CONFIG_OID,                                          //.id

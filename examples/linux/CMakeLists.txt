@@ -36,6 +36,7 @@ add_definitions(-g
                 -Wswitch-default
                 -DLWM2M_DEREGISTER
                 -DLWM2M_LOCATION_FLOAT
+                -DLWM2M_OBJECT_33406
                 -DCOAP_BLOCK1_SIZE=4096)
 
 include_directories (${LWM2MCORE_SOURCES_DIR} ${WAKAAMA_SOURCES_DIR} ${TINYDTLS_SOURCES_DIR} ${TINYHTTP_SOURCES_DIR})
@@ -62,6 +63,7 @@ set(LINUX_CLIENT_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/udp.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/update.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/cellular.c
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/fileTransfer.c
     main.c)
 
 add_executable(${PROJECT_NAME} ${LWM2MCORE_SOURCES} ${LINUX_CLIENT_SOURCES})

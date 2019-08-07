@@ -187,7 +187,9 @@ typedef enum
     LWM2MCORE_ERR_NET_ERROR             = -11,  ///< Error on socket management (package download
                                                 ///< case)
     LWM2MCORE_ERR_MEMORY                = -12,  ///< Memory issue
-    LWM2MCORE_ERR_RETRY_FAILED          = -13   ///< Last download retry attempt failed.
+    LWM2MCORE_ERR_RETRY_FAILED          = -13,  ///< Last download retry attempt failed.
+    LWM2MCORE_ERR_ALREADY_PROCESSED     = -14,  ///< The request was already made
+    LWM2MCORE_ERR_SHA_DIGEST_MISMATCH   = -15   ///< The SHA digest does not match
 }lwm2mcore_Sid_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -473,9 +475,10 @@ typedef struct
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    LWM2MCORE_FW_UPDATE_TYPE,    ///< Firmware update
-    LWM2MCORE_SW_UPDATE_TYPE,    ///< Software update
-    LWM2MCORE_MAX_UPDATE_TYPE    ///< Internal usage
+    LWM2MCORE_FW_UPDATE_TYPE,     ///< Firmware update
+    LWM2MCORE_SW_UPDATE_TYPE,     ///< Software update
+    LWM2MCORE_FILE_TRANSFER_TYPE, ///< File Stream
+    LWM2MCORE_MAX_UPDATE_TYPE     ///< Internal usage
 }lwm2mcore_UpdateType_t;
 
 /**
@@ -705,6 +708,7 @@ bool lwm2mcore_SetEventHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief LwM2MCore init function
  *
  * @return
  *  - instance reference
@@ -733,7 +737,11 @@ void lwm2mcore_SetServer
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Check whether the server is active
+ * @brief Check whether the server is active
+ *
+ * @return
+ *      - @c true if the server is active
+ *      - @c false if the server is not active
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_IsServerActive
@@ -754,7 +762,11 @@ void lwm2mcore_SetEdmEnabled
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Check whether Extended Device Management (EDM) feature is enabled
+ * @brief Check whether Extended Device Management (EDM) feature is enabled
+ *
+ * @return
+ *      - @c true if EDM is enabled
+ *      - @c false if EDM is not enabled
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_IsEdmEnabled
@@ -1214,6 +1226,7 @@ void lwm2mcore_DeleteRegistrationID
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to add a post LWM2M request handler to be run after the processing of the request
+ * and after having sent the response to the server
  *
  * @return
  *  - @c true if the given handler has been successfully added into the currently active session
@@ -1227,13 +1240,29 @@ bool lwm2mcore_AddPostRequestHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to add a LWM2M command request end handler to be run after having processing
+ * processing the received command and before sending the command (applicable for WRITE only)
+ *
+ * @return
+ *  - @c true if the given handler has been successfully added into the currently active session
+ *  - @c false otherwise
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_AddCommandRequestEndHandler
+(
+    void* handlerPtr    ///< [IN] Handler
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Function to perform a system clock update using the clock time set on the config tree
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_UpdateSystemClock
 (
-    void* connP
+    void* connP,
         ///< [IN] The LWM2M connection on which the update is triggered and a re-handshake required
+    bool  isCommandSucceded     /// [IN] Is the command succeeded?
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1250,8 +1279,8 @@ void lwm2mcore_UpdateSystemClock
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_GetClockTimeSourcePriority
 (
-    uint16_t source,
-    int16_t* priority
+    uint16_t source,                ///< [IN] Clock source
+    int16_t* priority               ///< [IN] Priority
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1266,8 +1295,8 @@ int lwm2mcore_GetClockTimeSourcePriority
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_SetClockTimeSourcePriority
 (
-    uint16_t source,
-    int16_t priority
+    uint16_t source,                ///< [IN] Clock source
+    int16_t priority                ///< [IN] Priority
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1282,9 +1311,9 @@ int lwm2mcore_SetClockTimeSourcePriority
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_GetClockTimeSourceConfig
 (
-    uint16_t source,
-    char* bufferPtr,
-    size_t* lenPtr
+    uint16_t source,                ///< [IN] Clock source
+    char* bufferPtr,                ///< [IN] Buffer
+    size_t* lenPtr                  ///< [IN] Buffer length
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1299,9 +1328,9 @@ int lwm2mcore_GetClockTimeSourceConfig
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_SetClockTimeSourceConfig
 (
-    uint16_t source,
-    char* bufferPtr,
-    size_t length
+    uint16_t source,                ///< [IN] Clock source
+    char* bufferPtr,                ///< [IN] Buffer
+    size_t length                   ///< [IN] Buffer length
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1316,8 +1345,8 @@ int lwm2mcore_SetClockTimeSourceConfig
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_ExecuteClockTimeUpdate
 (
-    char* bufferPtr,
-    size_t length
+    char* bufferPtr,                    ///< [IN] Execute data buffer
+    size_t length                       ///< [IN] Execute data buffer length
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1334,8 +1363,8 @@ int lwm2mcore_ExecuteClockTimeUpdate
 //--------------------------------------------------------------------------------------------------
 int lwm2mcore_GetClockTimeStatus
 (
-    uint16_t source,
-    int16_t* status
+    uint16_t source,                ///< [IN] Clock source on which the status is requested
+    int16_t* status                 ///< [INOUT] Clock source status
 );
 
 //--------------------------------------------------------------------------------------------------

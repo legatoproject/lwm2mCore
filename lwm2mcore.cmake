@@ -32,6 +32,7 @@ set(LWM2MCORE_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/objectManager/objectsTable.c
     ${LWM2MCORE_SOURCES_DIR}/objectManager/utils.c
     ${LWM2MCORE_SOURCES_DIR}/packageDownloader/lwm2mcorePackageDownloader.c
+    ${LWM2MCORE_SOURCES_DIR}/packageDownloader/fileTransfer.c
     ${LWM2MCORE_SOURCES_DIR}/packageDownloader/update.c
     ${LWM2MCORE_SOURCES_DIR}/packageDownloader/workspace.c
     ${LWM2MCORE_SOURCES_DIR}/sessionManager/dtlsConnection.c
@@ -58,3 +59,7 @@ add_definitions(-g
                 -DLWM2M_OLD_CONTENT_FORMAT_SUPPORT
                 -DSIERRA
                 -DLWM2M_OBJECT_9)
+
+if ($ENV{LE_CONFIG_AVC_FEATURE_FILETRANSFER} MATCHES "y")
+    add_definitions(-DLWM2M_OBJECT_33406)
+endif()

@@ -27,6 +27,7 @@ typedef enum
     LWM2MCORE_BOOTSTRAP_INFO_SIZE_PARAM,    ///< Bootstrap configuration file size
     LWM2MCORE_ACCESS_RIGHTS_PARAM,          ///< ACL data
     LWM2MCORE_ACCESS_RIGHTS_SIZE_PARAM,     ///< ACL data size
+    LWM2MCORE_FILE_TRANSFER_WORKSPACE_PARAM,///< File transfer workspace
     LWM2MCORE_MAX_PARAM                     ///< Maximum parameter value (internal use)
 }lwm2mcore_Param_t;
 

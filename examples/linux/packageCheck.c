@@ -204,6 +204,13 @@ lwm2mcore_Sid_t lwm2mcore_EndSha1
             credId = LWM2MCORE_CREDENTIAL_SW_KEY;
             break;
 
+#ifdef LWM2M_OBJECT_33406
+        // ToDo: Do we need a new credential provisioned for File Stream?
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            credId = LWM2MCORE_CREDENTIAL_SW_KEY;
+            break;
+#endif
+
         default:
             fprintf(stderr, "Unknown or unsupported package type %d\n", packageType);
             return LWM2MCORE_ERR_GENERAL_ERROR;
@@ -442,6 +449,244 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
         fprintf(stderr, "NULL certificate\n");
         return LWM2MCORE_ERR_INVALID_ARG;
     }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Initialize the SHA256 computation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_StartSha256
+(
+    void** sha256CtxPtr   ///< [INOUT] SHA256 context pointer
+)
+{
+    static SHA256_CTX shaCtx;
+
+    // Check if SHA256 context pointer is set
+    if (!sha256CtxPtr)
+    {
+        printf("No SHA256 context pointer\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Load the error strings
+    ERR_load_crypto_strings();
+
+    // Initialize the SHA256 context
+    // SHA256_Init function returns 1 for success, 0 otherwise
+    if (1 != SHA256_Init(&shaCtx))
+    {
+        printf("SHA256_Init failed\n");
+        PrintOpenSSLErrors();
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+    else
+    {
+        *sha256CtxPtr = (void*)&shaCtx;
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Compute and update SHA256 digest with the data buffer passed as an argument
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ProcessSha256
+(
+    void*    sha256CtxPtr,  ///< [IN] SHA256 context pointer
+    uint8_t* bufPtr,        ///< [IN] Data buffer to hash
+    size_t   len            ///< [IN] Data buffer length
+)
+{
+    // Check if pointers are set
+    if ((!sha256CtxPtr) || (!bufPtr))
+    {
+        printf("NULL pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Update SHA256 digest
+    // SHA256_Update function returns 1 for success, 0 otherwise
+    if (1 != SHA256_Update((SHA256_CTX*)sha256CtxPtr, bufPtr, len))
+    {
+        printf("SHA256_Update failed\n");
+        PrintOpenSSLErrors();
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+    else
+    {
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Finalize SHA256 digest and verify the checksum.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_EndAndCheckSha256
+(
+    void* sha256txPtr,                  ///< [IN] SHA256 context pointer
+    char* sha256DigestToCompare         ///< [IN] SHA256 digest to compare
+)
+{
+    unsigned char sha256Digest[SHA256_DIGEST_LENGTH];
+    char outputBuffer[(2*SHA256_DIGEST_LENGTH)+1];
+    int i = 0;
+
+    // Check if pointers are set
+    if ((!sha256txPtr) || (!sha256DigestToCompare))
+    {
+        printf("NULL pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Finalize SHA256 digest
+    // SHA56_Final function returns 1 for success, 0 otherwise
+    if (1 != SHA256_Final(sha256Digest, (SHA256_CTX*)sha256txPtr))
+    {
+        printf("SHA256_Final failed\n");
+        PrintOpenSSLErrors();
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    for(i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    {
+        sprintf(outputBuffer + (i * 2), "%02x", sha256Digest[i]);
+    }
+    outputBuffer[2*SHA256_DIGEST_LENGTH] = 0;
+    if (strncmp(outputBuffer, sha256DigestToCompare, 2*SHA256_DIGEST_LENGTH))
+    {
+        printf("SHA256 check error\n");
+        return LWM2MCORE_ERR_SHA_DIGEST_MISMATCH;
+    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Copy the SHA256 context in a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CopySha256
+(
+    void*  sha256CtxPtr,    ///< [IN] SHA256 context pointer
+    void*  bufPtr,          ///< [INOUT] Buffer
+    size_t bufSize          ///< [INOUT] Buffer length
+)
+{
+    // Check if pointers are set
+    if ((!sha256CtxPtr) || (!bufPtr))
+    {
+        printf("Null pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Check buffer length
+    if (bufSize < sizeof(SHA256_CTX))
+    {
+        printf("Buffer is too short (%zu < %zu)\n", bufSize, sizeof(SHA256_CTX));
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Copy the SHA256 context
+    memset(bufPtr, 0, bufSize);
+    memcpy(bufPtr, sha256CtxPtr, sizeof(SHA256_CTX));
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Restore the SHA256 context from a buffer
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreSha256
+(
+    void*  bufPtr,      ///< [IN] Buffer
+    size_t bufSize,     ///< [IN] Buffer length
+    void** sha256CtxPtr ///< [INOUT] SHA256 context pointer
+)
+{
+    // Check if pointers are set
+    if ((!sha256CtxPtr) || (!bufPtr))
+    {
+        printf("Null pointer provided\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Check buffer length
+    if (bufSize < sizeof(SHA256_CTX))
+    {
+        printf("Buffer is too short (%zu < %zd)\n", bufSize, sizeof(SHA256_CTX));
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Initialize SHA256 context
+    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha256(sha256CtxPtr))
+    {
+        printf("Unable to initialize SHA256 context\n");
+        return LWM2MCORE_ERR_GENERAL_ERROR;
+    }
+
+    // Restore the SHA256 context
+    memcpy(*sha256CtxPtr, bufPtr, sizeof(SHA256_CTX));
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Cancel and reset the SHA256 computation
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_CancelSha256
+(
+    void** sha256CtxPtr   ///< [INOUT] SHA256 context pointer
+)
+{
+    // Check if SHA256 context pointer is set
+    if (!sha256CtxPtr)
+    {
+        printf("No SHA256 context pointer\n");
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    // Reset SHA256 context
+    *sha256CtxPtr = NULL;
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }

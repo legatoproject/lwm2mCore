@@ -166,6 +166,14 @@ typedef enum
 }
 lwm2mcore_UpdateError_t;
 
+/**
+  * @}
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_update_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief The server pushes a package to the LWM2M client
@@ -188,56 +196,6 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
     uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
     char* bufferPtr,                ///< [INOUT] data buffer
     size_t len                      ///< [IN] length of input buffer
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief The server sends a package URI to the LWM2M client
- *
- * @remark Platform adaptor function which needs to be defined on client side.
- *
- * @return
- *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
- *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- */
-//--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_SetUpdatePackageUri //TODO: intenral now
-(
-    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
-    char* bufferPtr,                ///< [INOUT] data buffer
-    size_t len                      ///< [IN] length of input buffer
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief The server requires the current package URI stored in the LWM2M client
- *
- * @remark Platform adaptor function which needs to be defined on client side.
- *
- * @return
- *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters is incorrect
- *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
- *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
- *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
- */
-//--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri //TODO: intenral now
-(
-    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
-    char* bufferPtr,                ///< [INOUT] data buffer
-    size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
-                                    ///< data
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -643,6 +601,14 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
     lwm2mcore_UpdateError_t error   ///< [IN] Update error
 );
 
+/**
+  * @}
+  */
+
+/**
+  * @addtogroup lwm2mcore_update_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * Indicates that the Firmware update is accepted
@@ -671,8 +637,6 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted
 (
     void
 );
-
-//lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted(type) type à mettre? type dans workspace
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -761,6 +725,14 @@ lwm2mcore_Sid_t lwm2mcore_IsFwUpdateInstallWaited
     bool*   IsFwUpdateInstallWaitedPtr    ///< [INOUT] True if a FW update install request is waited
 );
 
+/**
+  * @}
+  */
+
+/**
+  * @addtogroup lwm2mcore_platform_adaptor_update_IFS
+  * @{
+  */
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Function to indicate that the server reads the update result resource.
@@ -786,6 +758,8 @@ lwm2mcore_Sid_t lwm2mcore_UpdateResultWasNotified
 //--------------------------------------------------------------------------------------------------
 /**
  * Clean the stale workspace of aborted SOTA/FOTA job
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_CleanStaleData

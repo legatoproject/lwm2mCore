@@ -76,8 +76,10 @@ typedef struct _dtls_Connection_t
                                                 ///< (used for NAT timeouts)
     time_t                      lastReceived;   ///< Last time a data was received from the server
                                                 ///< (used for NAT timeouts)
-    void (*postRequestHandler)(struct _dtls_Connection_t*); ///< post-Request session handler to invoke
-                                                ///< if present
+    void (*postRequestHandler)(struct _dtls_Connection_t*, bool isSuccess); ///< post-Request
+                                                ///< session handler to invoke if present
+    lwm2mcore_Sid_t (*cmdEndHandler)(struct _dtls_Connection_t*, bool isSuccess); ///< Command end
+                                                ///< session handler to invoke if present
 }dtls_Connection_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -88,7 +90,20 @@ typedef struct _dtls_Connection_t
 //--------------------------------------------------------------------------------------------------
 typedef void (*postRequestHandlerCb)
 (
-    dtls_Connection_t* connectionPtr    ///< [IN] DTLS connection list
+    dtls_Connection_t* connectionPtr,       ///< [IN] DTLS connection list
+    bool               isCommandSucceded    ///< [IN] Is command succeeded ?
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief  LWM2M command request end handler that will be invoked to run after the processing of
+ * the command and before sending the response to the server
+ */
+//--------------------------------------------------------------------------------------------------
+typedef lwm2mcore_Sid_t (*cmdEndHandlerCb)
+(
+    dtls_Connection_t* connectionPtr,       ///< [IN] DTLS connection list
+    bool               isCommandSucceded    ///< [IN] Is command succeeded ?
 );
 
 //--------------------------------------------------------------------------------------------------

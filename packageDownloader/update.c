@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include <internals.h>
 #include <lwm2mcore/lwm2mcore.h>
+#ifdef LWM2M_OBJECT_33406
+#include <lwm2mcore/fileTransfer.h>
+#include "fileMngt.h"
+#endif
 #include <lwm2mcore/update.h>
 #include "workspace.h"
 #include "updateAgent.h"
@@ -59,7 +63,7 @@ lwm2mcore_Sid_t downloader_InitializeDownload
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
-    // Copy the URL in the workspace
+    // Reset the URL
     memset(workspace.url, 0, LWM2MCORE_PACKAGE_URI_MAX_BYTES);
 
     // Copy the updateType
@@ -97,6 +101,15 @@ lwm2mcore_Sid_t downloader_InitializeDownload
             LOG("Initializing SOTA object instance");
             lwm2mcore_SoftwareUpdateInstance(true, instanceId);
             break;
+
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            // Reset state, result and failure cause
+            fileTransfer_SetFailureReason("", 0);
+            fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_PROCESSING);
+            fileTransfer_SetResult(LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL);
+            break;
+#endif
 
         default:
             return LWM2MCORE_ERR_INVALID_ARG;
@@ -311,7 +324,9 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
     PackageDownloaderWorkspace_t workspace;
     lwm2mcore_FwUpdateResult_t fwResult = LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI;
     lwm2mcore_SwUpdateResult_t swResult = LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI;
-
+#ifdef LWM2M_OBJECT_33406
+    lwm2mcore_FileTransferResult_t fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+#endif
     if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
     {
         return LWM2MCORE_ERR_GENERAL_ERROR;
@@ -344,6 +359,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         case LWM2MCORE_UPDATE_ERROR_OUT_OF_MEMORY:
@@ -355,6 +376,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         case LWM2MCORE_UPDATE_ERROR_CONNECTION_LOST:
@@ -366,6 +393,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         case LWM2MCORE_UPDATE_ERROR_UNSUPPORTED_PACKAGE:
@@ -377,6 +410,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         case LWM2MCORE_UPDATE_ERROR_DEVICE_SPECIFIC:
@@ -389,6 +428,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_DEVICE_ERROR;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         case LWM2MCORE_UPDATE_ERROR_INVALID_URI:
@@ -400,6 +445,12 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             {
                 swResult = LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI;
             }
+#ifdef LWM2M_OBJECT_33406
+            else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+            {
+                fileTransferResult = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+            }
+#endif
             break;
 
         default:
@@ -417,6 +468,13 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
         lwm2mcore_SetSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_INITIAL);
         lwm2mcore_SetSwUpdateResult(swResult);
     }
+#ifdef LWM2M_OBJECT_33406
+    else if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+    {
+        fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+        fileTransfer_SetResult(fileTransferResult);
+    }
+#endif
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
 
@@ -482,6 +540,12 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted
         case LWM2MCORE_SW_UPDATE_TYPE:
             LOG("Nothing to do in SW update case");
             return LWM2MCORE_ERR_COMPLETED_OK;
+
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            LOG("Nothing to do in file transfer case");
+            return LWM2MCORE_ERR_COMPLETED_OK;
+#endif
 
         default:
             LOG("Invalid update type");
@@ -560,6 +624,12 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateResult
         case LWM2MCORE_SW_UPDATE_TYPE:
             LOG("Nothing to do in SW update case");
             return LWM2MCORE_ERR_COMPLETED_OK;
+
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            LOG("Nothing to do in file transfer type");
+            return LWM2MCORE_ERR_COMPLETED_OK;
+#endif
 
         default:
             LOG("Invalid update type");

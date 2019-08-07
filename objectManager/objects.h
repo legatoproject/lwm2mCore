@@ -165,6 +165,8 @@ typedef enum
     LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object Id: Extended connectivity statistics
     LWM2MCORE_SSL_CERTIFS_OID       = 10243,    ///< Sierra Wireless proprietary object Id: SSL certificate
     LWM2MCORE_CLOCK_TIME_CONFIG_OID = 33405,    ///< Sierra Wireless proprietary object Id: Clock time config
+    LWM2MCORE_FILE_TRANSFER_OID     = 33406,    ///< Sierra Wireless proprietary object Id: File transfer
+    LWM2MCORE_FILE_LIST_OID         = 33407,    ///< Sierra Wireless proprietary object Id: File list
     LWM2MCORE_SIM_APDU_CONFIG_OID   = 33408     ///< Sierra Wireless proprietary object Id: SIM APDU config
 } lwm2mcore_objectEnum_t;
 
@@ -463,6 +465,39 @@ typedef enum
     LWM2MCORE_CLOCK_TIME_CONFIG_STATUS_RID = 3         ///< Status of time update operation
 } lwm2mcore_clockTimeConfigurationResource_t;
 
+#ifdef LWM2M_OBJECT_33406
+//--------------------------------------------------------------------------------------------------
+/**
+* @brief Enumeration for LwM2M object 33046 (File Transfer) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_FILE_TRANSFER_NAME_RID = 0,       ///< File Name
+    LWM2MCORE_FILE_TRANSFER_CLASS_RID,          ///< File Class
+    LWM2MCORE_FILE_TRANSFER_URI_RID,            ///< File URI
+    LWM2MCORE_FILE_TRANSFER_CHECKSUM_RID,       ///< SHA256 of the file
+    LWM2MCORE_FILE_TRANSFER_DIRECTION_RID,      ///< Direction
+    LWM2MCORE_FILE_TRANSFER_STATE_RID,          ///< State
+    LWM2MCORE_FILE_TRANSFER_RESULT_RID,         ///< Result
+    LWM2MCORE_FILE_TRANSFER_PROGRESS_RID,       ///< Percentage Completion
+    LWM2MCORE_FILE_TRANSFER_FAILURE_REASON_RID  ///< Failure reason
+}lwm2mcore_FileTransferResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* @brief Enumeration for LwM2M object 33047 (File list) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_FILE_LIST_NAME_RID = 0,       ///< File Name
+    LWM2MCORE_FILE_LIST_CLASS_RID,          ///< File class
+    LWM2MCORE_FILE_LIST_CHECKSUM_RID,       ///< File hashcode
+    LWM2MCORE_FILE_LIST_DIRECTION_RID       ///< File direction
+}lwm2mcore_FileListResource_t;
+#endif
+
 //--------------------------------------------------------------------------------------------------
 /**
 * @brief Enumeration for LwM2M object 33408 (SIM APDU configuration) resources
@@ -601,6 +636,21 @@ bool omanager_UpdateRequest
 lwm2mcore_Handler_t* omanager_GetHandlers
 (
      void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Get the number of registered object instance ID for a specific object
+ *
+ * @note If the object is not registered, 0 is returned
+ *
+ * @return
+ *  - Object instance count
+ */
+//--------------------------------------------------------------------------------------------------
+uint16_t omanager_ObjectInstanceCount
+(
+    uint16_t oid                            ///< [IN] object ID to find
 );
 /**
   * @}

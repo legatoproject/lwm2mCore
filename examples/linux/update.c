@@ -252,68 +252,6 @@ lwm2mcore_Sid_t lwm2mcore_PushUpdatePackage
 
 //--------------------------------------------------------------------------------------------------
 /**
- * The server requires the current package URI stored in the LWM2M client
- *
- * @return
- *  - LWM2MCORE_ERR_COMPLETED_OK on success
- *  - LWM2MCORE_ERR_INVALID_STATE if no package download is suspended
- *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
- *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- */
-//--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
-(
-    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
-    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
-    char* bufferPtr,                ///< [INOUT] data buffer
-    size_t* lenPtr                  ///< [INOUT] length of input buffer and length of the returned
-                                    ///< data
-)
-{
-    lwm2mcore_Sid_t result = LWM2MCORE_ERR_GENERAL_ERROR;
-    PackageDownloaderWorkspace_t workspace;
-    memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
-    if ((NULL == bufferPtr) || (NULL == lenPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
-    {
-        return LWM2MCORE_ERR_INVALID_ARG;
-    }
-
-    (void)instanceId;
-
-    // Read the workspace
-    if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
-    {
-        return LWM2MCORE_ERR_GENERAL_ERROR;
-    }
-
-    if (type != workspace.updateType)
-    {
-        printf("Curent URL is not linked to the required type");
-        return LWM2MCORE_ERR_INVALID_STATE;
-    }
-
-    // Set update result and state fields to initial values
-    switch (type)
-    {
-        case LWM2MCORE_FW_UPDATE_TYPE:
-                snprintf(bufferPtr, LWM2MCORE_PACKAGE_URI_MAX_BYTES, "%s", workspace.url);
-                *lenPtr = strlen(bufferPtr);
-                result = LWM2MCORE_ERR_COMPLETED_OK;
-            break;
-
-        case LWM2MCORE_SW_UPDATE_TYPE:
-            printf("SOTA to be implemented\n");
-            break;
-
-        default:
-            return LWM2MCORE_ERR_INVALID_ARG;
-    }
-
-    return result;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
  * The server requests to launch an update
  *
  * @warning The client MUST store a parameter in non-volatile memory in order to keep in memory that

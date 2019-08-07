@@ -438,13 +438,31 @@ coap_external_handler_t lwm2mcore_GetCoapExternalHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to execute a previously added post LWM2M request handler for the request that has just
- * been processed and responded to
+ * @brief Function to execute a previously added post LWM2M request handler for the request that has
+ * just been processed and responded to
  */
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_ExecPostRequestHandler
 (
-    void* connP     /// [IN] Connection list
+    void* connPtr,              ///< [IN] Connection list
+    bool  isCommandSucceded     ///< [IN] Is the command succeeded?
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to execute a previously added post LWM2M command request end handler for the
+ * request that has just been processed and before sending the response to the server
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_ExeCommandEndHandler
+(
+    void* connPtr,              ///< [IN] Connection list
+    bool  isCommandSucceded     ///< [IN] Is the command succeeded?
 );
 
 //--------------------------------------------------------------------------------------------------

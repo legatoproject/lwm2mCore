@@ -49,6 +49,10 @@
 #include <string.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/security.h>
+#ifdef LWM2M_OBJECT_33406
+#include <lwm2mcore/fileTransfer.h>
+#include <fileMngt.h>
+#endif
 #include <lwm2mcore/mutex.h>
 #include <lwm2mcore/sem.h>
 #include <internals.h>
@@ -217,8 +221,11 @@ PackageDownloaderError_t;
 //--------------------------------------------------------------------------------------------------
 typedef struct
 {
-    lwm2mcore_FwUpdateResult_t  fw;     ///< Firmware update result
-    lwm2mcore_SwUpdateResult_t  sw;     ///< Software update result
+    lwm2mcore_FwUpdateResult_t      fw;             ///< Firmware update result
+    lwm2mcore_SwUpdateResult_t      sw;             ///< Software update result
+#ifdef LWM2M_OBJECT_33406
+    lwm2mcore_FileTransferResult_t  fileTransfer;   ///< File transfer result
+#endif
 }
 UpdateResult_t;
 
@@ -267,6 +274,7 @@ typedef struct
     uint64_t remainingBinaryData;   ///< Remaining length of binary data to download
     uint64_t signatureSize;         ///< Signature size read in DWL prolog
     void*    sha1CtxPtr;            ///< SHA1 context pointer
+    void*    sha256CtxPtr;          ///< SHA256 context pointer
 }
 DwlParserObj_t;
 
@@ -431,6 +439,53 @@ static void SetUpdateResult
             LOG_ARG("Software update result: %d", PkgDwlObj.updateResult.fw);
             break;
 
+#ifdef LWM2M_OBJECT_33406
+            case LWM2MCORE_FILE_TRANSFER_TYPE:
+                if (PKG_DWL_NO_ERROR == error)
+                {
+                    PkgDwlObj.updateResult.fileTransfer = LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL;
+                }
+                else
+                {
+                    const char* failureCause;
+                    PkgDwlObj.updateResult.fileTransfer = LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE;
+
+                    switch (error)
+                    {
+                        case PKG_DWL_NO_ERROR:
+                            PkgDwlObj.updateResult.fileTransfer = LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL;
+                            break;
+
+                        case PKG_DWL_ERROR_NO_SPACE:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_NOT_ENOUGH_MEMORY;
+                            break;
+
+                        case PKG_DWL_ERROR_OUT_OF_MEMORY:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_OUT_OF_MEMORY;
+                            break;
+
+                        case PKG_DWL_ERROR_VERIFY:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_CRC_CHECK_FAILURE;
+                            break;
+
+                        case PKG_DWL_ERROR_PKG_TYPE:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_INVALID_FILE;
+                            break;
+
+                        case PKG_DWL_ERROR_URI:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_INVALID_URI;
+                            break;
+
+                        case PKG_DWL_ERROR_CONNECTION:
+                        default:
+                                failureCause = FILE_MNGT_ERROR_DOWNLOAD_MISC;
+                            break;
+                    }
+                    fileTransfer_SetFailureReason(failureCause, strlen(failureCause));
+                }
+                break;
+#endif
+
         default:
             LOG_ARG("Set update result failed, unknown package type %d", PkgDwlObj.packageType);
             break;
@@ -530,6 +585,13 @@ static void SetUpdateResultOnHttpError
             lwm2mcore_SetSwUpdateResult(PkgDwlObj.updateResult.sw);
             break;
 
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+            fileTransfer_SetResult(PkgDwlObj.updateResult.fileTransfer);
+            break;
+#endif
+
         default:
             break;
     }
@@ -627,6 +689,11 @@ static downloaderResult_t GetPackageSize
             }
 
             workspacePtr->packageSize = *packageSizePtr;
+            if (LWM2MCORE_FILE_TRANSFER_TYPE == workspacePtr->updateType)
+            {
+                // For file transfer, set also reamining bytes
+                workspacePtr->remainingBinaryData = *packageSizePtr;
+            }
 
             if (DWL_OK != WritePkgDwlWorkspace(workspacePtr))
             {
@@ -657,6 +724,13 @@ static downloaderResult_t GetPackageSize
                 case LWM2MCORE_SW_UPDATE_TYPE:
                     lwm2mcore_SetSwUpdateResult(PkgDwlObj.updateResult.sw);
                     break;
+
+#ifdef LWM2M_OBJECT_33406
+                case LWM2MCORE_FILE_TRANSFER_TYPE:
+                    fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+                    fileTransfer_SetResult(PkgDwlObj.updateResult.fileTransfer);
+                    break;
+#endif
 
                 default:
                     break;
@@ -767,56 +841,79 @@ static PackageDownloaderError_t GetPackageDownloaderError
     if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
             && (LWM2MCORE_FW_UPDATE_RESULT_DEFAULT_NORMAL == PkgDwlObj.updateResult.fw))
         || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-            && (LWM2MCORE_SW_UPDATE_RESULT_INITIAL == PkgDwlObj.updateResult.sw)))
+            && (LWM2MCORE_SW_UPDATE_RESULT_INITIAL == PkgDwlObj.updateResult.sw))
+#ifdef LWM2M_OBJECT_33406
+        || (   (LWM2MCORE_FILE_TRANSFER_TYPE == PkgDwlObj.packageType)
+            && (LWM2MCORE_FILE_TRANSFER_RESULT_INITIAL == PkgDwlObj.updateResult.fileTransfer))
+#endif
+        )
     {
         error = PKG_DWL_NO_ERROR;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_NO_STORAGE_SPACE == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_NOT_ENOUGH_MEMORY == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_NO_SPACE;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_OUT_OF_MEMORY == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_OUT_OF_MEMORY == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_OUT_OF_MEMORY;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_CONNECTION;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_VERIFY_ERROR == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_CHECK_FAILURE == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_CHECK_FAILURE == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_VERIFY;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_UNSUPPORTED_PKG_TYPE == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_UNSUPPORTED_TYPE == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_PKG_TYPE;
     }
     else if (   (   (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
                  && (LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI == PkgDwlObj.updateResult.fw))
              || (   (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
-                 && (LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI == PkgDwlObj.updateResult.sw)))
+                 && (LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI == PkgDwlObj.updateResult.sw))
+            )
     {
         error = PKG_DWL_ERROR_URI;
     }
     else
     {
-        LOG_ARG("Unknown update result: %d", ((LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType) ?
-                PkgDwlObj.updateResult.fw : PkgDwlObj.updateResult.sw));
+        if (LWM2MCORE_FW_UPDATE_TYPE == PkgDwlObj.packageType)
+        {
+            LOG_ARG("Unknown update result: %d", PkgDwlObj.updateResult.fw);
+        }
+        else if (LWM2MCORE_SW_UPDATE_TYPE == PkgDwlObj.packageType)
+        {
+            LOG_ARG("Unknown update result: %d", PkgDwlObj.updateResult.sw);
+        }
+        else
+        {
+#ifdef LWM2M_OBJECT_33406
+            LOG_ARG("Unknown update result: %d", PkgDwlObj.updateResult.fileTransfer);
+#endif
+        }
     }
 
     LOG_ARG("GetPackageDownloaderError %d", error);
@@ -848,13 +945,41 @@ static void PkgDwlEvent
             status.u.pkgStatus.progress = 0;
             status.u.pkgStatus.errorCode = 0;
 
+#ifdef LWM2M_OBJECT_33406
+            // For file transfer, check the available space
+            if (LWM2MCORE_FILE_TRANSFER_TYPE == pkgDwlPtr->data.updateType)
+            {
+                uint64_t availableSpace = 0;
+                lwm2mcore_Sid_t sID = lwm2mcore_FileTransferAvailableSpace(&availableSpace);
+                if ((LWM2MCORE_ERR_COMPLETED_OK == sID)
+                 && (availableSpace < pkgDwlPtr->data.packageSize))
+                {
+                    LOG("Not enough space to store the file");
+                    fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+                    fileTransfer_SetResult(LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE);
+                    fileTransfer_SetFailureReason(FILE_MNGT_ERROR_DOWNLOAD_NOT_ENOUGH_MEMORY,
+                                                  strlen(FILE_MNGT_ERROR_DOWNLOAD_NOT_ENOUGH_MEMORY));
+                    status.u.pkgStatus.errorCode = LWM2MCORE_FUMO_NO_SUFFICIENT_MEMORY;
+                    lwm2mcore_DeletePackageDownloaderResumeInfo();
+                    lwm2mcore_CleanStaleData(pkgDwlPtr->data.packageSize);
+                }
+            }
+#endif
+
             // TODO Check that the device has sufficient space to store the package
             // Need a new porting layer function
             break;
 
         case PKG_DWL_EVENT_DL_START:
             LOG_ARG("Package download start, size %"PRIu64, pkgDwlPtr->data.packageSize);
-
+#ifdef LWM2M_OBJECT_33406
+            if ((LWM2MCORE_FILE_TRANSFER_TYPE == pkgDwlPtr->data.updateType)
+             && PkgDwlObj.offset)
+            {
+                LOG("For file transfer, do not send DL progress event for resume");
+                return;
+            }
+#endif
             status.event = LWM2MCORE_EVENT_DOWNLOAD_PROGRESS;
             status.u.pkgStatus.pkgType = PkgDwlObj.packageType;
             status.u.pkgStatus.numBytes = pkgDwlPtr->data.packageSize;
@@ -1006,6 +1131,18 @@ static void UpdateAndStorePkgDwlWorkspace
     PkgDwlWorkspace.remainingBinaryData = DwlParserObj.remainingBinaryData;
     PkgDwlWorkspace.signatureSize = DwlParserObj.signatureSize;
     PkgDwlWorkspace.computedCRC = DwlParserObj.computedCRC;
+#ifdef LWM2M_OBJECT_33406
+    if (LWM2MCORE_FILE_TRANSFER_TYPE == PkgDwlWorkspace.updateType)
+    {
+        if (DwlParserObj.sha256CtxPtr)
+        {
+            lwm2mcore_CopySha256(DwlParserObj.sha256CtxPtr,
+                           PkgDwlWorkspace.sha1Ctx,
+                           SHA256_CTX_MAX_SIZE);
+        }
+    }
+    else
+#endif
     if (DwlParserObj.sha1CtxPtr)
     {
         lwm2mcore_CopySha1(DwlParserObj.sha1CtxPtr,
@@ -1033,21 +1170,40 @@ static void UpdateAndStorePkgDwlWorkspace
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t HashData
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
-    // Initialize SHA1 context and CRC if not already done
-    if (!DwlParserObj.sha1CtxPtr)
+#ifdef LWM2M_OBJECT_33406
+    if ((LWM2MCORE_FILE_TRANSFER_TYPE == updateType)
+     && (!DwlParserObj.sha256CtxPtr))
     {
-        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha1(&DwlParserObj.sha1CtxPtr))
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha256(&DwlParserObj.sha256CtxPtr))
         {
-            LOG("Unable to initialize SHA1 context");
+            LOG("Unable to initialize SHA256 context");
             SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+            fileTransfer_SetFailureReason(FILE_MNGT_ERROR_DOWNLOAD_CRC_INIT,
+                                          strlen(FILE_MNGT_ERROR_DOWNLOAD_CRC_INIT));
             return DWL_FAULT;
         }
+    }
+    else
+#endif
+    if ((LWM2MCORE_FW_UPDATE_TYPE == updateType)
+     || (LWM2MCORE_SW_UPDATE_TYPE == updateType))
+    {
+        // Initialize SHA1 context and CRC if not already done
+        if (!DwlParserObj.sha1CtxPtr)
+        {
+            if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_StartSha1(&DwlParserObj.sha1CtxPtr))
+            {
+                LOG("Unable to initialize SHA1 context");
+                SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+                return DWL_FAULT;
+            }
 
-        // Initialize computed CRC
-        DwlParserObj.computedCRC = lwm2mcore_Crc32(0L, NULL, 0);
+            // Initialize computed CRC
+            DwlParserObj.computedCRC = lwm2mcore_Crc32(0L, NULL, 0);
+        }
     }
 
     // Some parts of the DWL data are excluded from the CRC computation and/or the SHA1 digest
@@ -1107,18 +1263,36 @@ static lwm2mcore_DwlResult_t HashData
                 PkgDwlObj.updateGap = 0;
             }
 
-            DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
-                                                       dataToHashPtr,
-                                                       lenToHash);
-
-            // SHA1 digest is updated with all BINA data
-            if (LWM2MCORE_ERR_COMPLETED_OK!=lwm2mcore_ProcessSha1(DwlParserObj.sha1CtxPtr,
-                                                                  dataToHashPtr,
-                                                                  lenToHash))
+#ifdef LWM2M_OBJECT_33406
+            if (LWM2MCORE_FILE_TRANSFER_TYPE == updateType)
             {
-                LOG("Unable to update SHA1 digest");
-                SetUpdateResult(PKG_DWL_ERROR_VERIFY);
-                return DWL_FAULT;
+                if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ProcessSha256(DwlParserObj.sha256CtxPtr,
+                                                                          dataToHashPtr,
+                                                                          lenToHash))
+                {
+                    LOG("Unable to update SHA256 digest");
+                    SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+                    fileTransfer_SetFailureReason(FILE_MNGT_ERROR_DOWNLOAD_CRC_PROCESS,
+                                                  strlen(FILE_MNGT_ERROR_DOWNLOAD_CRC_PROCESS));
+                    return DWL_FAULT;
+                }
+            }
+            else
+#endif
+            {
+                DwlParserObj.computedCRC = lwm2mcore_Crc32(DwlParserObj.computedCRC,
+                                                           dataToHashPtr,
+                                                           lenToHash);
+
+                // SHA1 digest is updated with all BINA data
+                if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_ProcessSha1(DwlParserObj.sha1CtxPtr,
+                                                                        dataToHashPtr,
+                                                                        lenToHash))
+                {
+                    LOG("Unable to update SHA1 digest");
+                    SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+                    return DWL_FAULT;
+                }
             }
         }
         break;
@@ -1149,11 +1323,37 @@ static lwm2mcore_DwlResult_t HashData
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t CheckCrcAndSignature
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
-    LOG_ARG("CRC: expected 0x%08x, computed 0x%08x",
-            DwlParserObj.packageCRC, DwlParserObj.computedCRC);
+#ifdef LWM2M_OBJECT_33406
+    if (LWM2MCORE_FILE_TRANSFER_TYPE == updateType)
+    {
+        char checksum[LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR+1];
+        size_t checksumLen = LWM2MCORE_FILE_TRANSFER_HASH_MAX_CHAR+1;
+
+        if(LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_GetFileTransferChecksum(checksum, &checksumLen))
+        {
+            LOG("Unable to get checksum to compare");
+            SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+            return DWL_FAULT;
+        }
+        LOG_ARG("checksum %s", checksum);
+
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_EndAndCheckSha256(DwlParserObj.sha256CtxPtr,
+                                                                      checksum))
+        {
+            LOG("Unable to end SHA256 digest or digest mismatch");
+            SetUpdateResult(PKG_DWL_ERROR_VERIFY);
+            return DWL_FAULT;
+        }
+        LOG("Hash check OK");
+
+        return DWL_OK;
+    }
+#else
+    (void)updateType;
+#endif
 
     // Compare package CRC retrieved from first DWL prolog and computed CRC.
     if (DwlParserObj.packageCRC != DwlParserObj.computedCRC)
@@ -1194,7 +1394,7 @@ static lwm2mcore_DwlResult_t CheckCrcAndSignature
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlProlog
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1237,7 +1437,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
     PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Hash the prolog data
-    result = HashData();
+    result = HashData(updateType);
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -1309,7 +1509,7 @@ static lwm2mcore_DwlResult_t ParseDwlProlog
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlComments
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result = DWL_OK;
@@ -1325,7 +1525,7 @@ static lwm2mcore_DwlResult_t ParseDwlComments
         LOG_ARG("DWL comments: %s", PkgDwlObj.dwlDataPtr);
 
         // Hash the comments data
-        result = HashData();
+        result = HashData(updateType);
         if (DWL_OK != result)
         {
             // updateResult is already set by HashData
@@ -1378,7 +1578,7 @@ static lwm2mcore_DwlResult_t ParseDwlComments
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlHeader
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1389,7 +1589,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
     PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Hash the header data
-    result = HashData();
+    result = HashData(updateType);
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -1451,7 +1651,7 @@ static lwm2mcore_DwlResult_t ParseDwlHeader
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlBinary
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1469,7 +1669,7 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
     DwlParserObj.remainingBinaryData -= DwlParserObj.lenToParse;
 
     // Hash the binary data
-    result = HashData();
+    result = HashData(updateType);
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -1493,7 +1693,7 @@ static lwm2mcore_DwlResult_t ParseDwlBinary
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlPadding
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1512,7 +1712,7 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
     PkgDwlObj.processedLen = DwlParserObj.lenToParse;
 
     // Hash the padding data
-    result = HashData();
+    result = HashData(updateType);
     if (DWL_OK != result)
     {
         // updateResult is already set by HashData
@@ -1538,7 +1738,7 @@ static lwm2mcore_DwlResult_t ParseDwlPadding
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t ParseDwlSignature
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1560,7 +1760,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
     // no need to hash the data
 
     // Check the package CRC and verify the signature
-    result = CheckCrcAndSignature();
+    result = CheckCrcAndSignature(updateType);
     if (DWL_OK != result)
     {
         // updateResult is already set by CheckCrcAndSignature
@@ -1586,7 +1786,7 @@ static lwm2mcore_DwlResult_t ParseDwlSignature
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_DwlResult_t DwlParser
 (
-    void
+    lwm2mcore_UpdateType_t updateType   ///< [IN] Update type
 )
 {
     lwm2mcore_DwlResult_t result;
@@ -1599,31 +1799,82 @@ static lwm2mcore_DwlResult_t DwlParser
         return DWL_FAULT;
     }
 
+
+#ifdef LWM2M_OBJECT_33406
+    if(LWM2MCORE_FILE_TRANSFER_TYPE == updateType)
+    {
+        if (0 == DwlParserObj.remainingBinaryData)
+        {
+            if (DWL_OK != CheckCrcAndSignature(updateType))
+            {
+                PkgDwlObj.state = PKG_DWL_ERROR;
+                return DWL_FAULT;
+            }
+            else
+            {
+                PkgDwlObj.state = PKG_DWL_END;
+                return DWL_OK;
+            }
+        }
+
+        // In file stream case, the whole file is considered like a binary
+        PkgDwlObj.processedLen = DwlParserObj.lenToParse;
+        DwlParserObj.remainingBinaryData -= DwlParserObj.lenToParse;
+
+        // Hash the data
+        result = HashData(updateType);
+        if (DWL_OK != result)
+        {
+            // updateResult is already set by HashData
+            return result;
+        }
+        LOG_ARG("DwlParserObj.remainingBinaryData %"PRIu64, DwlParserObj.remainingBinaryData);
+
+        PkgDwlObj.state = PKG_DWL_STORE;
+
+        // Check if the DWL parsing is finished
+        if ((DWL_OK != result) || (PKG_DWL_END == PkgDwlObj.state))
+        {
+        // Cancel the SHA1 computation and reset SHA1 context
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_CancelSha256(&DwlParserObj.sha256CtxPtr))
+        {
+            LOG("Unable to reset SHA256 context");
+        }
+
+        // Reset the DWL parser object for next use
+        memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
+            DwlParserObj.subsection = DWL_SUB_PROLOG;
+        }
+
+        return result;
+    }
+#endif
+
     // Parse the downloaded data based on the current subsection
     switch (DwlParserObj.subsection)
     {
         case DWL_SUB_PROLOG:
-            result = ParseDwlProlog();
+            result = ParseDwlProlog(updateType);
             break;
 
         case DWL_SUB_COMMENTS:
-            result = ParseDwlComments();
+            result = ParseDwlComments(updateType);
             break;
 
         case DWL_SUB_HEADER:
-            result = ParseDwlHeader();
+            result = ParseDwlHeader(updateType);
             break;
 
         case DWL_SUB_BINARY:
-            result = ParseDwlBinary();
+            result = ParseDwlBinary(updateType);
             break;
 
         case DWL_SUB_PADDING:
-            result = ParseDwlPadding();
+            result = ParseDwlPadding(updateType);
             break;
 
         case DWL_SUB_SIGNATURE:
-            result = ParseDwlSignature();
+            result = ParseDwlSignature(updateType);
             break;
 
         default:
@@ -1854,6 +2105,15 @@ static void PkgDwlInit
             result = lwm2mcore_SetSwUpdateResult(PkgDwlObj.updateResult.sw);
             break;
 
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            LOG("File transfer");
+            PkgDwlObj.packageType = LWM2MCORE_FILE_TRANSFER_TYPE;
+            SetUpdateResult(PKG_DWL_NO_ERROR);
+            result = fileTransfer_SetResult(PkgDwlObj.updateResult.fileTransfer);
+            break;
+#endif
+
         default:
             LOG_ARG("Unknown package type %d", workspace.updateType);
             PkgDwlObj.packageType = LWM2MCORE_MAX_UPDATE_TYPE;
@@ -1900,7 +2160,7 @@ static void PkgDwlInit
     {
         uint64_t packageSize = 0;
         downloaderResult_t downloaderResult = GetPackageSize(&packageSize, &workspace);
-        LOG_ARG("Get package size: %d", downloaderResult);
+        LOG_ARG("Get package size result: %d", downloaderResult);
         switch(downloaderResult)
         {
             case DOWNLOADER_MEMORY_ERROR:
@@ -1947,8 +2207,23 @@ static void PkgDwlInit
 
     // Require to parse at least the length of DWL prolog, enough to determine the file type
     memset(&DwlParserObj, 0, sizeof(DwlParserObj_t));
-    DwlParserObj.subsection = DWL_SUB_PROLOG;
-    DwlParserObj.lenToParse = sizeof(DwlProlog_t);
+
+#ifdef LWM2M_OBJECT_33406
+    if (LWM2MCORE_FILE_TRANSFER_TYPE == workspace.updateType)
+    {
+        // In file transfer case, the whole file is considered like a binary
+        DwlParserObj.lenToParse = workspace.packageSize;
+        DwlParserObj.binarySize = workspace.packageSize;
+        DwlParserObj.remainingBinaryData = workspace.packageSize;
+        DwlParserObj.section = DWL_TYPE_BINA;
+        DwlParserObj.subsection = DWL_SUB_BINARY;
+    }
+    else
+#endif
+    {
+        DwlParserObj.subsection = DWL_SUB_PROLOG;
+        DwlParserObj.lenToParse = sizeof(DwlProlog_t);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2010,12 +2285,29 @@ static lwm2mcore_DwlResult_t LoadResumeData
     DwlParserObj.remainingBinaryData = PkgDwlWorkspace.remainingBinaryData;
     DwlParserObj.signatureSize = PkgDwlWorkspace.signatureSize;
 
-    if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha1(PkgDwlWorkspace.sha1Ctx,
-                                                            SHA1_CTX_MAX_SIZE,
-                                                            &DwlParserObj.sha1CtxPtr))
+#ifdef LWM2M_OBJECT_33406
+    if (LWM2MCORE_FILE_TRANSFER_TYPE == pkgDwlPtr->data.updateType)
     {
-        LOG("Unable to restore SHA1 context");
-        return DWL_FAULT;
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha256(PkgDwlWorkspace.sha1Ctx,
+                                                                  SHA256_CTX_MAX_SIZE,
+                                                                  &DwlParserObj.sha256CtxPtr))
+        {
+            LOG("Unable to restore SHA256 context");
+            fileTransfer_SetFailureReason(FILE_MNGT_ERROR_DOWNLOAD_CRC_RESTORE,
+                                          strlen(FILE_MNGT_ERROR_DOWNLOAD_CRC_RESTORE));
+            return DWL_FAULT;
+        }
+    }
+    else
+#endif
+    {
+        if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_RestoreSha1(PkgDwlWorkspace.sha1Ctx,
+                                                                SHA1_CTX_MAX_SIZE,
+                                                                &DwlParserObj.sha1CtxPtr))
+        {
+            LOG("Unable to restore SHA1 context");
+            return DWL_FAULT;
+        }
     }
 
     return DWL_OK;
@@ -2073,6 +2365,11 @@ static void PkgDwlDownload
             case LWM2MCORE_SW_UPDATE_TYPE:
                 result = lwm2mcore_SetSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOAD_STARTED);
                 break;
+#ifdef LWM2M_OBJECT_33406
+            case LWM2MCORE_FILE_TRANSFER_TYPE:
+                result = fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_TRANSFERRING);
+                break;
+#endif
              default:
                 LOG("unknown download type");
                 break;
@@ -2246,7 +2543,7 @@ static void PkgDwlParse
 
     // Parse downloaded data and determine next state
     PkgDwlObj.processedLen = 0;
-    PkgDwlObj.result = DwlParser();
+    PkgDwlObj.result = DwlParser(pkgDwlPtr->data.updateType);
     if (PKG_DWL_STORE == PkgDwlObj.state)
     {
         goto end;
@@ -2287,7 +2584,7 @@ static void PkgDwlStore
 
     if (LWM2MCORE_ERR_COMPLETED_OK != result)
     {
-        LOG("Error during data storage");
+        LOG_ARG("Error during data storage %d", result);
         PkgDwlObj.state = PKG_DWL_ERROR;
         PkgDwlObj.result = DWL_FAULT;
         // Failed to write the package. Considering it as bad pkg type error.
@@ -2301,6 +2598,14 @@ static void PkgDwlStore
     // Check if all binary data is received
     if (0 == DwlParserObj.remainingBinaryData)
     {
+#ifdef LWM2M_OBJECT_33406
+        if (LWM2MCORE_FILE_TRANSFER_TYPE == pkgDwlPtr->data.updateType)
+        {
+            PkgDwlObj.state = PKG_DWL_PARSE;
+            PkgDwlObj.endOfProcessing = true;
+            return;
+        }
+#endif
         LOG("Prepare downloading of DWL padding data");
         // End of binary data, prepare download of DWL padding data
         DwlParserObj.subsection = DWL_SUB_PADDING;
@@ -2410,6 +2715,12 @@ static void PkgDwlEnd
                 result = lwm2mcore_SetSwUpdateResult(PkgDwlObj.updateResult.sw);
                 break;
 
+#ifdef LWM2M_OBJECT_33406
+            case LWM2MCORE_FILE_TRANSFER_TYPE:
+                result = fileTransfer_SetResult(PkgDwlObj.updateResult.fileTransfer);
+                break;
+#endif
+
             default:
                 LOG("unknown download type");
                 // End of processing
@@ -2433,6 +2744,12 @@ static void PkgDwlEnd
                 result = lwm2mcore_SetSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_INITIAL);
                 break;
 
+#ifdef LWM2M_OBJECT_33406
+            case LWM2MCORE_FILE_TRANSFER_TYPE:
+                result = fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+                break;
+#endif
+
             default:
                 LOG("unknown download type");
                 return;
@@ -2455,6 +2772,12 @@ static void PkgDwlEnd
             case LWM2MCORE_SW_UPDATE_TYPE:
                 result = lwm2mcore_SetSwUpdateState(LWM2MCORE_SW_UPDATE_STATE_DOWNLOADED);
                 break;
+#ifdef LWM2M_OBJECT_33406
+            case LWM2MCORE_FILE_TRANSFER_TYPE:
+                result = fileTransfer_SetState(LWM2MCORE_FILE_TRANSFER_STATE_IDLE);
+                result = fileTransfer_SetResult(LWM2MCORE_FILE_TRANSFER_RESULT_SUCCESS);
+                break;
+#endif
             default:
                 LOG("unknown download type");
                 // End of processing
@@ -2992,9 +3315,30 @@ lwm2mcore_Sid_t lwm2mcore_AbortDownload
             }
             break;
 
+#ifdef LWM2M_OBJECT_33406
+        case LWM2MCORE_FILE_TRANSFER_TYPE:
+            if ((LWM2MCORE_ERR_COMPLETED_OK != fileTransfer_SetState
+                                                        (LWM2MCORE_FILE_TRANSFER_STATE_IDLE))
+             || (LWM2MCORE_ERR_COMPLETED_OK != fileTransfer_SetResult
+                                                        (LWM2MCORE_FILE_TRANSFER_RESULT_FAILURE)))
+            {
+                LOG("Error to set state result");
+                return LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+
+            if (LWM2MCORE_ERR_COMPLETED_OK !=  lwm2mcore_FileTransferAbort())
+            {
+                LOG("Error to treat the file transfer abortion");
+            }
+            fileTransfer_SetFailureReason(FILE_MNGT_ERROR_DOWNLOAD_ABORTED,
+                                          strlen(FILE_MNGT_ERROR_DOWNLOAD_ABORTED));
+            break;
+#endif
+
         default:
             return LWM2MCORE_ERR_INVALID_STATE;
     }
+    LOG("Abort OK");
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }

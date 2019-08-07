@@ -123,6 +123,25 @@ lwm2mcore_FwUpdateDeliveryMethod_t;
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_BINDING_UDP_QUEUE_SMS "UQS"
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * The server sends a package URI to the LwM2M client
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t omanager_SetUpdatePackageUri
+(
+    lwm2mcore_UpdateType_t type,    ///< [IN] Update type
+    uint16_t instanceId,            ///< [IN] Instance Id (0 for FW, any value for SW)
+    char* bufferPtr,                ///< [INOUT] Data buffer
+    size_t len                      ///< [IN] Length of input buffer
+);
+
 //--------------------------------------------------------------------------------------------------
 /**
  *                                  OBJECT 0: SECURITY
@@ -878,6 +897,102 @@ int omanager_ReadExtConnectivityStatsObj
     valueChangedCallback_t changedCb    ///< [IN] callback for notification
 );
 
+#ifdef LWM2M_OBJECT_33406
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                          OBJECT 33406: FILE TRANSFER
+ */
+//--------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to write a resource of object 33406
+ *
+ * Object: 33406 - File transfer
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteFileTransferObj
+(
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+);
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to read a resource of object 33406
+ *
+ * Object: 33406 - File transfer
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadFileTransferObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to read a resource of object 33407
+ *
+ * Object: 33407 - File List
+ * Resource: All
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadFileListObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+);
+
+#endif
+
 //--------------------------------------------------------------------------------------------------
 /**
  *                              OBJECT 10243: SSL certificates
@@ -1142,6 +1257,29 @@ lwm2mcore_Sid_t omanager_GetLifetime
 (
     uint32_t* lifetimePtr                           ///< [OUT] lifetime in seconds
 );
+
+#ifdef LWM2M_OBJECT_33406
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Get the file transfer failure reason
+ *
+ * @remark Public function which can be called by the client.
+ *
+ * @note
+ * This function is available only if @c LWM2M_OBJECT_33406 flag is embedded
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if succeeds
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE parameter out of range
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR other failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t getFileTransferFailureCause
+(
+    char*   bufferPtr,     ///< [IN] Buffer
+    size_t  bufferLen      ///< [IN] Buffer length
+);
+#endif
 /**
   * @}
   */
