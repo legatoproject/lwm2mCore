@@ -698,6 +698,7 @@ void smanager_SendSessionEvent
                     if (BootstrapSession)
                     {
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
+                        omanager_RestoreBsCredentials();
                     }
                     else
                     {
