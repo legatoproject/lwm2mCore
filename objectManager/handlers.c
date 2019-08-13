@@ -669,23 +669,45 @@ bool omanager_StoreCredentials
                 && (strlen((const char *)securityInformationPtr->serverURI))
                 )
             {
-                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
-                                                        LWM2MCORE_BS_SERVER_ID,
-                                                        (char*)securityInformationPtr->devicePKID,
-                                                        securityInformationPtr->pskIdLen);
-                LOG_ARG("Store Bootstrap PskId result %d", storageResult);
+                // Only backup and set credentials if they are different from the currently stored ones
+                if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                               LWM2MCORE_BS_SERVER_ID,
+                                               (char*)securityInformationPtr->devicePKID))
+                {
+                    lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY, LWM2MCORE_BS_SERVER_ID);
 
-                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
-                                                        LWM2MCORE_BS_SERVER_ID,
-                                                        (char*)securityInformationPtr->secretKey,
-                                                        securityInformationPtr->pskLen);
-                LOG_ARG("Store Bootstrap Psk result %d", storageResult);
+                    storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
+                                                            LWM2MCORE_BS_SERVER_ID,
+                                                            (char*)securityInformationPtr->devicePKID,
+                                                            securityInformationPtr->pskIdLen);
+                    LOG_ARG("Store Bootstrap PskId result %d", storageResult);
+                }
 
-                storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
-                                                        LWM2MCORE_BS_SERVER_ID,
-                                                        (char*)securityInformationPtr->serverURI,
-                                                        strlen((const char *)securityInformationPtr->serverURI));
-                LOG_ARG("Store Bootstrap Addr result %d", storageResult);
+                if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                               LWM2MCORE_BS_SERVER_ID,
+                                               (char*)securityInformationPtr->secretKey))
+                {
+                    lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY, LWM2MCORE_BS_SERVER_ID);
+
+                    storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
+                                                            LWM2MCORE_BS_SERVER_ID,
+                                                            (char*)securityInformationPtr->secretKey,
+                                                            securityInformationPtr->pskLen);
+                    LOG_ARG("Store Bootstrap Psk result %d", storageResult);
+                }
+
+                if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                               LWM2MCORE_BS_SERVER_ID,
+                                               (char*)securityInformationPtr->serverURI))
+                {
+                    lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS, LWM2MCORE_BS_SERVER_ID);
+
+                    storageResult = lwm2mcore_SetCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
+                                                            LWM2MCORE_BS_SERVER_ID,
+                                                            (char*)securityInformationPtr->serverURI,
+                                                            strlen((const char *)securityInformationPtr->serverURI));
+                    LOG_ARG("Store Bootstrap Addr result %d", storageResult);
+                }
             }
         }
         else
@@ -741,6 +763,46 @@ bool omanager_StoreCredentials
     /* Set the bootstrap configuration */
     omanager_StoreBootstrapConfiguration(bsConfigPtr);
     return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to restore bootstrap credentials from backup
+ *
+ * @return
+ *  - @c true in case of success
+ *  - @c false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool omanager_RestoreBsCredentials
+(
+    void
+)
+{
+    lwm2mcore_Sid_t restoreResult = LWM2MCORE_ERR_COMPLETED_OK;
+
+    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY, LWM2MCORE_BS_SERVER_ID);
+
+    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
+    {
+        return false;
+    }
+
+    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY, LWM2MCORE_BS_SERVER_ID);
+
+    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
+    {
+        return false;
+    }
+
+    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS, LWM2MCORE_BS_SERVER_ID);
+
+    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------

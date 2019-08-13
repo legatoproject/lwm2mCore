@@ -887,6 +887,20 @@ bool omanager_StoreCredentials
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to restore bootstrap credentials from backup
+ *
+ * @return
+ *  - @c true in case of success
+ *  - @c false in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+bool omanager_RestoreBsCredentials
+(
+    void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Function to indicate how many object instances are defined in object 2 (ACL))
  *
  * @return
