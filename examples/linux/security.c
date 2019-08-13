@@ -66,7 +66,14 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Convert a numeric value into a uppercase character representing the hexidecimal value of the
+ * Global data
+ */
+//--------------------------------------------------------------------------------------------------
+static clientSecurityConfigBackup_t ClientSecurityConfigBackup;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Convert a decimal value into a uppercase character representing the hexadecimal value of the
  * input.
  *
  * @return
@@ -721,6 +728,71 @@ bool lwm2mcore_CheckCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to check if one credential is present in platform storage and matches with our
+ * credentials.
+ *
+ * @return
+ *      - true if the credential and matches with our credentials
+ *      - false else
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_CredentialMatch
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
+    uint16_t                serverId,   ///< [IN] server Id
+    const char*             credential  ///< [IN] Credential
+)
+{
+    (void)serverId;
+    bool result = false;
+    clientSecurityConfig_t* securityObjPtr;
+    clientConfig_t* config = ClientConfigGet();
+
+    if (!config)
+    {
+        return false;
+    }
+
+    securityObjPtr = GetBootstrapInformation();
+    if (!securityObjPtr)
+    {
+        return false;
+    }
+
+    switch (credId)
+    {
+        case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
+            if (strncmp(securityObjPtr->devicePKID, credential, securityObjPtr->pkidLen) == 0)
+            {
+                result = true;
+            }
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
+            if (strncmp((const char*)securityObjPtr->secretKey, credential, securityObjPtr->secretKeyLen) == 0)
+            {
+                result = true;
+            }
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
+            if (strncmp(securityObjPtr->serverURI, credential, strlen(securityObjPtr->serverURI)) == 0)
+            {
+                result = true;
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    printf("Credential presence: credId %d result %d\n", credId, result);
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * This function erases one credential from platform storage
  *
  * @return
@@ -794,6 +866,113 @@ bool lwm2mcore_DeleteCredential
             result = false;
             break;
     }
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Backup a credential.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_BackupCredential
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
+    uint16_t                serverId    ///< [IN] server Id
+)
+{
+    (void)serverId;
+    bool result = false;
+    clientSecurityConfig_t* securityObjPtr;
+    clientConfig_t* config = ClientConfigGet();
+
+    if (!config)
+    {
+        return false;
+    }
+
+    securityObjPtr = GetBootstrapInformation();
+    if (!securityObjPtr)
+    {
+        return false;
+    }
+
+    switch (credId)
+    {
+        case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
+            memcpy(ClientSecurityConfigBackup.devicePKID, securityObjPtr->devicePKID, strlen(securityObjPtr->devicePKID));
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
+            memcpy(ClientSecurityConfigBackup.secretKey, securityObjPtr->secretKey, securityObjPtr->secretKeyLen);
+            ClientSecurityConfigBackup.secretKeyLen = securityObjPtr->secretKeyLen;
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
+            memcpy(ClientSecurityConfigBackup.serverURI, securityObjPtr->serverURI, strlen(securityObjPtr->serverURI));
+            break;
+
+        default:
+            break;
+    }
+
+    return result;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Restore credential from backup if they exist. If restore is successful, backup will be
+ * removed.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreCredential
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
+    uint16_t                serverId    ///< [IN] server Id
+)
+{
+        (void)serverId;
+    bool result = false;
+    clientSecurityConfig_t* securityObjPtr;
+    clientConfig_t* config = ClientConfigGet();
+
+    if (!config)
+    {
+        return false;
+    }
+
+    securityObjPtr = GetBootstrapInformation();
+    if (!securityObjPtr)
+    {
+        return false;
+    }
+
+    switch (credId)
+    {
+        case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
+            memcpy(securityObjPtr->devicePKID, ClientSecurityConfigBackup.devicePKID, strlen(ClientSecurityConfigBackup.devicePKID));
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
+            memcpy(securityObjPtr->secretKey, ClientSecurityConfigBackup.secretKey, ClientSecurityConfigBackup.secretKeyLen);
+            securityObjPtr->secretKeyLen = ClientSecurityConfigBackup.secretKeyLen;
+            break;
+
+        case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
+            memcpy(securityObjPtr->serverURI, ClientSecurityConfigBackup.serverURI, strlen(ClientSecurityConfigBackup.serverURI));
+            break;
+
+        default:
+            break;
+    }
+
     return result;
 }
 
@@ -1219,3 +1398,4 @@ lwm2mcore_Sid_t lwm2mcore_UpdateSslCertificate
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
+
