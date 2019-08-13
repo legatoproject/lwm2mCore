@@ -177,6 +177,30 @@ bool lwm2mcore_CheckCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to check if one credential is present in platform non-volatile storage and
+ * matches with our credentials.
+ *
+ * @details Since the LwM2MCore is able to connect to several Device Management servers, the
+ * Device Management server Id is indicated in parameters (this field is useless if the credential
+ * Id concerns a bootstrap server credential).
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *      - true if the credential and matches with our credentials
+ *      - false else
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_CredentialMatch
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
+    uint16_t                serverId,   ///< [IN] server Id
+    const char*             credential  ///< [IN] Credential
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief This function erases one credential from platform non-volatile storage.
  *
  * @details Since the LwM2MCore is able to connect to several Device Management servers, the
@@ -193,6 +217,39 @@ bool lwm2mcore_CheckCredential
 bool lwm2mcore_DeleteCredential
 (
     lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
+    uint16_t                serverId    ///< [IN] server Id
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Backup a credential.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_BackupCredential
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
+    uint16_t                serverId    ///< [IN] server Id
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Restore credential to the previous credential.
+ * Used for bs credential where we restore the credential back to the previous bs credential if
+ * they exist. If not, we also remove the current bs credential and allow the device to retrieve
+ * the bs credential from the modem.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_RestoreCredential
+(
+    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
     uint16_t                serverId    ///< [IN] server Id
 );
 

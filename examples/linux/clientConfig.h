@@ -156,6 +156,27 @@ clientSecurityConfig_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Structure for server configuration backup
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct _clientSecurityConfigBackup_t
+{
+
+    char                            serverURI[LWM2MCORE_SERVERADDR_LEN];    ///< Server URI
+    char                            devicePKID[LWM2MCORE_PSKID_LEN+1];      ///< PSK identity
+    uint8_t                         secretKey[2*LWM2MCORE_PSK_LEN+1];       ///< PSK secret
+    int                             pkidLen;                                ///< PSK identity length
+    int                             secretKeyLen;                           ///< PSK secret length
+    struct _clientSecurityConfigBackup_t* nextPtr;                          ///< Next entry in the
+                                                                            ///< list
+    bool                            isBootstrapServer;                      ///< Is bootstrap
+                                                                            ///< server ?
+    int                             serverId;                               ///< Server Id
+}
+clientSecurityConfigBackup_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Structure for LwM2MCore configuration
  */
 //--------------------------------------------------------------------------------------------------
