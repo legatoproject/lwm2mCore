@@ -133,27 +133,22 @@ static uint8_t SetCoapError
             }
         break;
 
-        // LWM2MCORE_ERR_INVALID_STATE needs to be mapped to COAP_501_NOT_IMPLEMENTED and not
+        // LWM2MCORE_ERR_INVALID_STATE needs to be mapped to COAP_404_NOT_FOUND and not
         // COAP_503_SERVICE_UNAVAILABLE in order to have the required behavior:
         // - Data is ignored on a READ command on an object
         // - CoAP 4.04 is returned on command on an atomic resource
         case LWM2MCORE_ERR_INVALID_STATE:
-        {
-            result = COAP_501_NOT_IMPLEMENTED;
-        }
-        break;
+            result = COAP_404_NOT_FOUND;
+            break;
 
         case LWM2MCORE_ERR_INVALID_ARG:
             result = COAP_400_BAD_REQUEST;
             break;
 
         case LWM2MCORE_ERR_OP_NOT_SUPPORTED:
+        case LWM2MCORE_ERR_NOT_YET_IMPLEMENTED:
             result = COAP_404_NOT_FOUND;
             break;
-
-        case LWM2MCORE_ERR_NOT_YET_IMPLEMENTED:
-            result = COAP_501_NOT_IMPLEMENTED;
-        break;
 
         case LWM2MCORE_ERR_INCORRECT_RANGE:
         case LWM2MCORE_ERR_GENERAL_ERROR:
@@ -537,7 +532,7 @@ static uint8_t ReadCb
                     }
                 }
 
-                if (COAP_501_NOT_IMPLEMENTED == result)
+                if (COAP_404_NOT_FOUND == result)
                 {
                     /* Read resource is not implemented, check the number of resources */
                     if (1 == *numDataPtr)
