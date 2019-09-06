@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <errno.h>
 #include <platform/types.h>
 #include <lwm2mcore/lwm2mcore.h>
 #include <lwm2mcore/connectivity.h>
@@ -1549,11 +1550,14 @@ int omanager_WriteDeviceObj
 
     switch (uriPtr->rid)
     {
+        uint64_t source;
+
         /* Resource 13: Current time */
         case LWM2MCORE_DEVICE_CURRENT_TIME_RID:
-            sID = LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+            source = (uint64_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            LOG_ARG("Input length %d; input time %lld", len, source);
+            sID = lwm2mcore_SetDeviceCurrentTime(source);
             break;
-
 
         /* Resource 16: Supported binding mode */
         case LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID:
@@ -1681,6 +1685,7 @@ int omanager_ReadDeviceObj
                                              &currentTime,
                                              sizeof(currentTime),
                                              false);
+                LOG_ARG("Time retrieved %lld", currentTime);
             }
         }
         break;

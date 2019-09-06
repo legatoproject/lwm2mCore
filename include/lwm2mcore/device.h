@@ -136,15 +136,29 @@ lwm2mcore_Sid_t lwm2mcore_GetBatteryLevel
  * @return
  *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
  *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
- *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
  *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
- *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
  */
 //--------------------------------------------------------------------------------------------------
 lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
 (
     uint64_t* valuePtr  ///< [INOUT] data buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Set the device time (UNIX time in seconds) into its system clock
+ * This API needs to have a procedural treatment
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetDeviceCurrentTime
+(
+    uint64_t inputTime  ///< [IN] Current clock time given
 );
 
 //--------------------------------------------------------------------------------------------------

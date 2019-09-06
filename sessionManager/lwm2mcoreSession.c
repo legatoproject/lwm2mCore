@@ -1735,6 +1735,56 @@ bool lwm2mcore_SendAsyncResponse
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to add a post LWM2M request handler that will be invoked to run after the processing of
+ * the request currently being processed is done and its corresponding response has been sent out
+ *
+ * @return
+ *      - True if the given handler has been successfully added into the currently active session
+ *      - False otherwise
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_AddPostRequestHandler
+(
+    void* handler
+)
+{
+    if (!DataCtxPtr->connListPtr)
+    {
+        LOG("No connection for adding post-request handler");
+        return false;
+    }
+
+    DataCtxPtr->connListPtr->postRequestHandler = handler;
+
+    LOG("Post-request handler added");
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a previously added post LWM2M request handler for the request that has just
+ * been processed and responded to
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_ExecPostRequestHandler
+(
+    void* connP
+)
+{
+    dtls_Connection_t* connPtr = (dtls_Connection_t*)connP;
+    if (!connPtr || !(connPtr->postRequestHandler))
+    {
+        LOG("No post-request session handler to invoke");
+        return;
+    }
+
+    LOG("Invoking post-request session handler");
+    connPtr->postRequestHandler(connPtr);
+    connPtr->postRequestHandler = NULL;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to check if the client is connected to a bootstrap server
  *
  * @return

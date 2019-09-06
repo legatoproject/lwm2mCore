@@ -1110,6 +1110,31 @@ void lwm2mcore_DeleteRegistrationID
     int    shortID    ///< [IN] Server ID. Use -1 value to delete all servers registration ID.
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to add a post LWM2M request handler to be run after the processing of the request
+ *
+ * @return
+ *  - @true if the given handler has been successfully added into the currently active session
+ *  - @false otherwise
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_AddPostRequestHandler
+(
+    void* handler
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to perform a system clock update using the clock time set on the config tree
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_UpdateSystemClock
+(
+    void* connP
+        ///< [IN] The LWM2M connection on which the update is triggered and a re-handshake required
+);
+
 /**
   * @}
   */

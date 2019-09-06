@@ -220,6 +220,25 @@ lwm2mcore_Sid_t lwm2mcore_GetDeviceCurrentTime
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Set the device time (UNIX time in seconds) into its system clock
+ * This API needs to have a procedural treatment
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetDeviceCurrentTime
+(
+    uint64_t inputTime  ///< [IN] Current clock time given
+)
+{
+    (void)inputTime;
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Retrieve the module identity (IMEI)
  * This API needs to have a procedural treatment
  *
