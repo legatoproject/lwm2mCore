@@ -20,6 +20,7 @@
 #include <lwm2mcore/timer.h>
 #include <lwm2mcore/update.h>
 #include <lwm2mcore/location.h>
+#include <lwm2mcore/cellular.h>
 #include <lwm2mcore/lwm2mcorePackageDownloader.h>
 #include "downloader.h"
 #include <lwm2mcore/timer.h>
@@ -3110,6 +3111,259 @@ int omanager_ExecSwUpdate
         break;
     }
 
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                                  OBJECT 10: CELLULAR CONNECTIVITY
+ */
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Translate eDRX rid to rat value.
+ *
+ * @return
+ *  - @c Rat value in case of success
+ *  - @c NULL value in case of failure
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_CelleDrxRat_t TranslateEdrxParamToRat
+(
+    uint16_t rid
+)
+{
+    switch (rid)
+    {
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_IU_MODE_RID:
+            return LWM2MCORE_CELL_EDRX_IU_MODE;
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_WB_S1_MODE_RID:
+            return LWM2MCORE_CELL_EDRX_WB_S1_MODE;
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_NB_S1_MODE_RID:
+            return LWM2MCORE_CELL_EDRX_NB_S1_MODE;
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_AGB_MODE_RID:
+            return LWM2MCORE_CELL_EDRX_A_GB_MODE;
+        default:
+            return (lwm2mcore_CelleDrxRat_t)0;
+    }
+}
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 10
+ *
+ * Object: 10 - Cellular connectivity
+ * Resource: all with read operation
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - @ref LWM2MCORE_ERR_OVERFLOW in case of buffer overflow
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadCellularConnectivityObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID = LWM2MCORE_ERR_INVALID_STATE;
+
+    (void)changedCb;
+
+    if ((!uriPtr) || (!bufferPtr) || (!lenPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: SMSC address */
+        case LWM2MCORE_CELL_CONN_SMSC_ADDR_RID:
+            break;
+
+        /* Resource 1: Disable radio period */
+        case LWM2MCORE_CELL_CONN_DISABLE_RADIO_PERIOD_RID:
+            break;
+
+        /* Resource 2: Module activation code */
+        case LWM2MCORE_CELL_CONN_MOD_ACTIVATION_CODE_RID:
+            break;
+
+        /* Resource 3: Vendor specific extensions */
+        case LWM2MCORE_CELL_CONN_VENDOR_SPEC_EXT_RID:
+            break;
+
+        /* Resource 4: PSM timer */
+        case LWM2MCORE_CELL_CONN_PSM_TIMER_RID:
+            break;
+
+        /* Resource 5: Active timer */
+        case LWM2MCORE_CELL_CONN_ACTIVE_TIMER_RID:
+            break;
+
+        /* Resource 6: Serving PLMN rate control */
+        case LWM2MCORE_CELL_CONN_SERV_PLMN_RATE_CTRL_RID:
+            break;
+
+        /* Resource 7: eDRX parameters for Iu mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_IU_MODE_RID:
+        /* Resource 8: eDRX parameters for WB-S1 mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_WB_S1_MODE_RID:
+        /* Resource 9: eDRX parameters for NB-S1 mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_NB_S1_MODE_RID:
+        /* Resource 10: eDRX parameters for A/Gb mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_AGB_MODE_RID:
+        {
+            uint8_t value = 0;
+
+            lwm2mcore_CelleDrxRat_t rat = TranslateEdrxParamToRat(uriPtr->rid);
+
+            if (!rat)
+            {
+                return LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+
+            sID = lwm2mcore_GeteDrxParameters(rat, &value);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                *lenPtr = omanager_FormatValueToBytes((uint8_t*) bufferPtr,
+                                             &value,
+                                             sizeof(value),
+                                             false);
+            }
+        }
+        break;
+
+        /* Resource 11: Activated profile name */
+        case LWM2MCORE_CELL_CONN_ACTIVATED_PROFILE_NAME_RID:
+            break;
+
+        default:
+            break;
+    }
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write a resource of object 10
+ *
+ * Object: 10 - Cellular connectivity
+ * Resource: all with write operation
+ *
+ * @return
+ *  - @ref LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *  - @ref LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *  - @ref LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *  - @ref LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *  - @ref LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *  - @ref LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *  - @ref LWM2MCORE_ERR_INVALID_STATE in case of invalid state to treat the resource handler
+ *  - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteCellularConnectivityObj
+(
+    lwm2mcore_Uri_t *uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource.
+    char *bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID = LWM2MCORE_ERR_INVALID_STATE;
+
+    if ((!uriPtr) || (!bufferPtr))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 ==(uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    (void)len;
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: SMSC address */
+        case LWM2MCORE_CELL_CONN_SMSC_ADDR_RID:
+            break;
+
+        /* Resource 1: Disable radio period */
+        case LWM2MCORE_CELL_CONN_DISABLE_RADIO_PERIOD_RID:
+            break;
+
+        /* Resource 2: Module activation code */
+        case LWM2MCORE_CELL_CONN_MOD_ACTIVATION_CODE_RID:
+            break;
+
+        /* Resource 4: PSM timer */
+        case LWM2MCORE_CELL_CONN_PSM_TIMER_RID:
+            break;
+
+        /* Resource 5: Active timer */
+        case LWM2MCORE_CELL_CONN_ACTIVE_TIMER_RID:
+            break;
+
+        /* Resource 7: eDRX parameters for Iu mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_IU_MODE_RID:
+        /* Resource 8: eDRX parameters for WB-S1 mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_WB_S1_MODE_RID:
+        /* Resource 9: eDRX parameters for NB-S1 mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_NB_S1_MODE_RID:
+        /* Resource 10: eDRX parameters for A/Gb mode */
+        case LWM2MCORE_CELL_CONN_EDRX_PARAM_AGB_MODE_RID:
+        {
+            uint8_t eDrx = (uint8_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            // Received value could include Paging Time Window
+            // b1-4: eDRX
+            // b5-8: PTW
+            // The whole value is sent to the client
+            lwm2mcore_CelleDrxRat_t rat = TranslateEdrxParamToRat(uriPtr->rid);
+
+            if (!rat)
+            {
+                return LWM2MCORE_ERR_GENERAL_ERROR;
+            }
+
+            sID = lwm2mcore_SeteDrxParameters(rat, eDrx);
+        }
+        break;
+
+        default:
+            break;
+    }
     return sID;
 }
 

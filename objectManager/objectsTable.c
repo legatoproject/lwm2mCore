@@ -721,6 +721,105 @@ static lwm2mcore_Resource_t SoftwareUpdateResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Supported resources defined for LWM2M Cellular connectivity object (10).
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t CellularConnectivityResources[] =
+{
+    {
+        LWM2MCORE_CELL_CONN_SMSC_ADDR_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_DISABLE_RADIO_PERIOD_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_MOD_ACTIVATION_CODE_RID,  //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_PSM_TIMER_RID,          //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_ACTIVE_TIMER_RID,       //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_SERV_PLMN_RATE_CTRL_RID,  //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_EDRX_PARAM_IU_MODE_RID,   //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_EDRX_PARAM_WB_S1_MODE_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_EDRX_PARAM_NB_S1_MODE_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_EDRX_PARAM_AGB_MODE_RID,  //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        omanager_WriteCellularConnectivityObj,      //.write
+        NULL,                                       //.exec
+    },
+    {
+        LWM2MCORE_CELL_CONN_ACTIVATED_PROFILE_NAME_RID, //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,             //.type
+        1,                                          //.maxResInstCnt
+        omanager_ReadCellularConnectivityObj,       //.read
+        NULL,                                       //.write
+        NULL,                                       //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Supported resources defined for Subscription, a Sierra Wireless proprietary object (10241)
  * For each resource, the resource Id, the resource type, the resource instance number,
  * a READ, WRITE, EXEC callback can be defined.
@@ -1039,6 +1138,13 @@ static lwm2mcore_Object_t ObjArray[] =
         LWM2MCORE_ID_NONE,                                                      //.maxObjInstCnt
         ARRAYSIZE(SoftwareUpdateResources),                                     //.resCnt
         SoftwareUpdateResources                                                 //.resources
+    },
+    /* Object 10: cellular connectivity */
+    {
+        LWM2MCORE_CELL_CONN_OID,                                                //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(CellularConnectivityResources),                               //.resCnt
+        CellularConnectivityResources                                           //.resources
     },
     /* Object 10241: subscription */
     {

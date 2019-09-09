@@ -27,7 +27,7 @@
  * Maximum number of objects which can be registered in Wakaama
  */
 //--------------------------------------------------------------------------------------------------
-#define OBJ_COUNT 13
+#define OBJ_COUNT 14
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -35,6 +35,14 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define ONE_PATH_MAX_LEN 90
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Padding character in Base 64
+ */
+//--------------------------------------------------------------------------------------------------
+
+#define B64_PADDING '='
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -641,6 +649,158 @@ static uint8_t ReadCb
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Revert a character from base 64
+ *
+ * @return
+ *      - character value
+ *      - 0 on error
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t prv_b64Revert
+(
+    uint8_t value       ///< [IN] Character to decode
+)
+{
+    if (value >= 'A' && value <= 'Z')
+    {
+        return (value - 'A');
+    }
+
+    if (value >= 'a' && value <= 'z')
+    {
+        return (26 + value - 'a');
+    }
+
+    if (value >= '0' && value <= '9')
+    {
+        return (52 + value - '0');
+    }
+
+    switch (value)
+    {
+        case '+':
+            return 62;
+        case '/':
+            return 63;
+        default:
+            return 0;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Decode a 4-bit base 64 encoded block
+ */
+//--------------------------------------------------------------------------------------------------
+static void prv_decodeBlock
+(
+    uint8_t input[4],       ///< [IN] Base 64 encoded bloc
+    uint8_t output[3]       ///< [OUT] Decoded block
+)
+{
+    uint8_t tmp[4];
+    int i;
+
+    memset(output, 0, 3);
+
+    for (i = 0; i < 4; i++)
+    {
+        tmp[i] = prv_b64Revert(input[i]);
+    }
+
+    output[0] = (tmp[0] << 2) | (tmp[1] >> 4);
+    output[1] = (tmp[1] << 4) | (tmp[2] >> 2);
+    output[2] = (tmp[2] << 6) | tmp[3];
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Decode a base 64 string
+ *
+ * @return
+ *      - decoded string length
+ *      - 0 on error
+ */
+//--------------------------------------------------------------------------------------------------
+size_t base64_decode
+(
+    uint8_t * dataP,    ///< [IN] Base 64 string
+    size_t    dataLen,  ///< [IN] Base 64 string length
+    uint8_t * bufferP   ///< [OUT] Buffer for decoded string
+)
+{
+    size_t data_index;
+    size_t result_index;
+    size_t result_len;
+
+    // Check if the number of bytes is a multiple of 4
+    if (dataLen % 4)
+    {
+        return 0;
+    }
+
+    result_len = (dataLen >> 2) * 3;
+
+    // remove padding
+    while (dataP[dataLen - 1] == B64_PADDING)
+    {
+        dataLen--;
+    }
+
+    data_index = 0;
+    result_index = 0;
+    while (data_index < dataLen)
+    {
+        prv_decodeBlock(dataP + data_index, bufferP + result_index);
+        data_index += 4;
+        result_index += 3;
+    }
+
+    switch (data_index - dataLen)
+    {
+        case 0:
+            break;
+
+        case 2:
+        {
+            uint8_t tmp[2];
+
+            tmp[0] = prv_b64Revert(dataP[dataLen - 2]);
+            tmp[1] = prv_b64Revert(dataP[dataLen - 1]);
+
+            bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+            bufferP[result_index - 2] = (tmp[1] << 4);
+            result_len -= 2;
+        }
+        break;
+
+        case 3:
+        {
+            uint8_t tmp[3];
+
+            tmp[0] = prv_b64Revert(dataP[dataLen - 3]);
+            tmp[1] = prv_b64Revert(dataP[dataLen - 2]);
+            tmp[2] = prv_b64Revert(dataP[dataLen - 1]);
+
+            bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+            bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
+            bufferP[result_index - 1] = (tmp[2] << 6);
+            result_len -= 1;
+        }
+        break;
+
+        default:
+            bufferP = NULL;
+            result_len = 0;
+            break;
+    }
+
+    return result_len;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Generic function when a WRITE/EXECUTE command is treated to format the received data
  *
  * @return
@@ -714,6 +874,17 @@ static bool FormatDataWriteExecute
                     break;
 
                     case LWM2MCORE_RESOURCE_TYPE_OPAQUE:
+                    {
+                        size_t len = 0;
+                        // decode b64
+                        len = base64_decode(dataArray.value.asBuffer.buffer,
+                                            dataArray.value.asBuffer.length,
+                                            (uint8_t*)bufferPtr);
+                        *bufferLenPtr = len;
+                        result = true;
+                    }
+                    break;
+
                     case LWM2MCORE_RESOURCE_TYPE_FLOAT:
                     case LWM2MCORE_RESOURCE_TYPE_UNKNOWN:
                     default:

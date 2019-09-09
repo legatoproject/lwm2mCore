@@ -61,6 +61,7 @@ set(LINUX_CLIENT_SOURCES
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/timer.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/udp.c
     ${LWM2MCORE_SOURCES_DIR}/examples/linux/update.c
+    ${LWM2MCORE_SOURCES_DIR}/examples/linux/cellular.c
     main.c)
 
 add_executable(${PROJECT_NAME} ${LWM2MCORE_SOURCES} ${LINUX_CLIENT_SOURCES})

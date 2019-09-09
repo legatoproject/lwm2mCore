@@ -160,6 +160,7 @@ typedef enum
     LWM2MCORE_LOCATION_OID          = 6,        ///< Location object Id
     LWM2MCORE_CONN_STATS_OID        = 7,        ///< Connectivity statistics object Id
     LWM2MCORE_SOFTWARE_UPDATE_OID   = 9,        ///< Application update object Id
+    LWM2MCORE_CELL_CONN_OID         = 10,       ///< Cellular connectivity object Id
     LWM2MCORE_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object Id: Subscription
     LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object Id: Extended connectivity statistics
     LWM2MCORE_SSL_CERTIFS_OID       = 10243,    ///< Sierra Wireless proprietary object Id: SSL certificate
@@ -377,6 +378,27 @@ typedef enum
     LWM2MCORE_SW_COMPONENT_LINK_RID,                ///< Reference to software components
     LWM2MCORE_SW_COMPONENT_TREE_LENGTH_RID          ///< Software component tree length
 }lwm2mcore_swUpdateResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* @brief Enumeration for LwM2M object 10 (cellular connectivity) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_CELL_CONN_SMSC_ADDR_RID = 0,          ///< SMSC address
+    LWM2MCORE_CELL_CONN_DISABLE_RADIO_PERIOD_RID,   ///< Disable radio period
+    LWM2MCORE_CELL_CONN_MOD_ACTIVATION_CODE_RID,    ///< Module activation code
+    LWM2MCORE_CELL_CONN_VENDOR_SPEC_EXT_RID,        ///< Vendor specific extensions
+    LWM2MCORE_CELL_CONN_PSM_TIMER_RID,              ///< PSM timer
+    LWM2MCORE_CELL_CONN_ACTIVE_TIMER_RID,           ///< Active timer
+    LWM2MCORE_CELL_CONN_SERV_PLMN_RATE_CTRL_RID,    ///< Serving PLMN rate control
+    LWM2MCORE_CELL_CONN_EDRX_PARAM_IU_MODE_RID,     ///< eDRX parameters for Iu mode
+    LWM2MCORE_CELL_CONN_EDRX_PARAM_WB_S1_MODE_RID,  ///< eDRX parameters for WB-S1 mode
+    LWM2MCORE_CELL_CONN_EDRX_PARAM_NB_S1_MODE_RID,  ///< eDRX parameters for NB-S1 mode
+    LWM2MCORE_CELL_CONN_EDRX_PARAM_AGB_MODE_RID,    ///< eDRX parameters for A/Gb mode
+    LWM2MCORE_CELL_CONN_ACTIVATED_PROFILE_NAME_RID  ///< Activated profile name
+}lwm2mcore_cellularConnectivity_t;
 
 //--------------------------------------------------------------------------------------------------
 /**
