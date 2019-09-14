@@ -1385,9 +1385,17 @@ bool lwm2mcore_DisconnectWithDeregister
         return false;
     }
 
-    /* Stop package download if one is on-going */
-    LOG("Suspend Download");
-    downloader_SuspendDownload();
+    // No need to suspend download here. Download should be suspended once session closure stuff is
+    // finished and avcDaemon receives session done event.
+    // Following race condition may occur if download is suspended here:
+    // Precondition: User agreement for download is disabled
+    //  1. Start a SOTA job and continue download
+    //  2. Stop session in the middle of download
+    //  3. As user agreement is disabled, download tries to resume and it jumps into retry loop.
+    //  4. User receives session stop notification
+    //  5. User starts the session and download suddenly starts even if session start isn't
+    //     complete, hence subsequent avc communications (i.e. Registration Update,
+    //     Receiving install command etc) are in jeopardy.
 
     dataPtr = (smanager_ClientData_t*)instanceRef;
 
@@ -1446,9 +1454,17 @@ bool lwm2mcore_Disconnect
         return false;
     }
 
-    /* Stop package download if one is on-going */
-    LOG("Suspend Download");
-    downloader_SuspendDownload();
+    // No need to suspend download here. Download should be suspended once session closure stuff is
+    // finished and avcDaemon receives session done event.
+    // Following race condition may occur if download is suspended here:
+    // Precondition: User agreement for download is disabled
+    //  1. Start a SOTA job and continue download
+    //  2. Stop session in the middle of download
+    //  3. As user agreement is disabled, download tries to resume and it jumps into retry loop.
+    //  4. User receives session stop notification
+    //  5. User starts the session and download suddenly starts even if session start isn't
+    //     complete, hence subsequent avc communications (i.e. Registration Update,
+    //     Receiving install command etc) are in jeopardy.
 
     dataPtr = (smanager_ClientData_t*)instanceRef;
 
