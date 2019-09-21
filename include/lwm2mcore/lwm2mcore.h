@@ -1144,6 +1144,123 @@ void lwm2mcore_UpdateSystemClock
         ///< [IN] The LWM2M connection on which the update is triggered and a re-handshake required
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to retrieve the configured priority of the given clock time source from the
+ * config tree
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the info retrieval has succeeded
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the info retrieval has failed
+ *      - LWM2MCORE_ERR_INVALID_ARG if a config parameter is invalid
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the retrieved value is out of the proper range
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_GetClockTimeSourcePriority
+(
+    uint16_t source,
+    int16_t* priority
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to set the priority of the given clock time source provided in the input onto
+ * the config tree
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the input has been successfully set
+ *      - LWM2MCORE_ERR_INVALID_ARG if the input is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_SetClockTimeSourcePriority
+(
+    uint16_t source,
+    int16_t priority
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to retrieve the clock time source config as server name, IPv4/v6 address, etc.,
+ * from the config tree
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the info retrieval has succeeded
+ *      - LWM2MCORE_ERR_INVALID_ARG if there is no source config configured to be retrieved
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_GetClockTimeSourceConfig
+(
+    uint16_t source,
+    char* bufferPtr,
+    size_t* lenPtr
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to set the clock time source config as server name, IPv4/v6 address, etc., onto
+ * the config tree
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the input has been successfully set
+ *      - LWM2MCORE_ERR_INVALID_ARG if the input is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_SetClockTimeSourceConfig
+(
+    uint16_t source,
+    char* bufferPtr,
+    size_t length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to execute the device's system clock update by acquiring it from the clock
+ * source(s) configured and, if successful, setting it in
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if successful
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED if this functionality is not supported
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_ExecuteClockTimeUpdate
+(
+    char* bufferPtr,
+    size_t length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to retrieve the status of the last execution of clock time update
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the status retrieval has succeeded
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the status retrieval has failed
+ *      - LWM2MCORE_ERR_INVALID_ARG if there is no status to be retrieved
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the retrieved status is out of the proper range
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED if this functionality is not supported
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_GetClockTimeStatus
+(
+    uint16_t source,
+    int16_t* status
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to return a boolean to reveal whether the Clock Service is the process of doing
+ * a system clock update.
+ *
+ * @return
+ *      - true if a system clock update is in progress
+ *      - false otherwise
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_UpdateSystemClockInProgress
+(
+    void
+);
+
 /**
   * @}
   */

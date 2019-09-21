@@ -15,6 +15,7 @@
 #include "objects.h"
 #include "handlers.h"
 #include "clientConfig.h"
+#include "clockTimeConfiguration.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -922,6 +923,49 @@ static lwm2mcore_Resource_t SslCertificateResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Clock time configuration resources defined for LWM2M certificate object (33405)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t ClockTimeConfigResources[] =
+{
+    {
+        LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_PRIORITY_RID,    //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        omanager_ReadClockTimeConfigObj,                    //.read
+        omanager_WriteClockTimeConfigObj,                   //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_CONFIG_RID,      //.id
+        LWM2MCORE_RESOURCE_TYPE_STRING,                     //.type
+        2,                                                  //.maxResInstCnt
+        omanager_ReadClockTimeConfigObj,                    //.read
+        omanager_WriteClockTimeConfigObj,                   //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_CLOCK_TIME_CONFIG_UPDATE_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,                    //.type
+        1,                                                  //.maxResInstCnt
+        NULL,                                               //.read
+        NULL,                                               //.write
+        omanager_ExecClockTimeConfigObj,                    //.exec
+    },
+    {
+        LWM2MCORE_CLOCK_TIME_CONFIG_STATUS_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_INT,                        //.type
+        1,                                                  //.maxResInstCnt
+        omanager_ReadClockTimeConfigObj,                    //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * List of objects which are supported by the client
  *
  * For each object, the following parameters needs to be filled:
@@ -1016,6 +1060,13 @@ static lwm2mcore_Object_t ObjArray[] =
         1,                                                                      //.maxObjInstCnt
         ARRAYSIZE(SslCertificateResources),                                     //.resCnt
         SslCertificateResources                                                 //.resources
+    },
+    /* Object 33405: Clock Time configuration */
+    {
+        LWM2MCORE_CLOCK_TIME_CONFIG_OID,                                        //.id
+        CLOCK_TIME_CONFIG_SOURCE_MAX,                                           //.maxObjInstCnt
+        ARRAYSIZE(ClockTimeConfigResources),                                    //.resCnt
+        ClockTimeConfigResources                                                //.resources
     }
 };
 

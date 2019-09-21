@@ -27,7 +27,7 @@
  * Maximum number of objects which can be registered in Wakaama
  */
 //--------------------------------------------------------------------------------------------------
-#define OBJ_COUNT 12
+#define OBJ_COUNT 13
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -342,6 +342,7 @@ static uint8_t ReadResourceInstances
 
         /* Read the instance of the resource */
         sid  = resourcePtr->read(uriPtr, bufPtr, &readSize, NULL);
+        LOG_ARG("Result of reading instance %d: %d", uriPtr->oiid, sid);
 
         /* Define the CoAP result */
         result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -400,6 +401,41 @@ static uint8_t ReadResourceInstances
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Validate the operational state to see if it's allowed to proceed with the given object instance.
+ * So far all objects are allowed to proceed, except object 33405 when it's in the process of and
+ * not done with a system time update. Then this function will return false to advise the caller
+ * to not proceed.
+ *
+ * @return
+ *      - true if it's good to proceed; false otherwise.
+ */
+//--------------------------------------------------------------------------------------------------
+static bool ValidStateForOperation
+(
+    lwm2mcore_Uri_t* uri
+)
+{
+    if (!uri)
+    {
+        return false;
+    }
+
+    if (LWM2MCORE_CLOCK_TIME_CONFIG_OID != uri->oid)
+    {
+        return true;
+    }
+
+    // Check if the current state of Clock Service allows this operation
+    if (lwm2mcore_UpdateSystemClockInProgress())
+    {
+        LOG("Operation disallowed when system clock time update is in progress");
+        return false;
+    }
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Generic function when a READ command is treated for a specific object (Wakaama)
  *
  * @return
@@ -438,19 +474,25 @@ static uint8_t ReadCb
         LOG_ARG("Object %d not found", objectPtr->objID);
         return COAP_404_NOT_FOUND;
     }
-
     LOG("object instance Id was registered");
-
-    memset(&uri, 0, sizeof(uri));
-    uri.op = LWM2MCORE_OP_READ;
-    uri.oid = objectPtr->objID;
-    uri.oiid = instanceId;
 
     objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
     if (NULL == objPtr)
     {
         LOG_ARG("Object %d is NOT registered", objectPtr->objID);
         return COAP_404_NOT_FOUND;
+    }
+
+    memset(&uri, 0, sizeof(uri));
+    uri.op = LWM2MCORE_OP_READ;
+    uri.oid = objectPtr->objID;
+    uri.oiid = instanceId;
+
+    // Validate the operational state early here, as the code to follow may block
+    if (!ValidStateForOperation(&uri))
+    {
+        LOG("Operation disallowed due to the present state");
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     LOG_ARG("numDataP %d", *numDataPtr);
@@ -515,10 +557,12 @@ static uint8_t ReadCb
                                                    (*dataArrayPtr) + i,
                                                    asyncBuf,
                                                    asyncBufLen);
+                    LOG_ARG("Result of reading object: %d", objectPtr->objID, result);
                 }
                 else
                 {
                     sid = resourcePtr->read(&uri, asyncBuf, &asyncBufLen, NULL);
+                    LOG_ARG("Result of reading instance %d: %d", instanceId, sid);
 
                     /* Define the CoAP result */
                     result = SetCoapError(sid, LWM2MCORE_OP_READ);
@@ -758,16 +802,23 @@ static uint8_t WriteCb
 
     LOG("object instance Id was registered");
 
-    memset( &uri, 0, sizeof (lwm2mcore_Uri_t));
-    uri.op = LWM2MCORE_OP_WRITE;
-    uri.oid = objectPtr->objID;
-    uri.oiid = instanceId;
-
     objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
     if (!objPtr)
     {
         LOG_ARG("Object %d is NOT registered", objectPtr->objID);
         return COAP_404_NOT_FOUND;
+    }
+
+    memset(&uri, 0, sizeof (lwm2mcore_Uri_t));
+    uri.op = LWM2MCORE_OP_WRITE;
+    uri.oid = objectPtr->objID;
+    uri.oiid = instanceId;
+
+    // Validate the operational state early here, as the code to follow may block
+    if (!ValidStateForOperation(&uri))
+    {
+        LOG("Operation disallowed due to the present state");
+        return COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     LOG_ARG("numData %d", numData);
@@ -1160,16 +1211,8 @@ static uint8_t ExecuteCb
     /* Search if the object was registered */
     if (LWM2M_LIST_FIND(objectPtr->instanceList, instanceId))
     {
-        lwm2mcore_Uri_t uri;
         lwm2mcore_internalObject_t* objPtr;
         LOG("object instance Id was registered");
-
-        memset(&uri, 0, sizeof (lwm2mcore_Uri_t));
-
-        uri.op = LWM2MCORE_OP_EXECUTE;
-        uri.oid = objectPtr->objID;
-        uri.oiid = instanceId;
-        uri.rid = resourceId;
 
         objPtr = FindObject(Lwm2mcoreCtxPtr, objectPtr->objID);
         if (NULL == objPtr)
@@ -1183,6 +1226,19 @@ static uint8_t ExecuteCb
             lwm2mcore_internalResource_t* resourcePtr = NULL;
             char asyncBuf[LWM2MCORE_BUFFER_MAX_LEN];
             size_t asyncBufLen = LWM2MCORE_BUFFER_MAX_LEN;
+            lwm2mcore_Uri_t uri;
+            memset(&uri, 0, sizeof (lwm2mcore_Uri_t));
+            uri.op = LWM2MCORE_OP_EXECUTE;
+            uri.oid = objectPtr->objID;
+            uri.oiid = instanceId;
+            uri.rid = resourceId;
+
+            // Validate the operational state early here, as the code to follow may block
+            if (!ValidStateForOperation(&uri))
+            {
+                LOG("Operation disallowed due to the present state");
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
 
             /* Search the resource handler */
             resourcePtr = FindResource(objPtr, uri.rid);

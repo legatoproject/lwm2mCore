@@ -33,6 +33,7 @@
 #include "liblwm2m.h"
 #include "workspace.h"
 #include "updateAgent.h"
+#include "clockTimeConfiguration.h"
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -3631,4 +3632,249 @@ int omanager_OnUnlistedObject
     (void)changedCb;
 
     return LWM2MCORE_ERR_NOT_YET_IMPLEMENTED;
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                              OBJECT 33405: Clock Time Configuration
+ */
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 33405
+ * Object: Clock Time Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_INVALID_STATE if the current state doesn't allow a Read operation
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadClockTimeConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int16_t output;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
+    if (!uriPtr || !bufferPtr || !lenPtr || (*lenPtr == 0))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (uriPtr->oiid >= CLOCK_TIME_CONFIG_SOURCE_MAX)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    LOG_ARG("Provided buffer size %d", *lenPtr);
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: Clock time source priority */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_PRIORITY_RID:
+            sID = lwm2mcore_GetClockTimeSourcePriority(uriPtr->oiid, &output);
+            if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+            {
+                LOG_ARG("Failed to read priority for clock source %d", uriPtr->rid);
+            }
+            break;
+
+        /* Resource 1: Clock time source config */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_CONFIG_RID:
+            sID = lwm2mcore_GetClockTimeSourceConfig(uriPtr->oiid, bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+            {
+                LOG_ARG("Failed to read source config for clock source %d", uriPtr->rid);
+                break;
+            } else if (*lenPtr == 0)
+            {
+                bufferPtr[0] = '\0';
+                *lenPtr = 1;
+            }
+            return sID;
+
+        /* Resource 3: Clock time update status */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_STATUS_RID:
+            sID = lwm2mcore_GetClockTimeStatus(uriPtr->oiid, &output);
+            if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+            {
+                LOG_ARG("Failed to read source config for clock source %d", uriPtr->rid);
+            }
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Invalid clock source %d for reading", uriPtr->rid);
+            break;
+    }
+
+    if ((LWM2MCORE_ERR_COMPLETED_OK != sID) || (*lenPtr == 0))
+    {
+        bufferPtr[0] = '\0';
+        *lenPtr = 1;
+    }
+    else
+    {
+        LOG_ARG("Clock time config output read: %d", output);
+        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr, &output, sizeof(output), false);
+        if (*lenPtr == 0)
+        {
+            *lenPtr = 1;
+            bufferPtr[0] = '\0';
+        }
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write into a resource of object 33405
+ * Object: Clock Time Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteClockTimeConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    if (!uriPtr || !bufferPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (uriPtr->oiid >= CLOCK_TIME_CONFIG_SOURCE_MAX)
+    {
+        LOG_ARG("Invalid instance ID %d", uriPtr->oiid);
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        LOG_ARG("Incoherent operation %d with Write", uriPtr->op);
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        int16_t priority;
+
+        /* Resource 0: Clock time source priority */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_PRIORITY_RID:
+            if (len == 0)
+            {
+                LOG_ARG("No input for writing for clock source %d", uriPtr->rid);
+                return LWM2MCORE_ERR_INVALID_ARG;
+            }
+
+            priority = omanager_BytesToInt((const char*)bufferPtr, len);
+            sID = lwm2mcore_SetClockTimeSourcePriority(uriPtr->oiid, priority);
+            break;
+
+        /* Resource 1: Clock time source config */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_SOURCE_CONFIG_RID:
+            sID = lwm2mcore_SetClockTimeSourceConfig(uriPtr->oiid, bufferPtr, len);
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Invalid clock source %d for writing", uriPtr->rid);
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a resource of object 33405
+ * Object: Clock Time Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters (WRITE operation) is incorrect
+ *      - LWM2MCORE_ERR_NOT_YET_IMPLEMENTED if the resource is not yet implemented
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ *      - LWM2MCORE_ERR_INVALID_STATE if the current state doesn't allow an Execute operation
+ *      - positive value for asynchronous response
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ExecClockTimeConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    if (!uriPtr || !bufferPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_EXECUTE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 2: Clock time update to execute */
+        case LWM2MCORE_CLOCK_TIME_CONFIG_UPDATE_RID:
+            sID = lwm2mcore_ExecuteClockTimeUpdate(bufferPtr, len);
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Invalid clock source %d for executing", uriPtr->rid);
+            break;
+    }
+
+    return sID;
 }
