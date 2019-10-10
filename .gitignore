@@ -2,3 +2,5 @@ tinyhttp
 tinydtls
 wakaama
 tinyhttp
+examples/linux/*
+doc/html/*

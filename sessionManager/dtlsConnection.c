@@ -397,6 +397,10 @@ static int GetPskInfo
             lwm2m_free(keyPtr);
             return keyLen;
         }
+
+        case DTLS_PSK_HINT:
+            return 0;
+
         default:
             LOG_ARG("Unsupported request type: %d", type);
         break;
