@@ -2245,6 +2245,8 @@ static void PkgDwlStore
         LOG("Error during data storage");
         PkgDwlObj.state = PKG_DWL_ERROR;
         PkgDwlObj.result = DWL_FAULT;
+        // Failed to write the package. Considering it as bad pkg type error.
+        SetUpdateResult(PKG_DWL_ERROR_PKG_TYPE);
         return;
     }
 
