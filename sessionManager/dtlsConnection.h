@@ -26,8 +26,10 @@
 #ifndef DTLS_CONNECTION_H_
 #define DTLS_CONNECTION_H_
 
+#ifndef __THREADX__
 #include <unistd.h>
 #include <sys/stat.h>
+#endif
 #include <stdint.h>
 #include <platform/types.h>
 #include <platform/inet.h>
@@ -67,6 +69,8 @@ typedef struct _dtls_Connection_t
     void (*postRequestHandler)(struct _dtls_Connection_t*); ///< post-Request session handler to invoke
                                                 ///< if present
 }dtls_Connection_t;
+
+typedef void (*postRequestHandlerCb)(dtls_Connection_t* connectionPtr);
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -199,7 +203,7 @@ int dtls_Rehandshake
  *  - @c -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-int dtls_Resume
+int dtls_ResumeSession
 (
     dtls_Connection_t* connPtr          ///< [IN] DTLS connection structure
 );

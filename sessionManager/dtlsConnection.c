@@ -974,7 +974,7 @@ static int ConnectionSend
         {
             // If difference is negative, a time update could have been made on platform side.
             // In this case, do a rehandshake
-            if (timeFromLastData < 0)
+            if ((int32_t)timeFromLastData < 0)
             {
                 // We need to rehandhake because our source IP/port probably changed for the server
                 if (0 != dtls_Rehandshake(connPtr, false))
@@ -985,7 +985,7 @@ static int ConnectionSend
             }
             else if ((0 < DTLS_NAT_TIMEOUT) && (DTLS_NAT_TIMEOUT < timeFromLastData))
             {
-                if (0 != dtls_Resume(connPtr))
+                if (0 != dtls_ResumeSession(connPtr))
                 {
                     LOG("Unable to resume. Fall-back to a rehandshake");
                     if (0 != dtls_Rehandshake(connPtr, false))
@@ -1119,7 +1119,7 @@ int dtls_Rehandshake
  *  - -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
-int dtls_Resume
+int dtls_ResumeSession
 (
     dtls_Connection_t* connPtr  ///< [IN] DTLS connection structure
 )

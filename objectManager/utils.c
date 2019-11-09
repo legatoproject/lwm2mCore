@@ -250,7 +250,7 @@ size_t omanager_FormatValueToBytes
 
         default:
         {
-            lReturn = -1;
+            lReturn = (size_t)-1;
         }
         break;
     }

@@ -419,6 +419,17 @@ coap_external_handler_t lwm2mcore_GetCoapExternalHandler
 (
     void
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a previously added post LWM2M request handler for the request that has just
+ * been processed and responded to
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_ExecPostRequestHandler
+(
+    void* connP
+);
 /**
   * @}
   */

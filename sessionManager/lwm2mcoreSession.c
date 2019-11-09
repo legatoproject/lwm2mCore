@@ -1770,7 +1770,7 @@ bool lwm2mcore_AddPostRequestHandler
         return false;
     }
 
-    DataCtxPtr->connListPtr->postRequestHandler = handler;
+    DataCtxPtr->connListPtr->postRequestHandler = (postRequestHandlerCb)handler;
 
     LOG("Post-request handler added");
     return true;

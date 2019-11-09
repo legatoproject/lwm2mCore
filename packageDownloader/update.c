@@ -463,14 +463,10 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted
                 LOG("FW update state already set to UPDATING");
                 return LWM2MCORE_ERR_COMPLETED_OK;
             }
-            else
-            {
-                LOG_ARG("Invalid FW update state %d, result %d",
-                        workspace.fwState, workspace.fwResult);
-                return LWM2MCORE_ERR_INVALID_STATE;
-            }
+            LOG_ARG("Invalid FW update state %d, result %d",
+                    workspace.fwState, workspace.fwResult);
+            return LWM2MCORE_ERR_INVALID_STATE;
         }
-        break;
 
         case LWM2MCORE_SW_UPDATE_TYPE:
             LOG("Nothing to do in SW update case");
@@ -478,10 +474,10 @@ lwm2mcore_Sid_t lwm2mcore_SetUpdateAccepted
 
         default:
             LOG("Invalid update type");
-            return LWM2MCORE_ERR_INVALID_STATE;
+            break;
     }
 
-    return result;
+    return LWM2MCORE_ERR_INVALID_STATE;
 }
 
 //--------------------------------------------------------------------------------------------------

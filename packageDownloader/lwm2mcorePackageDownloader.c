@@ -2067,7 +2067,7 @@ static void PkgDwlDownload
     if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
     {
         LOG("Unable to read workspace");
-        PkgDwlObj.state = LWM2MCORE_ERR_GENERAL_ERROR;
+        PkgDwlObj.state = PKG_DWL_ERROR;
         return;
     }
 
@@ -2722,7 +2722,7 @@ lwm2mcore_DwlResult_t lwm2mcore_PackageDownloaderReceiveData
     PkgDwlObj.dwlDataPtr = bufPtr;
     PkgDwlObj.downloadedLen = bufSize;
 
-    return lwm2mcore_HandlePackageDownloader();
+    return (lwm2mcore_DwlResult_t)lwm2mcore_HandlePackageDownloader();
 }
 
 //--------------------------------------------------------------------------------------------------

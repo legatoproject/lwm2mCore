@@ -2232,7 +2232,7 @@ static lwm2mcore_Sid_t SetUpdatePackageUri
         }
     }
 
-    return sID;
+    return (lwm2mcore_Sid_t)sID;
 }
 
 //--------------------------------------------------------------------------------------------------

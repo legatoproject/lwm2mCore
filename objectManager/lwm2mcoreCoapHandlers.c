@@ -261,7 +261,7 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
     if (!requestPtr)
     {
         LOG("requestPtr is NULL");
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        return (coap_status_t)COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     requestPtr->uri = coap_get_multi_option_as_string(messagePtr->uri_path);
@@ -269,7 +269,7 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
     requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
 #endif
 
-    requestPtr->method = messagePtr->code;
+    requestPtr->method = (coap_method_t)messagePtr->code;
     requestPtr->buffer = messagePtr->payload;
     requestPtr->bufferLength = messagePtr->payload_len;
     requestPtr->messageId = messagePtr->mid;
@@ -293,7 +293,7 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
     // If the application responds within 2 seconds, we can send a piggy backed response.
 
     // Actual response will be sent by external application
-    return COAP_IGNORE;
+    return (coap_status_t)COAP_IGNORE;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -335,7 +335,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     if (!requestPtr)
     {
         LOG("requestPtr is NULL");
-        return COAP_500_INTERNAL_SERVER_ERROR;
+        return (coap_status_t)COAP_500_INTERNAL_SERVER_ERROR;
     }
 
     requestPtr->uri = coap_get_multi_option_as_string(message->uri_path);
@@ -343,7 +343,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     requestPtr->uri = Replace(requestPtr->uri, DELIMITER);
 #endif
 
-    requestPtr->method = message->code;
+    requestPtr->method = (coap_method_t)message->code;
     requestPtr->buffer = message->payload;
     requestPtr->bufferLength = message->payload_len;
     requestPtr->messageId = message->mid;
@@ -363,7 +363,7 @@ coap_status_t lwm2mcore_CallCoapEventHandler
        lwm2m_free(requestPtr);
     }
 
-    return coapErrorCode;
+    return (coap_status_t)coapErrorCode;
 }
 
 //--------------------------------------------------------------------------------------------------
