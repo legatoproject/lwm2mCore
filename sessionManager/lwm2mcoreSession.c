@@ -1412,6 +1412,9 @@ bool lwm2mcore_DisconnectWithDeregister
     lwm2mcore_Ref_t instanceRef     ///< [IN] instance reference
 )
 {
+    lwm2mcore_UpdateType_t updateType = LWM2MCORE_MAX_UPDATE_TYPE;
+    lwm2mcore_Sid_t infoResult;
+    uint64_t packageSize = 0;
     smanager_ClientData_t* dataPtr;
 
 #ifndef LWM2M_DEREGISTER
@@ -1423,6 +1426,15 @@ bool lwm2mcore_DisconnectWithDeregister
     {
         LOG("Null instance reference");
         return false;
+    }
+
+    /* If a download is on-going, better to not send the DEREGISTER message */
+    infoResult = lwm2mcore_GetDownloadInfo (&updateType, &packageSize);
+    if ((LWM2MCORE_ERR_COMPLETED_OK == infoResult)
+     && (packageSize))
+    {
+        LOG("Do not send DEREGISTER message on package download suspend");
+        return lwm2mcore_Disconnect(instanceRef);
     }
 
     // No need to suspend download here. Download should be suspended once session closure stuff is
