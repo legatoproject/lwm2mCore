@@ -76,9 +76,9 @@ static lwm2mcore_Sid_t BuildVelocity
 )
 {
     lwm2mcore_Sid_t sID, lsID, hsID, vsID;
-    uint32_t direction;
-    uint32_t hSpeed;
-    int32_t vSpeed;
+    uint32_t direction = 0;
+    uint32_t hSpeed = 0;
+    int32_t vSpeed = 0;
     uint8_t gadVelocity[LWM2MCORE_GAD_VELOCITY_MAX_BYTES];
     uint8_t gadVelocityLen = 0;
 
