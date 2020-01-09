@@ -277,6 +277,7 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
     memcpy(requestPtr->token, messagePtr->token, messagePtr->token_len);
     requestPtr->contentType = messagePtr->content_type;
     requestPtr->streamStatus = streamStatus;
+    requestPtr->blockSize = messagePtr->block1_size;
 
     if (ExternalHandlerRef != NULL)
     {
@@ -284,8 +285,12 @@ coap_status_t lwm2mcore_CallCoapExternalHandler
         ExternalHandlerRef(requestPtr);
     }
 
-    if ((NULL == ExternalHandlerRef) && (requestPtr))
+    if (requestPtr)
     {
+       if(requestPtr->uri)
+       {
+           lwm2m_free(requestPtr->uri);
+       }
        lwm2m_free(requestPtr);
     }
 
@@ -512,4 +517,20 @@ unsigned int lwm2mcore_GetContentType
 )
 {
     return requestRef->contentType;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get block1 size
+ *
+ * @return
+ *  - block size
+ */
+//--------------------------------------------------------------------------------------------------
+uint16_t lwm2mcore_GetBlock1Size
+(
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] CoAP request reference
+)
+{
+    return requestRef->blockSize;
 }
