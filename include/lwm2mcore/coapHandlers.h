@@ -62,6 +62,7 @@ typedef struct
     uint8_t* payloadPtr;                            ///< [IN] Payload pointer
     size_t payloadLength;                           ///< [IN] Payload length
     lwm2mcore_StreamStatus_t  streamStatus;         ///< [IN] Status of the transmit stream
+    uint16_t blockSize;                             ///< [IN] Block size
 }
 lwm2mcore_CoapResponse_t;
 
@@ -115,6 +116,7 @@ typedef struct
     uint8_t *buffer;                        ///< [IN] payload of coap request
     size_t bufferLength;                    ///< [IN] length of input buffer
     lwm2mcore_StreamStatus_t streamStatus;  ///< [IN] stream status
+    uint16_t blockSize;                     ///< [IN] Block size
 }
 lwm2mcore_CoapRequest_t;
 
@@ -328,6 +330,19 @@ uint8_t lwm2mcore_GetTokenLength
 unsigned int lwm2mcore_GetContentType
 (
     lwm2mcore_CoapRequest_t* requestRef    ///< [IN] Coap request reference
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get block1 size
+ *
+ * @return
+ *  - block size
+ */
+//--------------------------------------------------------------------------------------------------
+uint16_t lwm2mcore_GetRequestBlock1Size
+(
+    lwm2mcore_CoapRequest_t* requestRef    ///< [IN] CoAP request reference
 );
 
 //--------------------------------------------------------------------------------------------------
