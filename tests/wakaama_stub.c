@@ -16,7 +16,7 @@
 #include <sessionManager/sessionManager.h>
 #include "liblwm2m.h"
 #include <stdarg.h>
-
+#include "internals.h"
 
 //-------------------------------------------------------------------------------------------------
 /**
@@ -207,10 +207,37 @@ lwm2m_list_t* lwm2m_list_remove
     lwm2m_list_t** nodeP
 )
 {
-    (void)head;
-    (void)id;
-    (void)nodeP;
-    return NULL;
+    lwm2m_list_t * target;
+
+    if (head == NULL)
+    {
+        if (nodeP) *nodeP = NULL;
+        return NULL;
+    }
+
+    if (head->id == id)
+    {
+        if (nodeP) *nodeP = head;
+        return head->next;
+    }
+
+    target = head;
+    while (NULL != target->next && target->next->id < id)
+    {
+        target = target->next;
+    }
+
+    if (NULL != target->next && target->next->id == id)
+    {
+        if (nodeP) *nodeP = target->next;
+        target->next = target->next->next;
+    }
+    else
+    {
+        if (nodeP) *nodeP = NULL;
+    }
+
+    return head;
 }
 
 int lwm2m_configure
@@ -308,12 +335,25 @@ bool lwm2m_close
     return true;
 }
 
+static void prv_deleteServer(lwm2m_server_t * serverP, void *userData)
+{
+    (void)userData;
+    lwm2m_free(serverP);
+}
+
+
 void lwm2m_followClosure
 (
-    lwm2m_context_t* contextP
+    lwm2m_context_t* context
 )
 {
-    (void)contextP;
+    while (NULL != context->serverList)
+    {
+        lwm2m_server_t * server;
+        server = context->serverList;
+        context->serverList = server->next;
+        prv_deleteServer(server, context->userData);
+    }
 }
 
 void lwm2m_set_push_callback
@@ -452,9 +492,33 @@ void lwm2m_data_free
     lwm2m_data_t* dataP
 )
 {
-    (void)size;
-    (void)dataP;
-    return;
+    int i;
+
+    if (size == 0 || dataP == NULL) return;
+
+    for (i = 0; i < size; i++)
+    {
+        switch (dataP[i].type)
+        {
+        case LWM2M_TYPE_MULTIPLE_RESOURCE:
+        case LWM2M_TYPE_OBJECT_INSTANCE:
+        case LWM2M_TYPE_OBJECT:
+            lwm2m_data_free(dataP[i].value.asChildren.count, dataP[i].value.asChildren.array);
+            break;
+
+        case LWM2M_TYPE_STRING:
+        case LWM2M_TYPE_OPAQUE:
+            if (dataP[i].value.asBuffer.buffer != NULL)
+            {
+                lwm2m_free(dataP[i].value.asBuffer.buffer);
+            }
+
+        default:
+            // do nothing
+            break;
+        }
+    }
+    lwm2m_free(dataP);
 }
 
 lwm2m_context_t * lwm2m_init(void * userData)

@@ -964,7 +964,7 @@ static downloaderResult_t SendRequest
         LOG("Error on download disconnection");
         if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
         {
-            LOG("Error on download free");
+           LOG("Error on download free");
         }
         return DOWNLOADER_ERROR;
     }
