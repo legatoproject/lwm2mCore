@@ -887,7 +887,7 @@ static downloaderResult_t SendRequest
         }
         if (LWM2MCORE_ERR_COMPLETED_OK != lwm2mcore_FreeForDownload(packageDownloadCtxPtr))
         {
-            LOG("Error on download free");
+           LOG("Error on download free");
         }
     }
 
@@ -899,7 +899,6 @@ static downloaderResult_t SendRequest
 
         case LWM2MCORE_ERR_NET_SEND_FAILED:
             LOG("Error on download connection send data");
-
             return DOWNLOADER_SEND_ERROR;
 
         case LWM2MCORE_ERR_MEMORY:

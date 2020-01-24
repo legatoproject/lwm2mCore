@@ -1734,9 +1734,11 @@ void omanager_FreeObjectByInstanceId
     {
         if (ObjectArray[i] && (ObjectArray[i]->objID == objectId))
         {
+            lwm2m_list_t* instancePtr;
             ObjectArray[i]->instanceList = lwm2m_list_remove(ObjectArray[i]->instanceList,
                                                              objectInstanceId,
-                                                             NULL);
+                                                             (lwm2m_list_t **)&instancePtr);
+            lwm2m_free(instancePtr);
         }
     }
 }

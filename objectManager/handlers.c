@@ -244,6 +244,36 @@ static lwm2mcore_Sid_t UpdateLifetime
     return LWM2MCORE_ERR_GENERAL_ERROR;
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Free bootstraop configuration
+ */
+//--------------------------------------------------------------------------------------------------
+static void FreeBootstrapConfiguration
+(
+    ConfigBootstrapFile_t* bsConfigPtr      ///< [IN] Bootstrap configuration pointer
+)
+{
+    if (bsConfigPtr)
+    {
+        ConfigSecurityObject_t* securityPtr;
+        ConfigServerObject_t* serverPtr;
+
+        while (bsConfigPtr->securityPtr)
+        {
+            securityPtr = bsConfigPtr->securityPtr;
+            bsConfigPtr->securityPtr = bsConfigPtr->securityPtr->nextPtr;
+            lwm2m_free(securityPtr);
+        }
+        while (bsConfigPtr->serverPtr)
+        {
+            serverPtr = bsConfigPtr->serverPtr;
+            bsConfigPtr->serverPtr = bsConfigPtr->serverPtr->nextPtr;
+            lwm2m_free(serverPtr);
+        }
+        lwm2m_free(bsConfigPtr);
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -1166,6 +1196,7 @@ lwm2mcore_Sid_t omanager_SetLifetime
         /* Load configuration from file system */
         if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, false))
         {
+            FreeBootstrapConfiguration(bsConfigPtr);
             return LWM2MCORE_ERR_GENERAL_ERROR;
         }
 
@@ -1173,7 +1204,7 @@ lwm2mcore_Sid_t omanager_SetLifetime
         result = UpdateLifetime(bsConfigPtr, lifetime, storage);
 
         /* Free memory allocated */
-        lwm2m_free(bsConfigPtr);
+        FreeBootstrapConfiguration(bsConfigPtr);
 
         if (LWM2MCORE_ERR_COMPLETED_OK != result)
         {
@@ -1223,7 +1254,7 @@ lwm2mcore_Sid_t omanager_GetLifetime
     /* Read the configuration from file system */
     if (false == omanager_LoadBootstrapConfiguration(bsConfigPtr, false))
     {
-        lwm2m_free(bsConfigPtr);
+        FreeBootstrapConfiguration(bsConfigPtr);
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
@@ -1239,9 +1270,8 @@ lwm2mcore_Sid_t omanager_GetLifetime
     {
         *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
     }
-    lwm2m_free(bsConfigPtr->securityPtr);
-    lwm2m_free(bsConfigPtr->serverPtr);
-    lwm2m_free(bsConfigPtr);
+
+    FreeBootstrapConfiguration(bsConfigPtr);
 
     LOG_ARG("Lifetime is %d seconds", *lifetimePtr);
     return LWM2MCORE_ERR_COMPLETED_OK;

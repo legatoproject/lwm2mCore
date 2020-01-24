@@ -241,7 +241,7 @@ static bool LoadAclConfiguration
     uint32_t lenWritten = 0;
     uint32_t loop;
     uint32_t loop2;
-    uint32_t fileSize;
+    uint32_t fileSize = 0;
     size_t fileReadSize = 0;
     size_t len = sizeof(fileSize);
     AclObjectInstance_t* aclObjectInstanceListPtr;

@@ -159,6 +159,13 @@ static lwm2mcore_CoapResponse_t Lwm2mServerResponse;
 //--------------------------------------------------------------------------------------------------
 static lwm2mcore_CoapRequest_t* RequestPtr;
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Number of configured server
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t serverNb = 0;
+
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -254,6 +261,36 @@ static int EventHandler
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Local function to add a server
+ */
+//--------------------------------------------------------------------------------------------------
+static void AddOneServer
+(
+    void
+)
+{
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)Lwm2mcoreRef;
+    lwm2m_server_t* targetP;
+    targetP = (lwm2m_server_t*)lwm2m_malloc(sizeof(lwm2m_server_t));
+    if (NULL == targetP)
+    {
+        printf("targetP is NULL!\n");
+        TEST_ASSERT(false);
+    }
+
+    memset(targetP, 0, sizeof(lwm2m_server_t));
+    targetP->secObjInstID = 123;
+    targetP->shortID = 1;
+    targetP->next = NULL;
+    dataPtr->lwm2mHPtr->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(dataPtr->lwm2mHPtr->serverList,
+                                                                     targetP);
+    serverNb++;
+    // The server is removed by calling lwm2mcore_Disconnect or lwm2mcore_DisconnectWithDeregister
+    // This is made in lwm2m_followClosure stubbed Wakaama function
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Test function for lwm2mcore_Init API
  */
 //--------------------------------------------------------------------------------------------------
@@ -299,6 +336,10 @@ static void test_lwm2mcore_DisconnectWithDeregister
     TEST_ASSERT(lwm2mcore_DisconnectWithDeregister(NULL) == false);
     printf("Lwm2mcoreRef is %p\n", Lwm2mcoreRef);
     TEST_ASSERT(lwm2mcore_DisconnectWithDeregister(Lwm2mcoreRef) == true);
+
+    // lwm2m_followClosure is called internally in Wakaama
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)Lwm2mcoreRef;
+    lwm2m_followClosure(dataPtr->lwm2mHPtr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -340,26 +381,17 @@ static void test_lwm2mcore_Update
     void
 )
 {
-    TEST_ASSERT(lwm2mcore_Update(NULL) == false);
     smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)Lwm2mcoreRef;
+    TEST_ASSERT(lwm2mcore_Update(NULL) == false);
     dataPtr->lwm2mHPtr->state = STATE_REGISTER_REQUIRED;
-    TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == false);
-
-    lwm2m_server_t* targetP;
-    targetP = (lwm2m_server_t*)lwm2m_malloc(sizeof(lwm2m_server_t));
-    if (NULL == targetP)
+    if(!serverNb)
     {
-        printf("targetP is NULL!\n");
-        TEST_ASSERT(false);
+        TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == false);
     }
-
-    memset(targetP, 0, sizeof(lwm2m_server_t));
-    targetP->secObjInstID = 123;
-    targetP->shortID = 1;
-    dataPtr->lwm2mHPtr->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD(dataPtr->lwm2mHPtr->serverList,
-                                                                     targetP);
-
-    TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == true);
+    else
+    {
+        TEST_ASSERT(lwm2mcore_Update(Lwm2mcoreRef) == true);
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -374,6 +406,7 @@ static void test_lwm2mcore_Push
 {
     uint8_t payload[MAX_LEN_PAYLOAD] = "1234567890";
     uint16_t midPtr = 0;
+
     TEST_ASSERT(lwm2mcore_Push(Lwm2mcoreRef, payload, strlen((const char*)payload),
                                LWM2MCORE_PUSH_CONTENT_CBOR, &midPtr) == LWM2MCORE_PUSH_INITIATED);
 }
@@ -577,6 +610,11 @@ void test_lwm2mcore_SendAsyncResponse
 
     TEST_ASSERT(lwm2mcore_SendAsyncResponse(Lwm2mcoreRef, RequestPtr, &Lwm2mServerResponse)
                 != false);
+
+    lwm2m_free(RequestPtr->uri);
+    lwm2m_free(RequestPtr->buffer);
+    lwm2m_free(RequestPtr);
+    lwm2m_free(Lwm2mServerResponse.payloadPtr);
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -1458,6 +1496,8 @@ int main
 )
 {
     printf("======== Start UnitTest of lwm2mcore ========\n");
+    test_lwm2mcore_Init();
+    test_lwm2mcore_Free();
 
     CreateBsConfigurationFiles();
 
@@ -1469,6 +1509,11 @@ int main
 
     printf("======== test of lwm2mcore_Connect() ========\n");
     test_lwm2mcore_Connect();
+
+    printf("======== test of lwm2mcore_Update() ========\n");
+    test_lwm2mcore_Update();
+
+    AddOneServer();
 
     printf("======== test of lwm2mcore_Update() ========\n");
     test_lwm2mcore_Update();
@@ -1491,15 +1536,16 @@ int main
     printf("======== test of lwm2mcore_Init() ========\n");
     test_lwm2mcore_Init();
 
+    AddOneServer();
+
     printf("======== test of lwm2mcore_Connect() ========\n");
     test_lwm2mcore_Connect();
 
+    printf("======== test of smanager_SendSessionEvent() ========\n");
+    test_smanager_SendSessionEvent();
+
     printf("======== test of lwm2mcore_Disconnect() ========\n");
     test_lwm2mcore_Disconnect();
-
-    printf("======== test of smanager_SendSessionEvent() ========\n");
-    test_lwm2mcore_Init();
-    test_smanager_SendSessionEvent();
 
     printf("======== test of lwm2mcore_Free() ========\n");
     test_lwm2mcore_Free();
