@@ -1743,7 +1743,8 @@ bool lwm2mcore_SendResponse
                                        responsePtr->contentType,
                                        responsePtr->payloadPtr,
                                        responsePtr->payloadLength,
-                                       responsePtr->streamStatus);
+                                       responsePtr->streamStatus,
+                                       responsePtr->blockSize);
         }
     }
 

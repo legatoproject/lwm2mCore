@@ -390,7 +390,8 @@ bool lwm2m_send_response
     uint16_t content_type,
     uint8_t * payload,
     size_t payload_len,
-    uint32_t streamStatus
+    uint32_t streamStatus,
+    uint16_t blockSize
 )
 {
     (void)contextP;
@@ -403,6 +404,7 @@ bool lwm2m_send_response
     (void)payload;
     (void)payload_len;
     (void)streamStatus;
+    (void)blockSize;
     return true;
 }
 
@@ -484,3 +486,4 @@ bool lwm2m_acl_deleteObjectInstance(lwm2m_object_t * objectP, uint16_t oiid)
     (void) oiid;
     return false;
 }
+
