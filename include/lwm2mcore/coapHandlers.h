@@ -443,7 +443,7 @@ coap_external_handler_t lwm2mcore_GetCoapExternalHandler
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_ExecPostRequestHandler
 (
-    void* connP
+    void* connP     /// [IN] Connection list
 );
 /**
   * @}

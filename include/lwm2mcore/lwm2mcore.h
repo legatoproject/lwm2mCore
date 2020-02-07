@@ -660,8 +660,8 @@ typedef int (*lwm2mcore_StatusCb_t)
  * @ref lwm2mcore_SetEventHandler function is called at device boot in order to receive events.
  *
  * @return
- *  - true on success
- *  - false on failure
+ *  - @c true on success
+ *  - @c false on failure
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_SetEventHandler
@@ -729,8 +729,8 @@ uint16_t lwm2mcore_ObjectRegister
  * Write a resource from the object table
  *
  * @return
- *      - true if resource is found and read succeeded
- *      - else false
+ *      - @c true if resource is found and read succeeded
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ResourceWrite
@@ -748,8 +748,8 @@ bool lwm2mcore_ResourceWrite
  * Execute a resource from the object table
  *
  * @return
- *      - true if resource is found and read succeeded
- *      - else false
+ *      - @c true if resource is found and read succeeded
+ *      - else @c false
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_ResourceExec
@@ -1124,13 +1124,13 @@ void lwm2mcore_DeleteRegistrationID
  * @brief Function to add a post LWM2M request handler to be run after the processing of the request
  *
  * @return
- *  - @true if the given handler has been successfully added into the currently active session
- *  - @false otherwise
+ *  - @c true if the given handler has been successfully added into the currently active session
+ *  - @c false otherwise
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_AddPostRequestHandler
 (
-    void* handler
+    void* handlerPtr    ///< [IN] Handler
 );
 
 //--------------------------------------------------------------------------------------------------

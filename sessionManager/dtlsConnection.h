@@ -70,7 +70,16 @@ typedef struct _dtls_Connection_t
                                                 ///< if present
 }dtls_Connection_t;
 
-typedef void (*postRequestHandlerCb)(dtls_Connection_t* connectionPtr);
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief  Post LWM2M request handler that will be invoked to run after the processing of
+ * the request currently being processed is done and its corresponding response has been sent out
+ */
+//--------------------------------------------------------------------------------------------------
+typedef void (*postRequestHandlerCb)
+(
+    dtls_Connection_t* connectionPtr    ///< [IN] DTLS connection list
+);
 
 //--------------------------------------------------------------------------------------------------
 /**
