@@ -391,6 +391,17 @@ lwm2mcore_Sid_t lwm2mcore_SetDownloadError
             }
             break;
 
+        case LWM2MCORE_UPDATE_ERROR_INVALID_URI:
+            if (LWM2MCORE_FW_UPDATE_TYPE == workspace.updateType)
+            {
+                fwResult = LWM2MCORE_FW_UPDATE_RESULT_INVALID_URI;
+            }
+            else if (LWM2MCORE_SW_UPDATE_TYPE == workspace.updateType)
+            {
+                swResult = LWM2MCORE_SW_UPDATE_RESULT_INVALID_URI;
+            }
+            break;
+
         default:
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }

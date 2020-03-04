@@ -1909,6 +1909,11 @@ static void PkgDwlInit
                 }
                 break;
 
+            case DOWNLOADER_CONNECTION_ERROR:
+                PkgDwlObj.state = PKG_DWL_ERROR;
+                SendPackageSizeErrorEvent(workspace.updateType, downloaderResult);
+                return;
+
             default:
                 PkgDwlObj.state = PKG_DWL_ERROR;
                 SendPackageSizeErrorEvent(workspace.updateType, downloaderResult);
@@ -2128,6 +2133,26 @@ end:
     {
         LOG_ARG("Max retries reached for current download session - downloaderResult %d",
                 downloaderResult);
+
+        if (DOWNLOADER_CONNECTION_ERROR == downloaderResult)
+        {
+            // In case of DOWNLOADER_CONNECTION_ERROR error, check if a part of package was already
+            // downloaded. In this case, this error could be due to retry mechanism and network loss
+            // but the download is not directly suspended
+            if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
+            {
+                LOG("Unable to read workspace");
+            }
+            else
+            {
+                LOG_ARG("Package binarySize: %" PRIu64 " - remainingBinaryData %" PRIu64,
+                        workspace.binarySize, workspace.remainingBinaryData);
+                if(workspace.binarySize != workspace.remainingBinaryData)
+                {
+                    downloaderResult = DOWNLOADER_TIMEOUT;
+                }
+            }
+        }
 
         switch(downloaderResult)
         {
