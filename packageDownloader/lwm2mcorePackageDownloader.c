@@ -2838,7 +2838,7 @@ lwm2mcore_Sid_t downloadManager_ResumePackageDownloader
         return LWM2MCORE_ERR_INVALID_STATE;
     }
 
-    if (!(workspace.packageSize))
+    if (!(workspace.packageSize) || (workspace.fwState <= LWM2MCORE_FW_UPDATE_STATE_IDLE))
     {
         LOG("Need to get package size");
         /* Check if the package download timer is running */
