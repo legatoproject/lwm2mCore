@@ -1849,7 +1849,7 @@ int omanager_ReadConnectivityMonitoringObj
                 {
                     /* Reset the available network bearers list */
                     memset(bearersList, 0, sizeof(bearersList));
-                    bearersNb = 0;
+                    bearersNb = sizeof(bearersList) / sizeof(lwm2mcore_networkBearer_enum_t);
 
                     /* Retrieve the list */
                     sID = lwm2mcore_GetAvailableNetworkBearers(bearersList, &bearersNb);
@@ -2360,6 +2360,7 @@ int omanager_ReadFwUpdateObj
         case LWM2MCORE_FW_UPDATE_PACKAGE_URI_RID:
         {
             PackageDownloaderWorkspace_t workspace;
+            memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
 
             if (DWL_OK != ReadPkgDwlWorkspace(&workspace))
             {
@@ -2400,6 +2401,7 @@ int omanager_ReadFwUpdateObj
                                             sizeof(updateResult),
                                             false);
             }
+            lwm2mcore_UpdateResultWasNotified(LWM2MCORE_FW_UPDATE_TYPE);
         }
         break;
 

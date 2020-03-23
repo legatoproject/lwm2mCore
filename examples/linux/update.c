@@ -272,7 +272,7 @@ lwm2mcore_Sid_t lwm2mcore_GetUpdatePackageUri
 {
     lwm2mcore_Sid_t result = LWM2MCORE_ERR_GENERAL_ERROR;
     PackageDownloaderWorkspace_t workspace;
-
+    memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
     if ((NULL == bufferPtr) || (NULL == lenPtr) || (LWM2MCORE_MAX_UPDATE_TYPE <= type))
     {
         return LWM2MCORE_ERR_INVALID_ARG;
@@ -768,4 +768,25 @@ lwm2mcore_Sid_t lwm2mcore_GetTpfState
     }
 
    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to indicate that the server reads the update result resource.
+ *
+ * @remark Platform adaptor function which needs to be defined on client side.
+ *
+ * @return
+ *  - LWM2MCORE_ERR_COMPLETED_OK on success
+ *  - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *  - LWM2MCORE_ERR_GENERAL_ERROR on failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_UpdateResultWasNotified
+(
+    lwm2mcore_UpdateType_t type     ///< [IN] Update type
+)
+{
+    (void) type;
+    return LWM2MCORE_ERR_COMPLETED_OK;
 }

@@ -28,14 +28,14 @@
 //--------------------------------------------------------------------------------------------------
 typedef enum
 {
-    DWL_OK              = 0,    ///< Successful
-    DWL_FAULT           = 1,    ///< Internal error
-    DWL_SUSPEND         = 2,    ///< Download suspended
-    DWL_ABORTED         = 3,    ///< Download aborted
-    DWL_MEM_ERROR       = 4,    ///< Memory allocation error (download is suspended)
-    DWL_NETWORK_ERROR   = 5,    ///< Network error (download is suspended)
-    DWL_BAD_ADDR        = 6,    ///< Incorrect URL or server can not be reached
-    DWL_RETRY_FAILED    = 7,    ///< Download retry failed
+    DWL_OK,               ///< Successful
+    DWL_FAULT,            ///< Internal error
+    DWL_SUSPEND,          ///< Download suspended
+    DWL_ABORTED,          ///< Download aborted
+    DWL_MEM_ERROR,        ///< Memory allocation error (download is suspended)
+    DWL_NETWORK_ERROR,    ///< Network error (download is suspended)
+    DWL_BAD_ADDR,         ///< Incorrect URL or server can not be reached
+    DWL_RETRY_FAILED      ///< Download retry failed
 }
 lwm2mcore_DwlResult_t;
 

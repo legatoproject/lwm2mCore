@@ -287,6 +287,7 @@ typedef enum
     LWM2MCORE_NETWORK_BEARER_WIMAX          = 4,    ///< WiMAX cellular network
     LWM2MCORE_NETWORK_BEARER_LTE_TDD        = 5,    ///< LTE-TDD cellular network
     LWM2MCORE_NETWORK_BEARER_LTE_FDD        = 6,    ///< LTE-FDD cellular network
+    LWM2MCORE_NETWORK_BEARER_NB_IOT         = 7,    ///< NB-IOT celular network
     LWM2MCORE_NETWORK_BEARER_WLAN           = 21,   ///< WLAN network
     LWM2MCORE_NETWORK_BEARER_BLUETOOTH      = 22,   ///< Bluetooth network
     LWM2MCORE_NETWORK_BEARER_IEEE_802_15_4  = 23,   ///< IEEE 802.15.4 network

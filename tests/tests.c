@@ -1498,6 +1498,7 @@ int main
     test_lwm2mcore_Disconnect();
 
     printf("======== test of smanager_SendSessionEvent() ========\n");
+    test_lwm2mcore_Init();
     test_smanager_SendSessionEvent();
 
     printf("======== test of lwm2mcore_Free() ========\n");

@@ -2974,6 +2974,7 @@ lwm2mcore_Sid_t lwm2mcore_GetDownloadInfo
 )
 {
     PackageDownloaderWorkspace_t workspace;
+    memset(&workspace, 0, sizeof(PackageDownloaderWorkspace_t));
 
     if ((!typePtr) || (!packageSizePtr))
     {
