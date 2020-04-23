@@ -258,7 +258,7 @@ static int SendData
     size_t length               ///< [IN] Buffer length
 )
 {
-    int nbSent;
+    int nbSent = 0;
     size_t offset;
     LOG("SendData");
 
@@ -306,7 +306,7 @@ static int SendData
         offset += nbSent;
     }
     connPtr->lastSend = lwm2m_gettime();
-    return 0;
+    return (int)offset;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -415,7 +415,7 @@ static int GetPskInfo
  * This function is the "write" for tinyDTLS. It is called to send a buffer to a peer.
  *
  * @return
- *  - 0 if data were well sent
+ *  - number of bytes that were sent
  *  - -1 in case of failure
  */
 //--------------------------------------------------------------------------------------------------
@@ -441,12 +441,7 @@ static int SendToPeer
     if (NULL != cnxPtr)
     {
         // send data to peer
-        int err = SendData(cnxPtr, dataPtr, len);
-        if (COAP_NO_ERROR != err)
-        {
-            return -1;
-        }
-        return 0;
+        return SendData(cnxPtr, dataPtr, len);
     }
     return -1;
 }
@@ -959,7 +954,7 @@ static int ConnectionSend
     {
         LOG("ConnectionSend NO SEC");
         // no security
-        if ( 0 != SendData(connPtr, bufferPtr, length))
+        if ( 0 > SendData(connPtr, bufferPtr, length))
         {
             LOG("ConnectionSend SendData != 0");
             return -1;
@@ -977,7 +972,7 @@ static int ConnectionSend
             if (timeFromLastData < 0)
             {
                 // We need to rehandhake because our source IP/port probably changed for the server
-                if (0 != dtls_Rehandshake(connPtr, false))
+                if (0 > dtls_Rehandshake(connPtr, false))
                 {
                     LOG("Unable to perform rehandshake");
                     return -1;
@@ -985,10 +980,10 @@ static int ConnectionSend
             }
             else if ((0 < DTLS_NAT_TIMEOUT) && (DTLS_NAT_TIMEOUT < timeFromLastData))
             {
-                if (0 != dtls_Resume(connPtr))
+                if ( 0 > dtls_Resume(connPtr))
                 {
                     LOG("Unable to resume. Fall-back to a rehandshake");
-                    if (0 != dtls_Rehandshake(connPtr, false))
+                    if (0 > dtls_Rehandshake(connPtr, false))
                     {
                         LOG("Unable to perform rehandshake");
                         return -1;
@@ -1102,7 +1097,7 @@ int dtls_Rehandshake
     IsRehandshake = true;
     // start a fresh handshake
     result = dtls_connect(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
-    if (0 != result)
+    if (0 > result)
     {
          LOG_ARG("Error DTLS reconnection %d", result);
          IsRehandshake = false;
