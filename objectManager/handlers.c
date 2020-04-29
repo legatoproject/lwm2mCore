@@ -3429,7 +3429,7 @@ int omanager_ReadSubscriptionObj
             sID = lwm2mcore_GetDeviceImei(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen(bufferPtr);
+                *lenPtr = strnlen(bufferPtr, *lenPtr);
             }
             break;
 
@@ -3438,7 +3438,7 @@ int omanager_ReadSubscriptionObj
             sID = lwm2mcore_GetIccid(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen(bufferPtr);
+                *lenPtr = strnlen(bufferPtr, *lenPtr);
             }
             break;
 
@@ -3447,7 +3447,7 @@ int omanager_ReadSubscriptionObj
             sID = lwm2mcore_GetSubscriptionIdentity(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen(bufferPtr);
+                *lenPtr = strnlen(bufferPtr, *lenPtr);
             }
             break;
 
@@ -3456,7 +3456,7 @@ int omanager_ReadSubscriptionObj
             sID = lwm2mcore_GetMsisdn(bufferPtr, lenPtr);
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = strlen(bufferPtr);
+                *lenPtr = strnlen(bufferPtr, *lenPtr);
             }
             break;
 
