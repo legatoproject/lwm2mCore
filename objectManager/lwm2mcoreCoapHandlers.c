@@ -19,7 +19,7 @@
 #include "internals.h"
 #include "er-coap-13.h"
 #include "internalCoapHandler.h"
-
+#include "sessionManager.h"
 
 //--------------------------------------------------------------------------------------------------
 /*
@@ -237,6 +237,12 @@ void lwm2mcore_AckCallback
     if (AckHandlerRef != NULL)
     {
         AckHandlerRef(result);
+    }
+
+    if (LWM2MCORE_ACK_TIMEOUT == result)
+    {
+        // force a DTLS abbreviate handshake
+        smanager_ForceDtlsHandshake();
     }
 }
 

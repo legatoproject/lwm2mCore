@@ -1284,3 +1284,35 @@ void dtls_CloseAndFreePeer
     lwm2m_free(targetPtr->dtlsSessionPtr);
     lwm2m_free(targetPtr);
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a DTLS handshake
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_ForceDtlsHandshake
+(
+    dtls_Connection_t* connListPtr         ///< DTLS connection list
+)
+{
+    dtls_Connection_t* parentPtr;
+    parentPtr = connListPtr;
+
+    if(!parentPtr)
+    {
+        LOG("1st connListPtr NULL");
+    }
+
+    while (parentPtr != NULL)
+    {
+        if (0 > dtls_ResumeSession(parentPtr))
+        {
+            LOG("Unable to resume. Fall-back to a rehandshake");
+            if (0 > dtls_Rehandshake(parentPtr, false))
+            {
+                LOG("Unable to perform rehandshake");
+            }
+        }
+        parentPtr = parentPtr->nextPtr;
+    }
+}

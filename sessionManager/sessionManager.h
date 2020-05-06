@@ -129,6 +129,18 @@ void smanager_SendUpdateAllServers
     uint8_t regUpdateOptions        ///< [IN] bitfield of requested parameters to be added in the
                                     ///< registration update message
 );
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a DTLS handshake
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_ForceDtlsHandshake
+(
+    void
+);
+
 /**
   * @}
   */
