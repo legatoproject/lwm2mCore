@@ -1999,3 +1999,18 @@ void smanager_SendUpdateAllServers
 
     omanager_UpdateRequest((lwm2mcore_Ref_t)DataCtxPtr, regUpdateOptions);
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a DTLS handshake
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_ForceDtlsHandshake
+(
+    void
+)
+{
+    LOG("smanager_ForceDtlsHandshake");
+    dtls_ForceDtlsHandshake((lwm2mcore_Ref_t)DataCtxPtr->connListPtr);
+}

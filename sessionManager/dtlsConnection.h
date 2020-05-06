@@ -229,6 +229,16 @@ void dtls_CloseAndFreePeer
     dtls_Connection_t* targetPtr            ///< [IN] DTLS connection
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a DTLS handshake
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_ForceDtlsHandshake
+(
+    dtls_Connection_t* connListPtr;         ///< DTLS connection list
+);
+
 /**
   * @}
   */
