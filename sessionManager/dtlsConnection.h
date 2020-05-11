@@ -63,7 +63,10 @@ typedef struct _dtls_Connection_t
     int                         securityInstId; ///< LWM2M Security object instance Id
     lwm2m_context_t*            lwm2mHPtr;      ///< Session handler
     dtls_context_t*             dtlsContextPtr; ///< DTLS context
-    time_t                      lastSend;       ///< Last time a data was sent to the server (used for NAT timeouts)
+    time_t                      lastSend;       ///< Last time a data was sent to the server
+                                                ///< (used for NAT timeouts)
+    time_t                      lastReceived;   ///< Last time a data was received from the server
+                                                ///< (used for NAT timeouts)
     void (*postRequestHandler)(struct _dtls_Connection_t*); ///< post-Request session handler to invoke
                                                 ///< if present
 }dtls_Connection_t;

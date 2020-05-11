@@ -470,6 +470,7 @@ static int ReadFromPeer
                                                 sessionPtr->size);
     if (NULL != cnxPtr)
     {
+        cnxPtr->lastReceived = lwm2m_gettime();
         lwm2m_handle_packet(cnxPtr->lwm2mHPtr, dataPtr, len, (void*)cnxPtr);
         return 0;
     }
@@ -962,14 +963,16 @@ static int ConnectionSend
     }
     else
     {
-        time_t timeFromLastData = lwm2m_gettime() - connPtr->lastSend;
-        LOG_ARG("now - connP->lastSend %d", timeFromLastData);
+        time_t timeFromLastSentData = lwm2m_gettime() - connPtr->lastSend;
+        time_t timeFromLastReceivedData = lwm2m_gettime() - connPtr->lastReceived;
+        LOG_ARG("now - connP->lastSend %d", timeFromLastSentData);
+        LOG_ARG("now - connP->lastReceived %d", timeFromLastReceivedData);
 
         if (firstBlock)
         {
             // If difference is negative, a time update could have been made on platform side.
             // In this case, do a rehandshake
-            if (timeFromLastData < 0)
+            if (timeFromLastSentData < 0)
             {
                 // We need to rehandhake because our source IP/port probably changed for the server
                 if (0 > dtls_Rehandshake(connPtr, false))
@@ -978,7 +981,9 @@ static int ConnectionSend
                     return -1;
                 }
             }
-            else if ((0 < DTLS_NAT_TIMEOUT) && (DTLS_NAT_TIMEOUT < timeFromLastData))
+            else if ((0 < DTLS_NAT_TIMEOUT)
+                  && (DTLS_NAT_TIMEOUT < timeFromLastSentData)
+                  && (DTLS_NAT_TIMEOUT < timeFromLastReceivedData))
             {
                 if ( 0 > dtls_Resume(connPtr))
                 {
