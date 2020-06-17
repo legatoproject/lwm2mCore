@@ -541,6 +541,7 @@ int main
         opt += 1;
     }
 
+    memset(buffer, 0, MAX_PACKET_SIZE);
     DisplayHelp(Commands, buffer);
     printf("Connection will be automatically launched in 5 seconds\n");
     sleep(5);
@@ -553,6 +554,7 @@ int main
     clientConfigRead(&ClientConfiguration);
 
     // Install signal handler to catch CTRL+C to gracefully shutdown
+    memset(&psa, 0, sizeof(struct sigaction));
     psa.sa_handler = Interrupt;
     sigaction(SIGTSTP, &psa, NULL);
 

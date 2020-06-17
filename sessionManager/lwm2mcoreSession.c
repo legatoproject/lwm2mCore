@@ -181,7 +181,6 @@ static bool CloseConnection
     }
 
     dtls_FreeConnection(dataPtr->connListPtr);
-    dataPtr->lwm2mHPtr = NULL;
     dataPtr->connListPtr = NULL;
 
     /* Close the socket */
@@ -1210,6 +1209,11 @@ void lwm2mcore_Free
         if (NULL != dataPtr->lwm2mcoreCtxPtr)
         {
             lwm2m_free(dataPtr->lwm2mcoreCtxPtr);
+        }
+
+        if (NULL != dataPtr->lwm2mHPtr)
+        {
+            lwm2m_free(dataPtr->lwm2mHPtr);
         }
 
         lwm2m_free(dataPtr);

@@ -755,6 +755,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
     dtls_Connection_t* connPtr = (dtls_Connection_t*)lwm2m_malloc(sizeof(dtls_Connection_t));
     if (NULL != connPtr)
     {
+        memset(connPtr, 0, sizeof(dtls_Connection_t));
         connPtr->sock = sock;
         memcpy(&(connPtr->addr), addrPtr, addrLen);
         connPtr->addrLen = addrLen;
@@ -766,6 +767,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
            LOG("connPtr->dtlsSessionPtr is NULL");
            return NULL;
         }
+        memset(connPtr->dtlsSessionPtr, 0, sizeof(session_t));
         connPtr->dtlsSessionPtr->addr.sin6 = connPtr->addr;
         connPtr->dtlsSessionPtr->size = connPtr->addrLen;
         connPtr->lastSend = lwm2m_gettime();
