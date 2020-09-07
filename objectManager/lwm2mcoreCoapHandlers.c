@@ -100,7 +100,7 @@ static uint8_t GetCoapErrorCode
             break;
 
         case LWM2MCORE_ERR_ASYNC_OPERATION:
-            result = MANUAL_RESPONSE;
+            result = COAP_MANUAL_RESPONSE;
             break;
 
         case LWM2MCORE_ERR_INCORRECT_RANGE:
