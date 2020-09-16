@@ -2692,6 +2692,12 @@ int omanager_ExecFwUpdate
         /* Resource 2: Update */
         case LWM2MCORE_FW_UPDATE_UPDATE_RID:
             sID = lwm2mcore_LaunchUpdate(LWM2MCORE_FW_UPDATE_TYPE, 0, NULL, 0);
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                // Delete all registration IDs in order to send a new REGISTER after the package
+                // install
+                lwm2mcore_DeleteRegistrationID(-1);
+            }
             break;
 
         default:
