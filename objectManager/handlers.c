@@ -707,7 +707,8 @@ bool omanager_StoreCredentials
                 // Only backup and set credentials if they are different from the currently stored ones
                 if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY,
                                                LWM2MCORE_BS_SERVER_ID,
-                                               (char*)securityInformationPtr->devicePKID))
+                                               (char*)securityInformationPtr->devicePKID,
+                                               securityInformationPtr->pskIdLen))
                 {
                     lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY, LWM2MCORE_BS_SERVER_ID);
 
@@ -720,7 +721,8 @@ bool omanager_StoreCredentials
 
                 if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY,
                                                LWM2MCORE_BS_SERVER_ID,
-                                               (char*)securityInformationPtr->secretKey))
+                                               (char*)securityInformationPtr->secretKey,
+                                               securityInformationPtr->pskLen))
                 {
                     lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY, LWM2MCORE_BS_SERVER_ID);
 
@@ -733,7 +735,8 @@ bool omanager_StoreCredentials
 
                 if (!lwm2mcore_CredentialMatch(LWM2MCORE_CREDENTIAL_BS_ADDRESS,
                                                LWM2MCORE_BS_SERVER_ID,
-                                               (char*)securityInformationPtr->serverURI))
+                                               (char*)securityInformationPtr->serverURI,
+                                               strlen((const char *)securityInformationPtr->serverURI)))
                 {
                     lwm2mcore_BackupCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS, LWM2MCORE_BS_SERVER_ID);
 

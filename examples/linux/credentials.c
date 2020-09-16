@@ -752,7 +752,8 @@ bool lwm2mcore_CredentialMatch
 (
     lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
     uint16_t                serverId,   ///< [IN] server Id
-    const char*             credential  ///< [IN] Credential
+    const char*             credential, ///< [IN] Credential
+    size_t                  credLen     ///< [IN] Credential length
 )
 {
     (void)serverId;
@@ -774,21 +775,24 @@ bool lwm2mcore_CredentialMatch
     switch (credId)
     {
         case LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY:
-            if (strncmp(securityObjPtr->devicePKID, credential, securityObjPtr->pkidLen) == 0)
+            if ((((int)credLen) == securityObjPtr->pkidLen)
+             && (memcmp(securityObjPtr->devicePKID, credential, securityObjPtr->pkidLen) == 0))
             {
                 result = true;
             }
             break;
 
         case LWM2MCORE_CREDENTIAL_BS_SECRET_KEY:
-            if (strncmp((const char*)securityObjPtr->secretKey, credential, securityObjPtr->secretKeyLen) == 0)
+            if ((((int)credLen) == securityObjPtr->secretKeyLen)
+             && (memcmp((const char*)securityObjPtr->secretKey, credential, securityObjPtr->secretKeyLen) == 0))
             {
                 result = true;
             }
             break;
 
         case LWM2MCORE_CREDENTIAL_BS_ADDRESS:
-            if (strncmp(securityObjPtr->serverURI, credential, strlen(securityObjPtr->serverURI)) == 0)
+            if ((credLen == strlen(securityObjPtr->serverURI))
+             && (memcmp(securityObjPtr->serverURI, credential, strlen(securityObjPtr->serverURI)) == 0))
             {
                 result = true;
             }

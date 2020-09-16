@@ -196,7 +196,8 @@ bool lwm2mcore_CredentialMatch
 (
     lwm2mcore_Credentials_t credId,     ///< [IN] Credential identifier
     uint16_t                serverId,   ///< [IN] server Id
-    const char*             credential  ///< [IN] Credential
+    const char*             credential, ///< [IN] Credential
+    size_t                  credLen     ///< [IN] Credential length
 );
 
 //--------------------------------------------------------------------------------------------------
