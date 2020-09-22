@@ -237,24 +237,6 @@ lwm2mcore_Sid_t lwm2mcore_BackupCredential
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Restore credential to the previous credential.
- * Used for bs credential where we restore the credential back to the previous bs credential if
- * they exist. If not, we also remove the current bs credential and allow the device to retrieve
- * the bs credential from the modem.
- *
- * @return
- *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
- *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
- */
-//--------------------------------------------------------------------------------------------------
-lwm2mcore_Sid_t lwm2mcore_RestoreCredential
-(
-    lwm2mcore_Credentials_t credId,     ///< [IN] credential Id of credential to be retrieved
-    uint16_t                serverId    ///< [IN] server Id
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Package verification
  */
 //--------------------------------------------------------------------------------------------------

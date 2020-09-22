@@ -1029,19 +1029,6 @@ bool omanager_StoreCredentials
     void
 );
 
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief Function to restore bootstrap credentials from backup
- *
- * @return
- *  - @c true in case of success
- *  - @c false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool omanager_RestoreBsCredentials
-(
-    void
-);
 
 //--------------------------------------------------------------------------------------------------
 /**

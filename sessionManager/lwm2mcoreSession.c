@@ -878,9 +878,6 @@ void smanager_SendSessionEvent
                     if (BootstrapSession)
                     {
                         status.u.session.type = LWM2MCORE_SESSION_BOOTSTRAP;
-#if LE_CONFIG_LINUX
-                        omanager_RestoreBsCredentials();
-#endif
                     }
                     else
                     {
