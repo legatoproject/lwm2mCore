@@ -423,48 +423,60 @@ static void Lwm2mClientStepHandler
             LOG("All retransmission attempts failed");
             // All retransmission attempts failed
             // On tinyDTLS side, bufferized message are deleted
-
-            if (STATE_REGISTERING == DataCtxPtr->lwm2mHPtr->state)
+            switch (DataCtxPtr->lwm2mHPtr->state)
             {
-                // Notify the authentication failure to DM
-                smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_DONE_FAIL, NULL);
+                case STATE_REGISTERING:
+                    // Notify the authentication failure to DM
+                    smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION,
+                                              EVENT_STATUS_DONE_FAIL,
+                                              NULL);
 
-                DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
-                // While the device tries to register to the server, all DTLS retransmissions failed
-                // The common use case is that DM credentials were updated on server side
-                // (key-rotation) which requires a connection to the bootstrap server in order to
-                // retrieve new DM credentials
-                ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
-                               DataCtxPtr->lwm2mHPtr->transactionList);
-            }
-            else if (STATE_READY == DataCtxPtr->lwm2mHPtr->state)
-            {
-                // This means that a DTLS resume fails on REG UPDATE
-                // Do not notify the authentication failure in this case
-                // Try a full DTLS handshake
-                DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
-                LOG("Perform rehandshake");
-                    // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
-                    // 1) connects to the bootstrap server
-                    // 2) indicates the connection as failed.
-                    // Option 1 is kept
-                if (0 != dtls_Rehandshake(DataCtxPtr->connListPtr, false))
-                {
-                    LOG("Unable to perform rehandshake");
-                    // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
-                    // 1) connects to the bootstrap server
-                    // 2) indicates the connection as failed.
-                    // Option 1 is kept
+                    DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+                    // While the device tries to register to the server, all DTLS retransmissions
+                    // failed
+                    // The common use case is that DM credentials were updated on server side
+                    // (key-rotation) which requires a connection to the bootstrap server in order
+                    // to retrieve new DM credentials
                     ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
-                                   DataCtxPtr->lwm2mHPtr->transactionList);
-                }
-            }
-            else
-            {
-                // Close the connection
-                smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_FAIL, NULL);
-                lwm2mcore_Disconnect((lwm2mcore_Ref_t)DataCtxPtr);
-                return;
+                                DataCtxPtr->lwm2mHPtr->transactionList);
+                    break;
+
+                case STATE_READY:
+                    // This means that a DTLS resume fails on REG UPDATE
+                    // Do not notify the authentication failure in this case
+                    // Try a full DTLS handshake
+                    DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+                    LOG("Perform rehandshake");
+
+                    // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
+                    // 1) connects to the bootstrap server
+                    // 2) indicates the connection as failed.
+                    // Option 1 is kept
+                    if (0 != dtls_Rehandshake(DataCtxPtr->connListPtr, false))
+                    {
+                        LOG("Unable to perform rehandshake");
+                        // If dtls_Rehandshake function immediatly returns an error, 2 solutions:
+                        // 1) connects to the bootstrap server
+                        // 2) indicates the connection as failed.
+                        // Option 1 is kept
+                        ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
+                                    DataCtxPtr->lwm2mHPtr->transactionList);
+                    }
+                    break;
+
+                case STATE_BOOTSTRAPPING:
+                    // Authentication failure on BS
+                    LOG("Authentication failure on BS");
+                    smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION,
+                                              EVENT_STATUS_DONE_FAIL,
+                                              NULL);
+                    break;
+
+                default:
+                    // Close the connection
+                    smanager_SendSessionEvent(EVENT_SESSION, EVENT_STATUS_DONE_FAIL, NULL);
+                    lwm2mcore_Disconnect((lwm2mcore_Ref_t)DataCtxPtr);
+                    return;
             }
         }
     }
