@@ -986,6 +986,73 @@ int omanager_ExecClockTimeConfigObj
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Function to read a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_INVALID_STATE if the current state doesn't allow a Read operation
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///<      object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write into a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the size of the certificate is > 4000 bytes
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///<      object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters are not in correct range
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ExecSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///<      object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  *                              Not registered objects
  */
 //--------------------------------------------------------------------------------------------------

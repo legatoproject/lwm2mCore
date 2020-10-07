@@ -46,6 +46,9 @@ typedef struct
     lwm2m_context_t* lwm2mHPtr;             ///< Wakaama LWM2M context
     int addressFamily;                      ///< Socket family address
     lwm2mcore_context_t* lwm2mcoreCtxPtr;   ///< LWM2M Core context
+    uint16_t serverId;                      ///< Server ID (MAX_UINT16 for all servers)
+    bool isEdmEnabled;                      ///< Flag specifying whether Extended Device
+                                            ///<   Management (EDM) is enabled
 }smanager_ClientData_t;
 
 //--------------------------------------------------------------------------------------------------

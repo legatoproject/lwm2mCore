@@ -1065,6 +1065,41 @@ static lwm2mcore_Resource_t ClockTimeConfigResources[] =
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * SIM APDU config resources (33408)
+ * For each resource, the resource Id, the resource type, the resource instance number,
+ * a READ, WRITE, EXEC callback can be defined.
+ */
+//--------------------------------------------------------------------------------------------------
+static lwm2mcore_Resource_t SimApduConfigResources[] =
+{
+    {
+        LWM2MCORE_SIM_APDU_CONFIG_COMMAND_RID,              //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,                     //.type
+        1,                                                  //.maxResInstCnt
+        NULL,                                               //.read
+        omanager_WriteSimApduConfigObj,                     //.write
+        NULL,                                               //.exec
+    },
+    {
+        LWM2MCORE_SIM_APDU_CONFIG_EXEC_RID,                 //.id
+        LWM2MCORE_RESOURCE_TYPE_UNKNOWN,                    //.type
+        1,                                                  //.maxResInstCnt
+        NULL,                                               //.read
+        NULL,                                               //.write
+        omanager_ExecSimApduConfigObj,                      //.exec
+    },
+    {
+        LWM2MCORE_SIM_APDU_CONFIG_RESPONSE_RID,             //.id
+        LWM2MCORE_RESOURCE_TYPE_OPAQUE,                     //.type
+        1,                                                  //.maxResInstCnt
+        omanager_ReadSimApduConfigObj,                      //.read
+        NULL,                                               //.write
+        NULL,                                               //.exec
+    }
+};
+
+//--------------------------------------------------------------------------------------------------
+/**
  * List of objects which are supported by the client
  *
  * For each object, the following parameters needs to be filled:
@@ -1173,6 +1208,13 @@ static lwm2mcore_Object_t ObjArray[] =
         CLOCK_TIME_CONFIG_SOURCE_MAX,                                           //.maxObjInstCnt
         ARRAYSIZE(ClockTimeConfigResources),                                    //.resCnt
         ClockTimeConfigResources                                                //.resources
+    },
+    /* Object 33408: SIM APDU config */
+    {
+        LWM2MCORE_SIM_APDU_CONFIG_OID,                                          //.id
+        1,                                                                      //.maxObjInstCnt
+        ARRAYSIZE(SimApduConfigResources),                                      //.resCnt
+        SimApduConfigResources                                                  //.resources
     }
 };
 

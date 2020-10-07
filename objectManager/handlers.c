@@ -224,6 +224,8 @@ static lwm2mcore_Sid_t UpdateLifetime
         /* Set lifetime for all servers */
         while (serverInformationPtr)
         {
+            LOG_ARG("updating lifetime on existing server object %d to %d",
+                    serverInformationPtr->data.serverId, lifetime);
             serverInformationPtr->data.lifetime = lifetime;
             serverInformationPtr = serverInformationPtr->nextPtr;
         }
@@ -893,6 +895,8 @@ int omanager_WriteServerObj
         return LWM2MCORE_ERR_GENERAL_ERROR;
     }
 
+    LOG_ARG("Writing server obj oiid %d rid %d BS: %s", uriPtr->oiid, uriPtr->rid,
+            smanager_IsBootstrapConnection() ? "YES" : "NO");
     serverInformationPtr = omanager_GetBootstrapConfigurationServerInstance(bsConfigPtr,
                                                                             uriPtr->oiid);
     if (!serverInformationPtr)
@@ -913,13 +917,15 @@ int omanager_WriteServerObj
         case LWM2MCORE_SERVER_SHORT_ID_RID:
             serverInformationPtr->data.serverId =
                                 (uint16_t)omanager_BytesToInt((const char*)bufferPtr, len);
+            LOG_ARG("set serverId %d", serverInformationPtr->data.serverId);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
 
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
             lifetime = (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
-            LOG_ARG("set lifetime %d", lifetime);
+            LOG_ARG("set lifetime: serverId %d value %d", serverInformationPtr->data.serverId,
+                    lifetime);
             if (!smanager_IsBootstrapConnection())
             {
                 sID = lwm2mcore_SetPollingTimer(lifetime);
@@ -1229,7 +1235,26 @@ lwm2mcore_Sid_t omanager_GetLifetime
     }
     else
     {
-        *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
+        ConfigServerObject_t* serverPtr = bsConfigPtr->serverPtr;
+        *lifetimePtr = serverPtr->data.lifetime;
+    #if SIERRA
+        // If EDM is enabled, it is possible that there are multiple DM servers. In that case,
+        // try to find the AirVantage server (it will have server ID = 1). If not found, return
+        // the lifetime of the very first server in the list.
+        if (lwm2mcore_IsEdmEnabled())
+        {
+            while (serverPtr)
+            {
+                LOG_ARG("checking server %d", serverPtr->data.serverId);
+                if (serverPtr->data.serverId == LWM2MCORE_AIRVANTAGE_SERVER_ID)
+                {
+                    *lifetimePtr = bsConfigPtr->serverPtr->data.lifetime;
+                    break;
+                }
+                serverPtr = serverPtr->nextPtr;
+            }
+        }
+    #endif
     }
 
     FreeBootstrapConfiguration(bsConfigPtr);
@@ -4118,6 +4143,187 @@ int omanager_ExecClockTimeConfigObj
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
             LOG_ARG("Invalid clock source %d for executing", uriPtr->rid);
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ *                              OBJECT 33408: SIM APDU Configuration
+ */
+//--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to read a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters are not in correct range
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the operation is not supported
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ReadSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t* lenPtr,                     ///< [INOUT] length of input buffer and length of the
+                                        ///< returned data
+    valueChangedCallback_t changedCb    ///< [IN] callback for notification
+)
+{
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    (void)changedCb;
+
+    if (!uriPtr || !bufferPtr || !lenPtr || (*lenPtr == 0))
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_READ))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    LOG_ARG("Provided buffer size %d", *lenPtr);
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 2: SIM APDU response */
+        case LWM2MCORE_SIM_APDU_CONFIG_RESPONSE_RID:
+            sID = lwm2mcore_GetSimApduResponse(uriPtr->oiid, bufferPtr, lenPtr);
+            if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+            {
+                LOG_ARG("Failed to read SIM APDU response %d", uriPtr->rid);
+            }
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Invalid SIM APDU object %d for reading", uriPtr->rid);
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to write into a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the update succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters are not in correct range
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the update fails
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_WriteSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    len = len;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    if (!uriPtr || !bufferPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_WRITE))
+    {
+        LOG_ARG("Incoherent operation %d with Write", uriPtr->op);
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 0: SIM APDU command */
+        case LWM2MCORE_SIM_APDU_CONFIG_COMMAND_RID:
+            sID = lwm2mcore_SetSimApduConfig(uriPtr->oiid, bufferPtr, len);
+            if (LWM2MCORE_ERR_COMPLETED_OK != sID)
+            {
+                LOG_ARG("Failed to write SIM APDU command %d", uriPtr->rid);
+            }
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Incorrect RID %d", uriPtr->rid);
+            break;
+    }
+
+    return sID;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to execute a resource of object 33408
+ * Object: SIM APDU Configuration
+ * Resource: All
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE if the provided parameters are not in correct range
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED  if the resource is not supported
+ */
+//--------------------------------------------------------------------------------------------------
+int omanager_ExecSimApduConfigObj
+(
+    lwm2mcore_Uri_t* uriPtr,            ///< [IN] uri represents the requested operation and
+                                        ///< object/resource
+    char* bufferPtr,                    ///< [INOUT] data buffer for information
+    size_t len                          ///< [IN] length of input buffer
+)
+{
+    len = len;
+    int sID = LWM2MCORE_ERR_GENERAL_ERROR;
+
+    if (!uriPtr || !bufferPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    /* Check that the object instance Id is in the correct range (only one object instance) */
+    if (0 < uriPtr->oiid)
+    {
+        return LWM2MCORE_ERR_INCORRECT_RANGE;
+    }
+
+    /* Check that the operation is coherent */
+    if (0 == (uriPtr->op & LWM2MCORE_OP_EXECUTE))
+    {
+        return LWM2MCORE_ERR_OP_NOT_SUPPORTED;
+    }
+
+    switch (uriPtr->rid)
+    {
+        /* Resource 3: SIM APDU execute */
+        case LWM2MCORE_SIM_APDU_CONFIG_EXEC_RID:
+            sID = lwm2mcore_ExecuteSimApduConfig(uriPtr->oiid, bufferPtr, len);
+            break;
+
+        default:
+            sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            LOG_ARG("Invalid resource ID %d for executing", uriPtr->rid);
             break;
     }
 

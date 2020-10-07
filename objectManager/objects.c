@@ -27,7 +27,7 @@
  * Maximum number of objects which can be registered in Wakaama
  */
 //--------------------------------------------------------------------------------------------------
-#define OBJ_COUNT 14
+#define OBJ_COUNT 15
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -2575,6 +2575,7 @@ uint16_t lwm2mcore_ObjectRegister
         // Check if some software object instance exist
         UpdateSwListWakaama(instanceRef);
     }
+    LOG_ARG("Number of registered objects: %u", RegisteredObjNb);
 
     return RegisteredObjNb;
 }

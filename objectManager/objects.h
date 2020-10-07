@@ -164,7 +164,8 @@ typedef enum
     LWM2MCORE_SUBSCRIPTION_OID      = 10241,    ///< Sierra Wireless proprietary object Id: Subscription
     LWM2MCORE_EXT_CONN_STATS_OID    = 10242,    ///< Sierra Wireless proprietary object Id: Extended connectivity statistics
     LWM2MCORE_SSL_CERTIFS_OID       = 10243,    ///< Sierra Wireless proprietary object Id: SSL certificate
-    LWM2MCORE_CLOCK_TIME_CONFIG_OID = 33405     ///< Sierra Wireless proprietary object Id: Clock time config
+    LWM2MCORE_CLOCK_TIME_CONFIG_OID = 33405,    ///< Sierra Wireless proprietary object Id: Clock time config
+    LWM2MCORE_SIM_APDU_CONFIG_OID   = 33408     ///< Sierra Wireless proprietary object Id: SIM APDU config
 } lwm2mcore_objectEnum_t;
 
 //--------------------------------------------------------------------------------------------------
@@ -460,6 +461,18 @@ typedef enum
     LWM2MCORE_CLOCK_TIME_CONFIG_UPDATE_RID = 2,        ///< Execute system clock time update
     LWM2MCORE_CLOCK_TIME_CONFIG_STATUS_RID = 3         ///< Status of time update operation
 } lwm2mcore_clockTimeConfigurationResource_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+* @brief Enumeration for LwM2M object 33408 (SIM APDU configuration) resources
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_SIM_APDU_CONFIG_COMMAND_RID = 0,  ///< SIM APDU data
+    LWM2MCORE_SIM_APDU_CONFIG_EXEC_RID = 1,     ///< Execute SIM APDU
+    LWM2MCORE_SIM_APDU_CONFIG_RESPONSE_RID = 2  ///< SIM APDU response
+} lwm2mcore_simApduConfigurationResource_t;
 
 //--------------------------------------------------------------------------------------------------
 /**

@@ -652,6 +652,7 @@ void smanager_SendSessionEvent
     (void)contextPtr;
 #endif
 
+    LOG_ARG("Session event: ID %u status %u", eventId, eventstatus);
     switch (eventId)
     {
         case EVENT_TYPE_BOOTSTRAP:
@@ -662,6 +663,16 @@ void smanager_SendSessionEvent
                 {
                     LOG("BOOTSTRAP START");
                     BootstrapSession = true;
+#if SIERRA
+                    if (lwm2mcore_IsEdmEnabled())
+                    {
+                        /* Re-bootstrap can be caused by session with a specific server; but
+                         * after BS, the device should be able to connect to the AirVantage.
+                         * Therefore, the connection needs to change to "all-servers" mode.
+                         */
+                        lwm2mcore_SetServer(NULL, LWM2MCORE_ALL_SERVERS);
+                    }
+#endif
                 }
                 break;
 
@@ -1227,11 +1238,127 @@ lwm2mcore_Ref_t lwm2mcore_Init
     dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr);
     Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
     LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
+    dataPtr->serverId = LWM2MCORE_ALL_SERVERS;
+    dataPtr->isEdmEnabled = false;
 
     DataCtxPtr = dataPtr;
 
     LOG_ARG("Init done -> context %p", dataPtr);
     return (lwm2mcore_Ref_t)dataPtr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the "active" server ID
+ *
+ * Extended Device Management (EDM) requires the ability to establish a session with DM server with
+ * specific Short Server ID. This API sets the selected server as "active", so that other known
+ * DM servers are excluded from the session.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetServer
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    uint16_t        serverId        ///< [IN] server ID. Can be ALL_SERVERS (0xFFFF)
+)
+{
+    smanager_ClientData_t* dataPtr;
+    if (instanceRef)
+    {
+        dataPtr = (smanager_ClientData_t*)instanceRef;
+    }
+    else if (DataCtxPtr)
+    {
+        dataPtr = (smanager_ClientData_t*)DataCtxPtr;
+    }
+    else
+    {
+        LOG("Error: no data context");
+        return;
+    }
+    LOG_ARG("Setting ServerID to %u", serverId);
+    dataPtr->serverId = serverId;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the flag specifying whether Extended Device Management (EDM) feature is enabled
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetEdmEnabled
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool isEdmEnabled               ///< [IN] Whether EDM is enabled
+)
+{
+    smanager_ClientData_t* dataPtr;
+    if (instanceRef)
+    {
+        dataPtr = (smanager_ClientData_t*)instanceRef;
+    }
+    else if (DataCtxPtr)
+    {
+        dataPtr = (smanager_ClientData_t*)DataCtxPtr;
+    }
+    else
+    {
+        LOG("Error: no data context");
+        return;
+    }
+    LOG_ARG("Setting EDM flag to %d", isEdmEnabled);
+    dataPtr->isEdmEnabled = isEdmEnabled;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check whether the server is active
+ *
+ * Extended Device Management (EDM) requires the ability to establish a session with DM server with
+ * specific Short Server ID. This API checks whether selected server is set as "active", so that
+ * other known DM servers can be excluded from the session.
+ * IN ALL_SERVERS mode (or if EDM feature is disabled), all servers are considered "active".
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_IsServerActive
+(
+    uint16_t        serverId        ///< [IN] server ID
+)
+{
+    if (!lwm2mcore_IsEdmEnabled())
+    {
+        // if EDM is not enabled, all known servers are "active"
+        return true;
+    }
+    if (DataCtxPtr == NULL)
+    {
+        LOG("Error: no context");
+        return false;
+    }
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)DataCtxPtr;
+    LOG_ARG("Server ID: stored %d current %d", dataPtr->serverId, serverId);
+
+    return ((dataPtr->serverId == LWM2MCORE_ALL_SERVERS) ||
+            (dataPtr->serverId == serverId));
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check whether Extended Device Management (EDM) feature is enabled
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_IsEdmEnabled
+(
+    void
+)
+{
+    if (DataCtxPtr == NULL)
+    {
+        LOG("Error: no context");
+        return false;
+    }
+    smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)DataCtxPtr;
+
+    return (dataPtr->isEdmEnabled);
 }
 
 //--------------------------------------------------------------------------------------------------

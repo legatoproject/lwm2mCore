@@ -589,6 +589,7 @@ bool omanager_LoadBootstrapConfiguration
     /* Allocate security objects and copy related data */
     for (loop = 0; loop < configPtr->securityObjectNumber; loop++)
     {
+        LOG_ARG("Processing security object %u out of %u", loop, configPtr->securityObjectNumber);
         if (fileSize >= (lenWritten + sizeof(ConfigSecurityToStore_t)))
         {
             securityPtr = (ConfigSecurityObject_t*)lwm2m_malloc(sizeof(ConfigSecurityObject_t));
@@ -602,6 +603,9 @@ bool omanager_LoadBootstrapConfiguration
                 if (!omanager_GetBootstrapConfigurationSecurityInstance(configPtr,
                                                                         securityPtr->data.securityObjectInstanceId))
                 {
+                    LOG_ARG("Adding security object: instId %d serverId %d",
+                            securityPtr->data.securityObjectInstanceId,
+                            securityPtr->data.serverId);
                     omanager_AddBootstrapConfigurationSecurity(configPtr, securityPtr);
                 }
                 else
@@ -649,6 +653,7 @@ bool omanager_LoadBootstrapConfiguration
     /* Allocate server objects and copy related data */
     for (loop = 0; loop < configPtr->serverObjectNumber; loop++)
     {
+        LOG_ARG("Processing server object %u out of %u", loop, configPtr->serverObjectNumber);
         if (fileSize >= (lenWritten + lenConfigServerObj))
         {
             serverPtr = (ConfigServerObject_t*)lwm2m_malloc(sizeof(ConfigServerObject_t));
@@ -662,6 +667,9 @@ bool omanager_LoadBootstrapConfiguration
                 if (!omanager_GetBootstrapConfigurationServerInstance(configPtr,
                                                                       serverPtr->data.serverObjectInstanceId))
                 {
+                    LOG_ARG("Adding server object: instId %d serverId %d",
+                            serverPtr->data.serverObjectInstanceId,
+                            serverPtr->data.serverId);
                     omanager_AddBootstrapConfigurationServer(configPtr, serverPtr);
                 }
                 else

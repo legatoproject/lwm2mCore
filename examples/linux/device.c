@@ -456,6 +456,72 @@ lwm2mcore_Sid_t lwm2mcore_GetLastSimSwitchStatus
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * @brief Function to set SIM APDU config.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the input has been successfully set
+ *      - LWM2MCORE_ERR_INVALID_ARG if the input is invalid
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_SetSimApduConfig
+(
+    uint16_t source,
+    char* bufferPtr,
+    size_t length
+)
+{
+    source = source;
+    length = length;
+    (void) bufferPtr;
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to execute the (previously set) SIM APDU config.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if successful
+ *      - LWM2MCORE_ERR_OP_NOT_SUPPORTED if this functionality is not supported
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_ExecuteSimApduConfig
+(
+    uint16_t source,
+    char* bufferPtr,
+    size_t length
+)
+{
+    source = source;
+    length = length;
+    (void) bufferPtr;
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to retrieve the SIM APDU response.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the info retrieval has succeeded
+ *      - LWM2MCORE_ERR_INVALID_ARG if there is no response to be retrieved
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_GetSimApduResponse
+(
+    uint16_t source,
+    char* bufferPtr,
+    size_t* lenPtr
+)
+{
+    source = source;
+    (void) bufferPtr;
+    (void) lenPtr;
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Retrieve the phone number (MSISDN)
  * This API needs to have a procedural treatment
  *

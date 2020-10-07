@@ -106,6 +106,21 @@
  */
 //--------------------------------------------------------------------------------------------------
 #define LWM2MCORE_LIFETIME_VALUE_DISABLED       630720000
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * It is assumed that AirVantage server always has Short Server ID equals to 1.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_AIRVANTAGE_SERVER_ID          1
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * When used as a Server ID, indicate that the operation is applicable to all servers.
+ */
+//--------------------------------------------------------------------------------------------------
+#define LWM2MCORE_ALL_SERVERS                   0xFFFF
+
 /**
   * @}
   */
@@ -680,6 +695,52 @@ bool lwm2mcore_SetEventHandler
 lwm2mcore_Ref_t lwm2mcore_Init
 (
     lwm2mcore_StatusCb_t eventCb    ///< [IN] event callback
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the "active" server ID
+ *
+ * Extended Device Management (EDM) requires the ability to establish a session with DM server with
+ * specific Short Server ID. This API sets the selective server as "active", so that other known
+ * DM servers are excluded from the session.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetServer
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    uint16_t        serverId        ///< [IN] server ID. Can be ALL_SERVERS (0xFFFF)
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check whether the server is active
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_IsServerActive
+(
+    uint16_t        serverId        ///< [IN] server ID
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the flag specifying whether Extended Device Management (EDM) feature is enabled
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetEdmEnabled
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] instance reference
+    bool isEdmEnabled               ///< [IN] Whether EDM is enabled
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Check whether Extended Device Management (EDM) feature is enabled
+ */
+//--------------------------------------------------------------------------------------------------
+bool lwm2mcore_IsEdmEnabled
+(
+    void
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -1259,6 +1320,54 @@ int lwm2mcore_GetClockTimeStatus
 bool lwm2mcore_UpdateSystemClockInProgress
 (
     void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to set SIM APDU config.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_SetSimApduConfig
+(
+    uint16_t source,    ///< [IN] Instance ID of the object
+    char* bufferPtr,    ///< [IN] Data buffer
+    size_t length       ///< [IN] Data buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to execute the (previously set) SIM APDU config.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_ExecuteSimApduConfig
+(
+    uint16_t source,    ///< [IN] Instance ID of the object
+    char* bufferPtr,    ///< [IN] Data buffer
+    size_t length       ///< [IN] Data buffer length
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to retrieve the SIM APDU response.
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the info retrieval has succeeded
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the info can't be retrieved
+ */
+//--------------------------------------------------------------------------------------------------
+int lwm2mcore_GetSimApduResponse
+(
+    uint16_t source,    ///< [IN] Instance ID of the object
+    char* bufferPtr,    ///< [INOUT] Data buffer
+    size_t* lenPtr      ///< [INOUT] Data buffer length
 );
 
 /**
