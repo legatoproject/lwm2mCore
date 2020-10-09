@@ -2838,9 +2838,12 @@ lwm2mcore_Sid_t downloadManager_ResumePackageDownloader
         return LWM2MCORE_ERR_INVALID_STATE;
     }
 
-    if (!(workspace.packageSize) || (workspace.fwState <= LWM2MCORE_FW_UPDATE_STATE_IDLE))
+    // Get the package size only when it is zero or download not started yet
+    if (!(workspace.packageSize) || ( (workspace.fwState <= LWM2MCORE_FW_UPDATE_STATE_IDLE)
+                                      && (LWM2MCORE_FW_UPDATE_TYPE == workspace.updateType)))
     {
-        LOG("Need to get package size");
+        LOG_ARG("Need to get package size: %"PRIu64", fwState: %d, updateType: %d",
+            workspace.packageSize, workspace.fwState, workspace.updateType);
         /* Check if the package download timer is running */
         if (lwm2mcore_TimerIsRunning(LWM2MCORE_TIMER_DOWNLOAD))
         {
