@@ -768,46 +768,6 @@ bool omanager_StoreCredentials
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Function to restore bootstrap credentials from backup
- *
- * @return
- *  - @c true in case of success
- *  - @c false in case of failure
- */
-//--------------------------------------------------------------------------------------------------
-bool omanager_RestoreBsCredentials
-(
-    void
-)
-{
-    lwm2mcore_Sid_t restoreResult = LWM2MCORE_ERR_COMPLETED_OK;
-
-    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_PUBLIC_KEY, LWM2MCORE_BS_SERVER_ID);
-
-    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
-    {
-        return false;
-    }
-
-    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_SECRET_KEY, LWM2MCORE_BS_SERVER_ID);
-
-    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
-    {
-        return false;
-    }
-
-    restoreResult = lwm2mcore_RestoreCredential(LWM2MCORE_CREDENTIAL_BS_ADDRESS, LWM2MCORE_BS_SERVER_ID);
-
-    if (restoreResult != LWM2MCORE_ERR_COMPLETED_OK)
-    {
-        return false;
-    }
-
-    return true;
-}
-
-//--------------------------------------------------------------------------------------------------
-/**
  * Function for the server SMS parameters
  * Object: 0 - Security
  * Resources: 6, 7, 8, 9
