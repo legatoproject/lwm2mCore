@@ -1138,7 +1138,7 @@ int dtls_ResumeSession
 
     // start a resume
     result = dtls_resume(connPtr->dtlsContextPtr, connPtr->dtlsSessionPtr);
-    if (result)
+    if (0 > result)
     {
          LOG_ARG("Error DTLS resume %d",result);
     }
