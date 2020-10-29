@@ -271,7 +271,7 @@ static int SendData
     if (AF_INET == connPtr->addr.sin6_family)
     {
         struct sockaddr_in *saddrPtr = (struct sockaddr_in *)&connPtr->addr;
-        inet_ntop(saddrPtr->sin_family, &saddrPtr->sin_addr, s, INET6_ADDRSTRLEN);
+        inet_ntop(saddrPtr->sin_family, &saddrPtr->sin_addr, s, INET_ADDRSTRLEN);
         port = saddrPtr->sin_port;
     }
     else if (AF_INET6 == connPtr->addr.sin6_family)
@@ -863,13 +863,7 @@ dtls_Connection_t* dtls_CreateConnection
 
     if (s >= 0)
     {
-        lwm2mcore_SocketConfig_t config;
         connPtr = dtls_HandleNewIncoming(connListPtr, sock, &saPtr, sl);
-        config.sock = s;
-        if (!lwm2mcore_UdpClose(config))
-        {
-            lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
-        }
 
         // Do we need to start tinydtls?
         if (NULL != connPtr)
