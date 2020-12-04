@@ -663,16 +663,6 @@ void smanager_SendSessionEvent
                 {
                     LOG("BOOTSTRAP START");
                     BootstrapSession = true;
-#if SIERRA
-                    if (lwm2mcore_IsEdmEnabled())
-                    {
-                        /* Re-bootstrap can be caused by session with a specific server; but
-                         * after BS, the device should be able to connect to the AirVantage.
-                         * Therefore, the connection needs to change to "all-servers" mode.
-                         */
-                        lwm2mcore_SetServer(NULL, LWM2MCORE_ALL_SERVERS);
-                    }
-#endif
                 }
                 break;
 
