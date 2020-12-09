@@ -1677,17 +1677,154 @@ int omanager_ReadDeviceObj
             }
             break;
 
+        /* Resource 6: Available power sources */
+        case LWM2MCORE_DEVICE_AVAIL_POWER_SOURCES_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB)
+            {
+                static lwm2mcore_powerInfo_t powerInfo[CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB];
+                static size_t powerNb = 0;
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the available power sources */
+                    memset(powerInfo, 0, sizeof(powerInfo));
+                    /* Retrieve the available power sources */
+                    sID = lwm2mcore_GetAvailablePowerInfo(powerInfo, &powerNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < powerNb)
+                    {
+                        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                &powerInfo[uriPtr->riid].source,
+                                                sizeof(powerInfo[uriPtr->riid].source),
+                                                false);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+            break;
+
+        /* Resource 7: Power source voltage */
+        case LWM2MCORE_DEVICE_AVAIL_POWER_VOLTAGES_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB)
+            {
+                static lwm2mcore_powerInfo_t powerInfo[CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB];
+                static size_t powerNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the available power sources */
+                    memset(powerInfo, 0, sizeof(powerInfo));
+                    /* Retrieve the available power sources */
+                    sID = lwm2mcore_GetAvailablePowerInfo(powerInfo, &powerNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < powerNb)
+                    {
+                        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                &powerInfo[uriPtr->riid].voltage,
+                                                sizeof(powerInfo[uriPtr->riid].voltage),
+                                                false);
+                    }
+                    else
+                    {
+                        *lenPtr = 0;
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+        break;
+
+        /* Resource 8: Power Source Current */
+        case LWM2MCORE_DEVICE_AVAIL_POWER_CURRENTS_RID:
+            /* Check that the resource instance Id is in the correct range */
+            if (uriPtr->riid < CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB)
+            {
+                static lwm2mcore_powerInfo_t powerInfo[CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB];
+                static size_t powerNb = 0;
+
+                if (0 == uriPtr->riid)
+                {
+                    /* Reset the available power sources */
+                    memset(powerInfo, 0, sizeof(powerInfo));
+                    /* Retrieve the available power sources */
+                    sID = lwm2mcore_GetAvailablePowerInfo(powerInfo, &powerNb);
+                }
+                else
+                {
+                    sID = LWM2MCORE_ERR_COMPLETED_OK;
+                }
+
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    if (uriPtr->riid < powerNb)
+                    {
+                        if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                        {
+                            *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                    &powerInfo[uriPtr->riid].current,
+                                                    sizeof(powerInfo[uriPtr->riid].current),
+                                                    false);
+                        }
+                        else
+                        {
+                            *lenPtr = 0;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                sID = LWM2MCORE_ERR_INCORRECT_RANGE;
+            }
+        break;
+
+
         /* Resource 9: Battery level */
         case LWM2MCORE_DEVICE_BATTERY_LEVEL_RID:
         {
-            uint8_t batteryLevel = 0;
-            sID = lwm2mcore_GetBatteryLevel(&batteryLevel);
+            lwm2mcore_powerInfo_t powerInfo[CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB];
+            size_t powerNb;
+            uint8_t index;
+            /* Retrieve the available power sources */
+            sID = lwm2mcore_GetAvailablePowerInfo(powerInfo, &powerNb);
+
             if (LWM2MCORE_ERR_COMPLETED_OK == sID)
             {
-                *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
-                                             &batteryLevel,
-                                             sizeof(batteryLevel),
-                                             false);
+                for (index = 0; index < powerNb; index ++)
+                {
+                    if (LWM2MCORE_DEVICE_PWR_SRC_TYPE_BAT_INT == powerInfo[index].source)
+                    {
+                        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                                    &powerInfo[index].level,
+                                                    sizeof(powerInfo[index].level),
+                                                    false);
+                    }
+                    break;
+                }
             }
         }
         break;
@@ -1713,6 +1850,32 @@ int omanager_ReadDeviceObj
             *lenPtr = snprintf(bufferPtr, *lenPtr, LWM2MCORE_BINDING_UDP_QUEUE);
             sID = LWM2MCORE_ERR_COMPLETED_OK;
             break;
+
+        /* Resource 20: Battery status */
+        case LWM2MCORE_DEVICE_BATTERY_STATUS_RID:
+        {
+            lwm2mcore_powerInfo_t powerInfo[CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB];
+            size_t powerNb = 0;
+            uint8_t index = 0;
+            /* Retrieve the available power sources */
+            sID = lwm2mcore_GetAvailablePowerInfo(powerInfo, &powerNb);
+
+            if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+            {
+                for (index = 0; index < powerNb; index ++)
+                {
+                    if (LWM2MCORE_DEVICE_PWR_SRC_TYPE_BAT_INT == powerInfo[index].source)
+                    {
+                        *lenPtr = omanager_FormatValueToBytes((uint8_t*)bufferPtr,
+                                            &powerInfo[index].status,
+                                            sizeof(powerInfo[index].status),
+                                            false);
+                    }
+                    break;
+                }
+            }
+        }
+        break;
 
         default:
             sID = LWM2MCORE_ERR_INCORRECT_RANGE;
