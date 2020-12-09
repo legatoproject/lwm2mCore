@@ -17,6 +17,54 @@
   * @{
   */
 
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Enumeration for resource 6 (available power sources) of LwM2M object 3 (device)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_DC_POWER = 0,     ///< DC power
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_BAT_INT,          ///< Internal battery
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_BAT_EXT,          ///< External battery
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_UNUSED,           ///< Unused
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_PWR_OVER_ETH,     ///< Power over Ethernet
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_USB,              ///< USB
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_AC_POWER,         ///< AC power
+    LWM2MCORE_DEVICE_PWR_SRC_TYPE_SOLAR             ///< Solar
+}lwm2mcore_powerSource_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Enumeration for resource 20 (battery status) of LwM2M object 3 (device)
+ */
+//--------------------------------------------------------------------------------------------------
+typedef enum
+{
+    LWM2MCORE_DEVICE_BATTERY_NORMAL = 0,   ///< The battery is operating normally and not on power
+    LWM2MCORE_DEVICE_BATTERY_CHARGING,     ///< The battery is currently charging
+    LWM2MCORE_DEVICE_BATTERY_CHARGE_COMPLETE, ///< The battery is fully charged and still on power
+    LWM2MCORE_DEVICE_BATTERY_DAMAGED,      ///< The battery has some problem
+    LWM2MCORE_DEVICE_BATTERY_LOW,          ///< The battery is low on charge
+    LWM2MCORE_DEVICE_BATTERY_NOT_INSTALL,  ///< The battery is not installed
+    LWM2MCORE_DEVICE_BATTERY_UNKNOWN       ///< The battery information is not available
+}lwm2mcore_batteryStatus_enum_t;
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Data structure representing the power source information.
+ */
+//--------------------------------------------------------------------------------------------------
+typedef struct
+{
+    lwm2mcore_powerSource_enum_t source;          ///< power source
+    uint32_t    voltage;                          ///< power voltage
+    uint16_t    current;                          ///< power current
+    uint8_t     level;                            ///< battery level
+    lwm2mcore_batteryStatus_enum_t status;        ///< battery status
+}lwm2mcore_powerInfo_t;
+
 //--------------------------------------------------------------------------------------------------
 /**
  * @brief Retrieve the device manufacturer
@@ -413,6 +461,22 @@ LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetDeviceTotalResets
 lwm2mcore_Sid_t lwm2mcore_RebootDevice
 (
     void
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Retrieve the available power source
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetAvailablePowerInfo
+(
+    lwm2mcore_powerInfo_t* powerInfoPtr,  ///< [INOUT] power source list
+    size_t* powerNbPtr                    ///< [INOUT] power source nubmer
 );
 
 /**
