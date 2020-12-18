@@ -863,13 +863,7 @@ dtls_Connection_t* dtls_CreateConnection
 
     if (s >= 0)
     {
-        lwm2mcore_SocketConfig_t config;
         connPtr = dtls_HandleNewIncoming(connListPtr, sock, &saPtr, sl);
-        config.sock = s;
-        if (!lwm2mcore_UdpClose(config))
-        {
-            lwm2mcore_ReportUdpErrorCode(LWM2MCORE_UDP_CLOSE_ERR);
-        }
 
         // Do we need to start tinydtls?
         if (NULL != connPtr)
@@ -889,6 +883,8 @@ dtls_Connection_t* dtls_CreateConnection
                 connPtr->dtlsSessionPtr = NULL;
             }
         }
+        // Close the socket file descriptor
+        lwm2mcore_UdpSocketClose(s);
     }
 
     return connPtr;
