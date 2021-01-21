@@ -304,30 +304,7 @@ static lwm2mcore_Resource_t DeviceResources[] =
         NULL,                                       //.write
         omanager_ExecDeviceObj,                     //.exec
     },
-    {
-        LWM2MCORE_DEVICE_AVAIL_POWER_SOURCES_RID,   //.id
-        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
-        CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB,     //.maxResInstCnt
-        omanager_ReadDeviceObj,                     //.read
-        NULL,                                       //.write
-        NULL,                                       //.exec
-    },
-    {
-        LWM2MCORE_DEVICE_AVAIL_POWER_VOLTAGES_RID,  //.id
-        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
-        CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB,     //.maxResInstCnt
-        omanager_ReadDeviceObj,                     //.read
-        NULL,                                       //.write
-        NULL,                                       //.exec
-    },
-    {
-        LWM2MCORE_DEVICE_AVAIL_POWER_CURRENTS_RID,  //.id
-        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
-        CONN_MONITOR_AVAIL_POWER_SOURCE_MAX_NB,     //.maxResInstCnt
-        omanager_ReadDeviceObj,                     //.read
-        NULL,                                       //.write
-        NULL,                                       //.exec
-    },
+#ifdef LWM2M_OBJECT_3_BATTERY
     {
         LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,         //.id
         LWM2MCORE_RESOURCE_TYPE_INT,                //.type
@@ -336,6 +313,7 @@ static lwm2mcore_Resource_t DeviceResources[] =
         NULL,                                       //.write
         NULL,                                       //.exec
     },
+#endif
     {
         LWM2MCORE_DEVICE_CURRENT_TIME_RID,          //.id
         LWM2MCORE_RESOURCE_TYPE_TIME,               //.type
@@ -350,14 +328,6 @@ static lwm2mcore_Resource_t DeviceResources[] =
         1,                                          //.maxResInstCnt
         omanager_ReadDeviceObj,                     //.read
         omanager_WriteDeviceObj,                    //.write
-        NULL,                                       //.exec
-    },
-    {
-        LWM2MCORE_DEVICE_BATTERY_STATUS_RID,        //.id
-        LWM2MCORE_RESOURCE_TYPE_INT,                //.type
-        1,                                          //.maxResInstCnt
-        omanager_ReadDeviceObj,                     //.read
-        NULL,                                       //.write
         NULL,                                       //.exec
     }
 };

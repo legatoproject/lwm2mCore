@@ -57,4 +57,5 @@ add_definitions(-g
                 -DWITH_TINYDTLS
                 -DLWM2M_OLD_CONTENT_FORMAT_SUPPORT
                 -DSIERRA
+                -DLWM2M_OBJECT_3_BATTERY
                 -DLWM2M_OBJECT_9)

@@ -238,15 +238,14 @@ typedef enum
     LWM2MCORE_DEVICE_AVAIL_POWER_SOURCES_RID,       ///< Available power sources
     LWM2MCORE_DEVICE_AVAIL_POWER_VOLTAGES_RID,      ///< Power source voltage
     LWM2MCORE_DEVICE_AVAIL_POWER_CURRENTS_RID,      ///< Power source current
-    LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,             ///< Battery level
+    LWM2MCORE_DEVICE_BATTERY_LEVEL_RID,             ///< Battery Level
     LWM2MCORE_DEVICE_MEMORY_FREE_RID,               ///< Memory free
     LWM2MCORE_DEVICE_ERROR_CODES_RID,               ///< Error code
     LWM2MCORE_DEVICE_RESET_ERROR_CODE_RID,          ///< Reset error code
     LWM2MCORE_DEVICE_CURRENT_TIME_RID,              ///< Current time
     LWM2MCORE_DEVICE_UTC_OFFSET_RID,                ///< UTC offset
     LWM2MCORE_DEVICE_TIMEZONE_RID,                  ///< Timezone
-    LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID,    ///< Supported binding and modes
-    LWM2MCORE_DEVICE_BATTERY_STATUS_RID = 20        ///< Battery status
+    LWM2MCORE_DEVICE_SUPPORTED_BINDING_MODE_RID     ///< Supported binding and modes
 }lwm2mcore_deviceResource_enum_t;
 
 //--------------------------------------------------------------------------------------------------

@@ -149,6 +149,7 @@
  * @c LWM2M_EXTERNAL_DOWNLOADER                 | Optional    | Use an external package downloader (on client side)
  * @c LWM2M_LOCATION_FLOAT                      | Optional    | Object 6 resources with float type instead of string type (longitude, latitude, altitude)
  * @c DELIMITER                                 | Optional    | Change default CoAP URI delimiter
+ * @c LWM2M_OBJECT_3_BATTERY                    | Optional    | Enable read on battery level (/3/0/9)
  * @c LWM2M_OBJECT_9                            | Optional    | Used for buffer allocation for embedded application (SOTA)
  * @c LEGACY_FW_STATUS                          | Optional    | Used to ensure compatibility with Sierra Wireless proprietary downloader
  *
@@ -161,6 +162,7 @@
  * - @c LWM2M_OLD_CONTENT_FORMAT_SUPPORT
  * - @c WITH_TINYDTLS
  * - @c SIERRA
+ * - @c LWM2M_OBJECT_3_BATTERY
  * - @c LWM2M_OBJECT_9
  * - @c LWM2M_DEREGISTER (but depends on the server behavior)
  * - @c LWM2M_LOCATION_FLOAT if the server supports the last v1.0 LwM2M specification or newer
