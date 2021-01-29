@@ -161,7 +161,8 @@ typedef enum
     LWM2MCORE_UPDATE_ERROR_OUT_OF_MEMORY,           ///< Not enough storage for the new package
     LWM2MCORE_UPDATE_ERROR_CONNECTION_LOST,         ///< Connection lost during downloading process
     LWM2MCORE_UPDATE_ERROR_UNSUPPORTED_PACKAGE,     ///< Unsupported package type
-    LWM2MCORE_UPDATE_ERROR_DEVICE_SPECIFIC          ///< Device defined update error
+    LWM2MCORE_UPDATE_ERROR_DEVICE_SPECIFIC,         ///< Device defined update error
+    LWM2MCORE_UPDATE_ERROR_INVALID_URI              ///< Invalid URI
 }
 lwm2mcore_UpdateError_t;
 
