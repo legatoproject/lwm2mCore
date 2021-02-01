@@ -18,6 +18,43 @@
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Retrieve the available power source
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if the treatment succeeds
+ *      - LWM2MCORE_ERR_GENERAL_ERROR if the treatment fails
+ *      - LWM2MCORE_ERR_INVALID_ARG if a parameter is invalid in resource handler
+ */
+//--------------------------------------------------------------------------------------------------
+LWM2MCORE_SHARED lwm2mcore_Sid_t lwm2mcore_GetAvailablePowerInfo
+(
+    lwm2mcore_powerInfo_t* powerInfoPtr,  ///< [INOUT] power source list
+    size_t* powerNbPtr                    ///< [INOUT] power source number
+)
+{
+    uint8_t index = 0;
+
+    if (!powerInfoPtr || !powerNbPtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    *powerNbPtr = 1;
+
+    for (index = 0; index < *powerNbPtr; ++index)
+    {
+        powerInfoPtr[index].source  = LWM2MCORE_DEVICE_PWR_SRC_TYPE_DC_POWER;
+        powerInfoPtr[index].voltage = 12000;
+        powerInfoPtr[index].current = 1500;
+        powerInfoPtr[index].level   = 0;
+        powerInfoPtr[index].status  = LWM2MCORE_DEVICE_BATTERY_UNKNOWN;
+    }
+
+    return LWM2MCORE_ERR_COMPLETED_OK;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Retrieve the device manufacturer
  * This API needs to have a procedural treatment
  *
