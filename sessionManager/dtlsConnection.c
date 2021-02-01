@@ -50,6 +50,13 @@ static bool IsRehandshake = false;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Global for DTLS NAT TIMEOUT
+ */
+//--------------------------------------------------------------------------------------------------
+static uint32_t DtlsNatTimeout = DTLS_NAT_TIMEOUT;
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Function to search the server URI (resource 0 of object 0)
  *
  * @return
@@ -963,6 +970,7 @@ static int ConnectionSend
         time_t timeFromLastReceivedData = lwm2m_gettime() - connPtr->lastReceived;
         LOG_ARG("now - connP->lastSend %d", timeFromLastSentData);
         LOG_ARG("now - connP->lastReceived %d", timeFromLastReceivedData);
+        LOG_ARG("DtlsNatTimeout %d", DtlsNatTimeout);
 
         if (firstBlock)
         {
@@ -977,9 +985,9 @@ static int ConnectionSend
                     return -1;
                 }
             }
-            else if ((0 < DTLS_NAT_TIMEOUT)
-                  && (DTLS_NAT_TIMEOUT < timeFromLastSentData)
-                  && (DTLS_NAT_TIMEOUT < timeFromLastReceivedData))
+            else if ((0 < DtlsNatTimeout)
+                  && (DtlsNatTimeout < timeFromLastSentData)
+                  && (DtlsNatTimeout < timeFromLastReceivedData))
             {
                 if (0 > dtls_ResumeSession(connPtr))
                 {
@@ -1309,4 +1317,24 @@ void dtls_ForceDtlsHandshake
         }
         parentPtr = parentPtr->nextPtr;
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the DTLS NAT timeout
+ *
+ * This function sets the NAT timeout.
+ * When data need to be sent by the client, a check is made between this NAT timeout value and the
+ * time when last data were received from the server or sent to the server.
+ * If one of these times is greater than the NAT timeout, a DTLS resume is initiated.
+ * Default value if this function is not called: 40 seconds.
+ * Value 0 will deactivate any DTLS resume.
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_SetNatTimeout
+(
+    uint32_t        timeout        ///< [IN] Timeout (unit: seconds)
+)
+{
+    DtlsNatTimeout = timeout;
 }

@@ -2206,3 +2206,18 @@ void smanager_ForceDtlsHandshake
     LOG("smanager_ForceDtlsHandshake");
     dtls_ForceDtlsHandshake(DataCtxPtr->connListPtr);
 }
+
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Set the DTLS NAT timeout
+ * @note Storage: volatile memory
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetNatTimeout
+(
+    uint32_t        timeout        ///< [IN] Timeout
+)
+{
+    dtls_SetNatTimeout(timeout);
+}

@@ -1370,6 +1370,17 @@ int lwm2mcore_GetSimApduResponse
     size_t* lenPtr      ///< [INOUT] Data buffer length
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Set the DTLS NAT timeout.
+ * @note Storage: volatile memory
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SetNatTimeout
+(
+    uint32_t        timeout        ///< [IN] Timeout
+);
+
 /**
   * @}
   */

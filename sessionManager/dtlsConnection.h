@@ -252,6 +252,23 @@ void dtls_ForceDtlsHandshake
     dtls_Connection_t* connListPtr         ///< DTLS connection list
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Set the DTLS NAT timeout
+ *
+ * This function sets the NAT timeout.
+ * When data need to be sent by the client, a check is made between this NAT timeout value and the
+ * time when last data were received from the server or sent to the server.
+ * If one of these times is greater than the NAT timeout, a DTLS resume is initiated.
+ * Default value if this function is not called: 40 seconds.
+ * Value 0 will deactivate any DTLS resume.
+ */
+//--------------------------------------------------------------------------------------------------
+void dtls_SetNatTimeout
+(
+    uint32_t        timeout        ///< [IN] Timeout (unit: seconds)
+);
+
 /**
   * @}
   */
