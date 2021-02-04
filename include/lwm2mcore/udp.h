@@ -95,9 +95,9 @@ bool lwm2mcore_UdpOpen
 
 //--------------------------------------------------------------------------------------------------
 /**
- * @brief Close the udp connection
+ * @brief Close the socket
  *
- * @details The aim of this function is to close a udp connection
+ * @details The aim of this function is to close a socket
  *
  * @remark Platform adaptor function which needs to be defined on client side.
  *
@@ -110,21 +110,6 @@ bool lwm2mcore_UdpOpen
 bool lwm2mcore_UdpClose
 (
     lwm2mcore_SocketConfig_t config        ///< [INOUT] socket configuration
-);
-
-//--------------------------------------------------------------------------------------------------
-/**
- * @brief Close the socket
- *
- * @details The aim of this function is to close a socket
- *
- * @remark Platform adaptor function which needs to be defined on client side.
- *
- */
-//--------------------------------------------------------------------------------------------------
-void lwm2mcore_UdpSocketClose
-(
-    int sockFd             ///< [IN] socket file descriptor
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -146,7 +131,7 @@ bool lwm2mcore_UdpConnect
     char* serverAddressPtr,             ///< [IN] Server address URL
     char* hostPtr,                      ///< [IN] Host
     char* portPtr,                      ///< [IN] Port
-    int addressFamily,                  ///< [IN] Address family
+    int addressFamily,                  ///< [IN] Address familly
     struct sockaddr* saPtr,             ///< [IN] Socket address pointer
     socklen_t* slPtr,                   ///< [IN] Socket address length
     int* sockPtr                        ///< [IN] Socket file descriptor

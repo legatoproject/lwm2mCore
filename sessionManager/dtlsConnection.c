@@ -883,8 +883,6 @@ dtls_Connection_t* dtls_CreateConnection
                 connPtr->dtlsSessionPtr = NULL;
             }
         }
-        // Close the socket file descriptor
-        lwm2mcore_UdpSocketClose(s);
     }
 
     return connPtr;
