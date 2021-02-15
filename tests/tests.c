@@ -407,6 +407,12 @@ static void test_lwm2mcore_Push
     uint8_t payload[MAX_LEN_PAYLOAD] = "1234567890";
     uint16_t midPtr = 0;
 
+    TEST_ASSERT(lwm2mcore_Push(NULL, payload, strlen((const char*)payload),
+                               LWM2MCORE_PUSH_CONTENT_CBOR, &midPtr) == LWM2MCORE_PUSH_FAILED);
+
+    TEST_ASSERT(lwm2mcore_Push(Lwm2mcoreRef, payload, strlen((const char*)payload),
+                               0, &midPtr) == LWM2MCORE_PUSH_FAILED);
+
     TEST_ASSERT(lwm2mcore_Push(Lwm2mcoreRef, payload, strlen((const char*)payload),
                                LWM2MCORE_PUSH_CONTENT_CBOR, &midPtr) == LWM2MCORE_PUSH_INITIATED);
 }

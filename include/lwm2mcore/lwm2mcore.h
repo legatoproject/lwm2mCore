@@ -343,7 +343,9 @@ typedef struct ClientData_s* lwm2mcore_Ref_t;
 typedef enum
 {
     LWM2MCORE_ACK_RECEIVED = 0,     ///< Data transferred successfully.
-    LWM2MCORE_ACK_TIMEOUT           ///< Transaction time out
+    LWM2MCORE_ACK_TIMEOUT,          ///< Transaction time out
+    LWM2MCORE_ACK_FAILURE,          ///< Data is not correctly transferred
+    LWM2MCORE_ACK_REJECTED          ///< Data is rejected by the server, may need a bootstrap
 } lwm2mcore_AckResult_t;
 
 //--------------------------------------------------------------------------------------------------
