@@ -132,7 +132,6 @@ bool lwm2mcore_UdpOpen
     return result;
 }
 
-
 //--------------------------------------------------------------------------------------------------
 /**
  * Close the socket
@@ -154,6 +153,19 @@ bool lwm2mcore_UdpClose
     return true;
 }
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * Close the provided socket
+ * This function is called by the LWM2MCore and must be adapted to the platform.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_UdpSocketClose
+(
+    int sockFd             ///< [IN] socket file descriptor
+)
+{
+    close(sockFd);
+}
 
 //--------------------------------------------------------------------------------------------------
 /**
