@@ -96,3 +96,22 @@ lwm2mcore_Sid_t lwm2mcore_SetPollingTimer
 
     return LWM2MCORE_ERR_COMPLETED_OK;
 }
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Set the EDM Polling Timer interval
+ *
+ * @return
+ *      - LWM2MCORE_ERR_COMPLETED_OK if succeeds
+ *      - LWM2MCORE_ERR_INCORRECT_RANGE parameter out of range
+ *      - LWM2MCORE_ERR_GENERAL_ERROR other failure
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_SetEdmPollingTimer
+(
+    uint32_t interval   ///< [IN] Polling Timer interval in seconds
+)
+{
+    // For the purposes of this client, the behavior is the same for any DM server.
+    return lwm2mcore_SetPollingTimer(interval);
+}

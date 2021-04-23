@@ -927,8 +927,21 @@ int omanager_WriteServerObj
         /* Resource 1: Server lifetime */
         case LWM2MCORE_SERVER_LIFETIME_RID:
             lifetime = (uint32_t)omanager_BytesToInt((const char*)bufferPtr, len);
-            LOG_ARG("set lifetime: serverId %d value %d", serverInformationPtr->data.serverId,
-                    lifetime);
+            LOG_ARG("set lifetime: serverId %d value %d BS %d",
+                    serverInformationPtr->data.serverId, lifetime,
+                    smanager_IsBootstrapConnection());
+#if SIERRA
+            if (lwm2mcore_IsEdmEnabled() &&
+                serverInformationPtr->data.serverId == LWM2MCORE_EDM_SERVER_ID)
+            {
+                sID = lwm2mcore_SetEdmPollingTimer(lifetime);
+                if (LWM2MCORE_ERR_COMPLETED_OK == sID)
+                {
+                    serverInformationPtr->data.lifetime = lifetime;
+                }
+            }
+            else
+#endif
             if (!smanager_IsBootstrapConnection())
             {
                 sID = lwm2mcore_SetPollingTimer(lifetime);
