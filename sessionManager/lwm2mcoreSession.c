@@ -1301,6 +1301,42 @@ void lwm2mcore_SetEdmEnabled
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Skip deregister for a serverID. By default, a deregister message is sent by default
+ * when disconnecting.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SkipDeregister
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] Instance reference
+    uint16_t shortID                ///< [IN] Server ID
+)
+{
+#ifdef SIERRA
+    smanager_ClientData_t* dataPtr;
+    if (instanceRef)
+    {
+        dataPtr = (smanager_ClientData_t*)instanceRef;
+    }
+    else
+    {
+        LOG("Error: no data context");
+        return;
+    }
+
+    lwm2m_server_t* server = dataPtr->lwm2mHPtr->serverList;
+    while (NULL != server)
+    {
+        if (server->shortID == shortID)
+        {
+            server->isSkippingDereg = true;
+        }
+        server = server->next;
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Check whether the server is active
  *
  * Extended Device Management (EDM) requires the ability to establish a session with DM server with

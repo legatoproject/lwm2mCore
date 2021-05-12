@@ -754,6 +754,18 @@ bool lwm2mcore_IsEdmEnabled
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Skip deregister msg for a serverID. By default, a deregister message is sent by default
+ * when disconnecting.
+ */
+//--------------------------------------------------------------------------------------------------
+void lwm2mcore_SkipDeregister
+(
+    lwm2mcore_Ref_t instanceRef,    ///< [IN] Instance reference
+    uint16_t shortID                ///< [IN] Server ID
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
  * @brief Free LwM2MCore
  *
  * @remark Public function which can be called by the client.
