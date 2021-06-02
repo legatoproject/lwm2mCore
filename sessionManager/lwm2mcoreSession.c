@@ -1905,15 +1905,33 @@ bool lwm2mcore_SendNotification
 
     if (targetPtr)
     {
-        return lwm2m_send_notification(DataCtxPtr->lwm2mHPtr,
-                                       targetPtr->shortID,
-                                       notificationPtr->uriPtr,
-                                       notificationPtr->tokenPtr,
-                                       notificationPtr->tokenLength,
-                                       notificationPtr->contentType,
-                                       notificationPtr->payloadPtr,
-                                       notificationPtr->payloadLength,
-                                       notificationPtr->streamStatus);
+        bool result = false;
+        result = lwm2m_send_notification(DataCtxPtr->lwm2mHPtr,
+                                         targetPtr->shortID,
+                                         notificationPtr->uriPtr,
+                                         notificationPtr->tokenPtr,
+                                         notificationPtr->tokenLength,
+                                         notificationPtr->contentType,
+                                         notificationPtr->payloadPtr,
+                                         notificationPtr->payloadLength,
+                                         notificationPtr->streamStatus);
+        if (result)
+        {
+            /* To check for retransmission, need to relaunch LWM2MCORE_TIMER_STEP */
+            if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+            {
+                LOG("Error to stop the step timer");
+            }
+
+            /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to check retransmission needs */
+            if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                            1,
+                                            Lwm2mClientStepHandler))
+            {
+                LOG("ERROR to launch the step timer for retransmission check");
+            }
+        }
+        return result;
     }
     else
     {
