@@ -78,6 +78,15 @@ static bool BootstrapSession = false;
 //--------------------------------------------------------------------------------------------------
 #define INACTIVE_TIMEOUT_SECONDS    20
 
+#if SIERRA
+//--------------------------------------------------------------------------------------------------
+/**
+ *  Alternate (reduced) inactivity timeout after which a notification will be sent.
+ */
+//--------------------------------------------------------------------------------------------------
+#define INACTIVE_TIMEOUT_SECONDS_ALT 8
+#endif // SIERRA
+
 //--------------------------------------------------------------------------------------------------
 /**
  *  Client state bootstrapping / registered etc.,
@@ -357,6 +366,31 @@ static void ForceBootstrap
 
 //--------------------------------------------------------------------------------------------------
 /**
+ *  Get session inactivity timeout for the current DM server.
+ */
+//--------------------------------------------------------------------------------------------------
+static int GetInactiveTimeout
+(
+    void
+)
+{
+#if SIERRA
+    if (!lwm2mcore_IsEdmEnabled())
+    {
+        // if EDM is not enabled, it's just the regular timeout
+        return INACTIVE_TIMEOUT_SECONDS;
+    }
+    else if (lwm2mcore_IsServerActive(LWM2MCORE_EDM_SERVER_ID))
+    {
+        // if this is a connection to EDM server, use shortened timeout
+        return INACTIVE_TIMEOUT_SECONDS_ALT;
+    }
+#endif // SIERRA
+    return INACTIVE_TIMEOUT_SECONDS;
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
  *  LwM2M client inactivity timeout.
  */
 //--------------------------------------------------------------------------------------------------
@@ -365,11 +399,11 @@ static void Lwm2mClientInactivityHandler
     void
 )
 {
-    LOG_ARG("client inactive for %d seconds", INACTIVE_TIMEOUT_SECONDS);
+    LOG_ARG("client inactive for %d seconds", GetInactiveTimeout());
 
     /* Restart the timer for monitoring next period */
     if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
-                                    INACTIVE_TIMEOUT_SECONDS,
+                                    GetInactiveTimeout(),
                                     Lwm2mClientInactivityHandler))
     {
         LOG("Error re-launching inactivity timer");
@@ -605,7 +639,7 @@ static void ManageRegistration
 
     /* Launch inactivity timer to monitor inactivity during registered state */
     if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
-                                    INACTIVE_TIMEOUT_SECONDS,
+                                    GetInactiveTimeout(),
                                     Lwm2mClientInactivityHandler))
     {
         LOG("Error launching client inactivity timer");
@@ -1077,7 +1111,7 @@ void lwm2mcore_UdpReceiveCb
     if (lwm2mcore_TimerIsRunning(LWM2MCORE_TIMER_INACTIVITY))
     {
         if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_INACTIVITY,
-                                        INACTIVE_TIMEOUT_SECONDS,
+                                        GetInactiveTimeout(),
                                         Lwm2mClientInactivityHandler))
         {
             LOG("Error launching client inactivity timer");
