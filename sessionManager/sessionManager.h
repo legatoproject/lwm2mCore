@@ -144,6 +144,27 @@ void smanager_ForceDtlsHandshake
     void
 );
 
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a bootstrap
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_ForceBootstrap
+(
+    bool    removeTransaction       ///< [IN] Indicates if transactions need be removed
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a registration
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_Registration
+(
+    void
+);
 /**
   * @}
   */

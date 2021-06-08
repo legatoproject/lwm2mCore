@@ -329,19 +329,30 @@ uint8_t lwm2m_report_coap_status
 
 //--------------------------------------------------------------------------------------------------
 /**
- * Force a connection to the bootstrap
+ * Force an initial connection
+ *
+ * To connect to the bootstrap, areCredentialsToBeDeleted needs to be set to true
+ * To force a REGISTER, areCredentialsToBeDeleted needs to be set to false
  */
 //--------------------------------------------------------------------------------------------------
-static void ForceBootstrap
+static void ForceInitialConnection
 (
-    lwm2m_server_t* targetPtr,          ///< [IN] Server list
-    lwm2m_transaction_t* transacPtr     ///< [IN] Transaction list
+    bool                    areCredentialsToBeDeleted,      ///< [IN] Are credentials to be deleted?
+    lwm2m_server_t*         targetPtr,                      ///< [IN] Server list
+    lwm2m_transaction_t*    transacPtr                      ///< [IN] Transaction list
 )
 {
-    LOG("Force bootstrap");
-
-    // Delete DM credentials if present
-    omanager_DeleteDmCredentials();
+    if (areCredentialsToBeDeleted)
+    {
+        // Delete DM credentials if present
+        LOG("Force bootstrap");
+        omanager_DeleteDmCredentials();
+    }
+    else
+    {
+        LOG("Force registration");
+        lwm2mcore_DeleteRegistrationID(-1);
+    }
 
     while (targetPtr)
     {
@@ -471,8 +482,9 @@ static void Lwm2mClientStepHandler
                     // The common use case is that DM credentials were updated on server side
                     // (key-rotation) which requires a connection to the bootstrap server in order
                     // to retrieve new DM credentials
-                    ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
-                                DataCtxPtr->lwm2mHPtr->transactionList);
+                    ForceInitialConnection(true,
+                                           DataCtxPtr->lwm2mHPtr->serverList,
+                                           DataCtxPtr->lwm2mHPtr->transactionList);
                     break;
 
                 case STATE_READY:
@@ -493,8 +505,9 @@ static void Lwm2mClientStepHandler
                         // 1) connects to the bootstrap server
                         // 2) indicates the connection as failed.
                         // Option 1 is kept
-                        ForceBootstrap(DataCtxPtr->lwm2mHPtr->serverList,
-                                    DataCtxPtr->lwm2mHPtr->transactionList);
+                        ForceInitialConnection(true,
+                                               DataCtxPtr->lwm2mHPtr->serverList,
+                                               DataCtxPtr->lwm2mHPtr->transactionList);
                     }
                     break;
 
@@ -2308,4 +2321,70 @@ void lwm2mcore_SetNatTimeout
 )
 {
     dtls_SetNatTimeout(timeout);
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a bootstrap
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_ForceBootstrap
+(
+    bool    removeTransaction       ///< [IN] Indicates if transactions need be removed
+)
+{
+    DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+    ForceInitialConnection(true,
+                           DataCtxPtr->lwm2mHPtr->serverList,
+                           removeTransaction ? DataCtxPtr->lwm2mHPtr->transactionList : NULL);
+
+    /* Stop the timer and launch it */
+    if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+    {
+        LOG("Error to stop the step timer");
+    }
+
+    /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the update
+     * request
+     */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                    1,
+                                    Lwm2mClientStepHandler))
+    {
+        LOG("ERROR to launch the step timer for registration update");
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to force a registration
+ *
+ */
+//--------------------------------------------------------------------------------------------------
+void smanager_Registration
+(
+    void
+)
+{
+    DataCtxPtr->lwm2mHPtr->state = STATE_INITIAL;
+    ForceInitialConnection(false,
+                           DataCtxPtr->lwm2mHPtr->serverList,
+                           NULL);
+
+    /* Stop the timer and launch it */
+    if (false == lwm2mcore_TimerStop(LWM2MCORE_TIMER_STEP))
+    {
+        LOG("Error to stop the step timer");
+    }
+
+    /* Launch the LWM2MCORE_TIMER_STEP timer with 1 second to treat the update
+     * request
+     */
+    if (false == lwm2mcore_TimerSet(LWM2MCORE_TIMER_STEP,
+                                    1,
+                                    Lwm2mClientStepHandler))
+    {
+        LOG("ERROR to launch the step timer for registration update");
+    }
 }

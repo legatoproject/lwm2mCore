@@ -254,6 +254,19 @@ void lwm2mcore_AckCallback
         // force a DTLS abbreviate handshake
         smanager_ForceDtlsHandshake();
     }
+
+    if (LWM2MCORE_ACK_EXPIRED == result)
+    {
+        // Send a new registration
+        smanager_Registration();
+    }
+
+    if (LWM2MCORE_ACK_REJECTED == result)
+    {
+        // force a connection to the BS
+        /* Delete DM credentials in order to force a connection to the BS server */
+        smanager_ForceBootstrap(false);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
