@@ -361,7 +361,8 @@ typedef enum
     LWM2MCORE_ACK_RECEIVED = 0,     ///< Data transferred successfully.
     LWM2MCORE_ACK_TIMEOUT,          ///< Transaction time out
     LWM2MCORE_ACK_FAILURE,          ///< Data is not correctly transferred
-    LWM2MCORE_ACK_REJECTED          ///< Data is rejected by the server, may need a bootstrap
+    LWM2MCORE_ACK_REJECTED,         ///< Data is rejected by the server, need a bootstrap
+    LWM2MCORE_ACK_EXPIRED           ///< Data is rejected by the server
 } lwm2mcore_AckResult_t;
 
 //--------------------------------------------------------------------------------------------------
