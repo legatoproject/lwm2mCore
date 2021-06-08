@@ -43,6 +43,12 @@ static coap_ack_handler_t AckHandlerRef = NULL;
 //--------------------------------------------------------------------------------------------------
 static coap_request_handler_t RequestHandlerRef = NULL;
 
+//--------------------------------------------------------------------------------------------------
+/*
+ * Static error code for the last CoAP push
+ */
+//--------------------------------------------------------------------------------------------------
+static uint8_t LastCoapErrorCode = COAP_ERROR_CODE_UNSET;
 
 //--------------------------------------------------------------------------------------------------
 /**
@@ -231,9 +237,13 @@ void lwm2mcore_SetCoapAckHandler
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_AckCallback
 (
-    lwm2mcore_AckResult_t result     ///< [IN] CoAP ack result
+    lwm2mcore_AckResult_t result,                       ///< [IN] CoAP ack result
+    uint8_t               coapErrorCode                 ///< [IN] CoAP error code
 )
 {
+    LOG_ARG("lwm2mcore_AckCallback result %d", result);
+    LastCoapErrorCode = coapErrorCode;
+
     if (AckHandlerRef != NULL)
     {
         AckHandlerRef(result);
@@ -244,6 +254,34 @@ void lwm2mcore_AckCallback
         // force a DTLS abbreviate handshake
         smanager_ForceDtlsHandshake();
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * Function to get the last CoAP error code of the last CoAP push
+ *
+ * return
+ *      - LWM2MCORE_ERR_INVALID_ARG on incorrect parameter
+ *      - LWM2MCORE_ERR_COMPLETED_OK on success
+ *      - LWM2MCORE_ERR_INVALID_STATE if no CoAP push was made
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetLastCoapPushError
+(
+    uint8_t*    coapErrorCodePtr                 ///< [IN] CoAP error code
+)
+{
+    if (!coapErrorCodePtr)
+    {
+        return LWM2MCORE_ERR_INVALID_ARG;
+    }
+
+    if (LastCoapErrorCode != COAP_ERROR_CODE_UNSET)
+    {
+        *coapErrorCodePtr = LastCoapErrorCode;
+        return LWM2MCORE_ERR_COMPLETED_OK;
+    }
+    return LWM2MCORE_ERR_INVALID_STATE;
 }
 
 //--------------------------------------------------------------------------------------------------

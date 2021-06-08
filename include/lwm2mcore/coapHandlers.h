@@ -418,7 +418,8 @@ bool lwm2mcore_SendNotification
 //--------------------------------------------------------------------------------------------------
 void lwm2mcore_AckCallback
 (
-    lwm2mcore_AckResult_t result                        ///< [IN] CoAP ack result
+    lwm2mcore_AckResult_t result,                       ///< [IN] CoAP ack result
+    uint8_t               coapErrorCode                 ///< [IN] CoAP error code
 );
 
 //--------------------------------------------------------------------------------------------------
@@ -444,6 +445,21 @@ coap_external_handler_t lwm2mcore_GetCoapExternalHandler
 void lwm2mcore_ExecPostRequestHandler
 (
     void* connP     /// [IN] Connection list
+);
+
+//--------------------------------------------------------------------------------------------------
+/**
+ * @brief Function to get the last CoAP error code of the last CoAP push
+ *
+ * @return
+ *      - LWM2MCORE_ERR_INVALID_ARG on incorrect parameter
+ *      - LWM2MCORE_ERR_COMPLETED_OK on success
+ *      - LWM2MCORE_ERR_INVALID_STATE if no CoAP push was made
+ */
+//--------------------------------------------------------------------------------------------------
+lwm2mcore_Sid_t lwm2mcore_GetLastCoapPushError
+(
+    uint8_t*    coapErrorCodePtr                 ///< [IN] CoAP error code
 );
 /**
   * @}
