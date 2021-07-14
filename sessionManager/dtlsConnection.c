@@ -43,6 +43,15 @@ dtls_context_t* DtlsContextPtr;
 
 //--------------------------------------------------------------------------------------------------
 /**
+ * Global for DTLS connection list
+ */
+//--------------------------------------------------------------------------------------------------
+#ifdef LWM2M_RETAIN_SERVER_LIST
+dtls_Connection_t* DtlsConnectionListPtr = NULL;
+#endif
+
+//--------------------------------------------------------------------------------------------------
+/**
  * Global for DTLS rehandshake
  */
 //--------------------------------------------------------------------------------------------------
@@ -889,6 +898,31 @@ dtls_Connection_t* dtls_CreateConnection
                 // no dtls session
                 connPtr->dtlsSessionPtr = NULL;
             }
+#ifdef LWM2M_RETAIN_SERVER_LIST
+            dtls_Connection_t* globalConnPtr = NULL;
+            globalConnPtr = dtls_FindConnection(DtlsConnectionListPtr,
+                                                (const struct sockaddr_storage *)&saPtr,
+                                                sl);
+            if (globalConnPtr)
+            {
+                LOG("Re-using existing dtls connection");
+                connPtr->lastSend = globalConnPtr->lastSend;
+                connPtr->lastReceived = globalConnPtr->lastReceived;
+
+                // Update time for global connection
+                globalConnPtr->lastSend = lwm2m_gettime();
+                globalConnPtr->lastReceived = lwm2m_gettime();
+
+                /* Since we already have an available connection, we can fake this event */
+                smanager_SendSessionEvent(EVENT_TYPE_AUTHENTICATION, EVENT_STATUS_STARTED, NULL);
+            }
+            else
+            {
+                LOG("Create a new DTLS connection");
+                globalConnPtr = dtls_HandleNewIncoming(DtlsConnectionListPtr, sock, &saPtr, sl);
+                DtlsConnectionListPtr = globalConnPtr;
+            }
+#endif
         }
         // Close the socket file descriptor
         lwm2mcore_UdpSocketClose(s);
@@ -907,8 +941,10 @@ void dtls_FreeConnection
     dtls_Connection_t* connListPtr
 )
 {
+#ifndef LWM2M_RETAIN_SERVER_LIST
     dtls_free_context(DtlsContextPtr);
     DtlsContextPtr = NULL;
+#endif
 
     while (NULL != connListPtr)
     {
@@ -1285,6 +1321,37 @@ void dtls_CloseAndFreePeer
         peer->state = DTLS_STATE_CLOSED;
         dtls_reset_peer(targetPtr->dtlsContextPtr, peer);
     }
+
+#ifdef LWM2M_RETAIN_SERVER_LIST
+    // Remove from global DTLS connection list since we are resetting the peer
+    if (DtlsConnectionListPtr)
+    {
+        dtls_Connection_t* tmp = DtlsConnectionListPtr;
+        dtls_Connection_t* prev = NULL;
+
+        while (!SockaddrCmp((struct sockaddr*) (&tmp->addr), (struct sockaddr*) (&targetPtr->addr)))
+        {
+            prev = tmp;
+            tmp = tmp->nextPtr;
+        }
+
+        if (tmp)
+        {
+            if (!prev)
+            {
+                DtlsConnectionListPtr = tmp->nextPtr;
+            }
+            else
+            {
+                prev->nextPtr = tmp->nextPtr;
+            }
+
+            lwm2m_free(tmp->dtlsSessionPtr);
+            lwm2m_free(tmp);
+        }
+    }
+#endif
+
     lwm2m_free(targetPtr->dtlsSessionPtr);
     lwm2m_free(targetPtr);
 }
