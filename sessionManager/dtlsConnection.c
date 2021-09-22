@@ -1329,7 +1329,8 @@ void dtls_CloseAndFreePeer
         dtls_Connection_t* tmp = DtlsConnectionListPtr;
         dtls_Connection_t* prev = NULL;
 
-        while (!SockaddrCmp((struct sockaddr*) (&tmp->addr), (struct sockaddr*) (&targetPtr->addr)))
+        while (tmp && !SockaddrCmp((struct sockaddr*) (&tmp->addr),
+                                   (struct sockaddr*) (&targetPtr->addr)))
         {
             prev = tmp;
             tmp = tmp->nextPtr;
