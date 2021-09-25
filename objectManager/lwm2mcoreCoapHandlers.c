@@ -422,6 +422,10 @@ coap_status_t lwm2mcore_CallCoapEventHandler
     coapErrorCode = GetCoapErrorCode(result, requestPtr->method);
     if ((NULL == RequestHandlerRef) && (requestPtr))
     {
+       if(requestPtr->uri)
+       {
+           lwm2m_free(requestPtr->uri);
+       }
        lwm2m_free(requestPtr);
     }
 

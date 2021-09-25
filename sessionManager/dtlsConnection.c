@@ -781,6 +781,7 @@ dtls_Connection_t* dtls_HandleNewIncoming
         if (!(connPtr->dtlsSessionPtr))
         {
            LOG("connPtr->dtlsSessionPtr is NULL");
+           lwm2m_free(connPtr);
            return NULL;
         }
         memset(connPtr->dtlsSessionPtr, 0, sizeof(session_t));
@@ -896,6 +897,10 @@ dtls_Connection_t* dtls_CreateConnection
             else
             {
                 // no dtls session
+                if (connPtr->dtlsSessionPtr)
+                {
+                    lwm2m_free(connPtr->dtlsSessionPtr);
+                }
                 connPtr->dtlsSessionPtr = NULL;
             }
 #ifdef LWM2M_RETAIN_SERVER_LIST
