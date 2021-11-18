@@ -123,20 +123,6 @@
 #define LWM2MCORE_EDM_SERVER_ID                 1000
 #endif // SIERRA
 
-//--------------------------------------------------------------------------------------------------
-/**
- * It is assumed that EDM server always has Short Server ID equals to 1000.
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_EDM_SERVER_ID                 1000
-
-//--------------------------------------------------------------------------------------------------
-/**
- * When used as a Server ID, indicate that the operation is applicable to all servers.
- */
-//--------------------------------------------------------------------------------------------------
-#define LWM2MCORE_ALL_SERVERS                   0xFFFF
-
 /**
   * @}
   */

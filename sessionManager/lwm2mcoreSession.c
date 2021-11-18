@@ -1275,7 +1275,7 @@ lwm2mcore_Ref_t lwm2mcore_Init
     dataPtr->lwm2mcoreCtxPtr = InitContext(dataPtr);
     Lwm2mcoreCtxPtr = dataPtr->lwm2mcoreCtxPtr;
     LWM2MCORE_ASSERT(dataPtr->lwm2mcoreCtxPtr);
-    dataPtr->serverId = LWM2MCORE_ALL_SERVERS;
+    dataPtr->serverId = LWM2MCORE_AIRVANTAGE_SERVER_ID;
     dataPtr->isEdmEnabled = false;
 
     DataCtxPtr = dataPtr;
@@ -1389,7 +1389,6 @@ void lwm2mcore_SkipDeregister
  * Extended Device Management (EDM) requires the ability to establish a session with DM server with
  * specific Short Server ID. This API checks whether selected server is set as "active", so that
  * other known DM servers can be excluded from the session.
- * IN ALL_SERVERS mode (or if EDM feature is disabled), all servers are considered "active".
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_IsServerActive
@@ -1397,11 +1396,6 @@ bool lwm2mcore_IsServerActive
     uint16_t        serverId        ///< [IN] server ID
 )
 {
-    if (!lwm2mcore_IsEdmEnabled())
-    {
-        // if EDM is not enabled, all known servers are "active"
-        return true;
-    }
     if (DataCtxPtr == NULL)
     {
         LOG("Error: no context");
@@ -1410,8 +1404,7 @@ bool lwm2mcore_IsServerActive
     smanager_ClientData_t* dataPtr = (smanager_ClientData_t*)DataCtxPtr;
     LOG_ARG("Server ID: stored %d current %d", dataPtr->serverId, serverId);
 
-    return ((dataPtr->serverId == LWM2MCORE_ALL_SERVERS) ||
-            (dataPtr->serverId == serverId));
+    return (dataPtr->serverId == serverId);
 }
 
 //--------------------------------------------------------------------------------------------------
