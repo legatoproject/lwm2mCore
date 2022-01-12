@@ -1838,8 +1838,8 @@ int omanager_ReadDeviceObj
                                                     &powerInfo[index].level,
                                                     sizeof(powerInfo[index].level),
                                                     false);
+                        break;
                     }
-                    break;
                 }
             }
         }
@@ -1886,8 +1886,8 @@ int omanager_ReadDeviceObj
                                             &powerInfo[index].status,
                                             sizeof(powerInfo[index].status),
                                             false);
+                         break;
                     }
-                    break;
                 }
             }
         }
