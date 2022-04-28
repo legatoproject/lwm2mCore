@@ -393,6 +393,7 @@ static void SetUpdateResult
                     PkgDwlObj.updateResult.fw = LWM2MCORE_FW_UPDATE_RESULT_COMMUNICATION_ERROR;
                     break;
             }
+            LOG_ARG("Firmware update result: %d", PkgDwlObj.updateResult.fw);
             break;
 
         case LWM2MCORE_SW_UPDATE_TYPE:
@@ -427,6 +428,7 @@ static void SetUpdateResult
                     PkgDwlObj.updateResult.sw = LWM2MCORE_SW_UPDATE_RESULT_CONNECTION_LOST;
                     break;
             }
+            LOG_ARG("Software update result: %d", PkgDwlObj.updateResult.fw);
             break;
 
         default:
@@ -665,11 +667,29 @@ static downloaderResult_t GetPackageSize
             break;
 
 
+        case DOWNLOADER_TIMEOUT:
         case DOWNLOADER_MEMORY_ERROR:
         case DOWNLOADER_RECV_ERROR:
-        case DOWNLOADER_TIMEOUT:
-            // Nothing to do
-            break;
+        {
+            // In third-party FOTA case, a timeout here probably means the user has supplied
+            // an invalid URL, so treat this as an error.
+            //
+            // TODO: Re-examine this once there's a way to cancel third-party FOTA.
+            bool state = false;
+            if (DWL_OK != GetTpfWorkspace(&state))
+            {
+                state = false;
+            }
+
+            if (state)
+            {
+                SetUpdateResult(PKG_DWL_ERROR_URI);
+            }
+            else
+            {
+                // Nothing to do in the non-TPF case
+            }
+        }
 
         case DOWNLOADER_ERROR:
         default:
