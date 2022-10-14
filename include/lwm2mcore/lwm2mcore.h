@@ -173,7 +173,8 @@ typedef enum
     LWM2MCORE_ERR_NET_ERROR             = -11,  ///< Error on socket management (package download
                                                 ///< case)
     LWM2MCORE_ERR_MEMORY                = -12,  ///< Memory issue
-    LWM2MCORE_ERR_RETRY_FAILED          = -13   ///< Last download retry attempt failed.
+    LWM2MCORE_ERR_RETRY_FAILED          = -13,  ///< Last download retry attempt failed.
+    LWM2MCORE_ERR_ALREADY_PROCESSED     = -14,  ///< The request was already made
 }lwm2mcore_Sid_t;
 
 //--------------------------------------------------------------------------------------------------
