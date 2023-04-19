@@ -2352,9 +2352,6 @@ static void PkgDwlDownload
             }
         }
 
-        // Notify the application of the download start
-        PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
-
         // Set update state to 'Downloading'.
         // Use the update type set by PkgDwlInit().
         switch (PkgDwlObj.packageType)
@@ -2398,6 +2395,10 @@ static void PkgDwlDownload
     switch (downloaderResult)
     {
         case DOWNLOADER_OK:
+
+            // Notify the application of the download start
+            PkgDwlEvent(PKG_DWL_EVENT_DL_START, pkgDwlPtr);
+
             PkgDwlObj.result = DWL_OK;
 
             // Be ready to parse downloaded data
