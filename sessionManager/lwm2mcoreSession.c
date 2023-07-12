@@ -1389,7 +1389,6 @@ void lwm2mcore_SkipDeregister
  * Extended Device Management (EDM) requires the ability to establish a session with DM server with
  * specific Short Server ID. This API checks whether selected server is set as "active", so that
  * other known DM servers can be excluded from the session.
- * IN ALL_SERVERS mode (or if EDM feature is disabled), all servers are considered "active".
  */
 //--------------------------------------------------------------------------------------------------
 bool lwm2mcore_IsServerActive
@@ -1397,11 +1396,6 @@ bool lwm2mcore_IsServerActive
     uint16_t        serverId        ///< [IN] server ID
 )
 {
-    if (!lwm2mcore_IsEdmEnabled())
-    {
-        // if EDM is not enabled, all known servers are "active"
-        return true;
-    }
     if (DataCtxPtr == NULL)
     {
         LOG("Error: no context");
